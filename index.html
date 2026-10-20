@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конструктор очистных НДТ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: технологическая карта — слева исходные стоки, в центре каталог НДТ, справа собранная схема как вертикальная линия потока; под ними матрица результатов */
+:root{
+  --bg:#ECF0EF; --surface:#FFFFFF; --surface2:#F4F7F6; --ink:#15232A; --muted:#5A6A6F; --line:#CDD8D6;
+  --accent:#1D6B61; --accent-ink:#FFFFFF; --accent-soft:#D9EAE5;
+  --mech:#7A6448; --bio:#2F7A4F; --tert:#2E5E8C; --dis:#6C4E9A;
+  --ok:#2A7A4B; --ok-bg:#DFF0E5; --warn:#97620A; --warn-bg:#FAEED6; --bad:#B0382E; --bad-bg:#F7E0DC;
+  --f-display:'Unbounded','Golos Text',system-ui,sans-serif;
+  --f-body:'Golos Text',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1517; --surface:#152023; --surface2:#1A272A; --ink:#E3ECEA; --muted:#93A5A6; --line:#2B3B3E;
+  --accent:#5FB8A8; --accent-ink:#0B1A18; --accent-soft:#1D3A35;
+  --mech:#C4A27A; --bio:#6CC08C; --tert:#7FAEDD; --dis:#B49BE0;
+  --ok:#6CC08C; --ok-bg:#183326; --warn:#E3B05A; --warn-bg:#3A2D14; --bad:#F08A7E; --bad-bg:#3D1E1B;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1517; --surface:#152023; --surface2:#1A272A; --ink:#E3ECEA; --muted:#93A5A6; --line:#2B3B3E;
+  --accent:#5FB8A8; --accent-ink:#0B1A18; --accent-soft:#1D3A35;
+  --mech:#C4A27A; --bio:#6CC08C; --tert:#7FAEDD; --dis:#B49BE0;
+  --ok:#6CC08C; --ok-bg:#183326; --warn:#E3B05A; --warn-bg:#3A2D14; --bad:#F08A7E; --bad-bg:#3D1E1B;
+  color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1360px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:4px 0 0;max-width:70ch}
+h2{font-family:var(--f-display);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:0;color:var(--ink)}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+@media (max-width:1150px){.grid{grid-template-columns:300px minmax(0,1fr)} .col-scheme{grid-column:1 / -1}}
+@media (max-width:720px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:12.5px;margin:0}
+label.f{display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:8px;font-size:13px}
+label.f small{display:block;color:var(--muted);font-size:11px;font-family:var(--f-mono)}
+input[type=number],select{font:inherit;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;width:100%;font-variant-numeric:tabular-nums}
+select{font-family:var(--f-body)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fields{display:flex;flex-direction:column;gap:7px}
+.qrow{padding-bottom:10px;border-bottom:1px dashed var(--line)}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:5px 10px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{font-size:12.5px}
+/* library */
+.stage{display:flex;flex-direction:column;gap:6px}
+.stage-name{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.lib-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+.lib-item b{font-weight:600;font-size:13.5px}
+.lib-item p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.lib-item button{font-size:18px;line-height:1;padding:4px 10px}
+.lib-list{display:flex;flex-direction:column;gap:14px}
+/* scheme */
+.flow{display:flex;flex-direction:column;gap:0}
+.node{display:grid;grid-template-columns:4px minmax(0,1fr);border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.node .bar{background:var(--c)}
+.node-body{padding:9px 11px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.node-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.node-title{font-weight:600;font-size:13.5px}
+.node-title small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.node-ctrl{display:flex;gap:4px;flex:none}
+.node-ctrl button{padding:2px 7px;font-size:13px}
+.effects{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--ink);white-space:nowrap}
+.warns{display:flex;flex-direction:column;gap:4px}
+.w{font-size:12px;padding:5px 8px;border-radius:6px;background:var(--warn-bg);color:var(--warn)}
+.arrow{height:22px;display:flex;align-items:center;padding-left:18px;color:var(--muted);font-family:var(--f-mono);font-size:11px;gap:8px}
+.arrow::before{content:"";width:2px;height:100%;background:var(--line)}
+.terminal{padding:8px 11px;border:1px dashed var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+details.tune summary{cursor:pointer;font-size:12px;color:var(--accent)}
+.tune-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:6px}
+.tune-grid label{display:grid;grid-template-columns:minmax(0,1fr) 62px;gap:4px;align-items:center;font-size:11.5px}
+.tune-grid input{padding:3px 5px;font-size:12px}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
+/* results */
+.summary{display:flex;flex-wrap:wrap;gap:10px}
+.kpi{flex:1 1 170px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+.kpi span{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kpi b{font-family:var(--f-mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:11.5px;background:var(--surface2);vertical-align:bottom}
+th.step{max-width:110px;white-space:normal;line-height:1.25}
+td.p,th.p{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+th.p{background:var(--surface2)}
+td.p b{font-weight:600}
+td.p small{color:var(--muted);display:block;font-size:11px;font-family:var(--f-mono)}
+td.num{font-family:var(--f-mono)}
+td.out{font-weight:600;background:var(--accent-soft)}
+td.norm input{width:78px;padding:3px 5px;font-size:12px}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;font-weight:600}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.na{background:var(--surface2);color:var(--muted)}
+.spark{display:block}
+.advice{display:flex;flex-direction:column;gap:6px}
+.advice div{font-size:13px;padding:7px 10px;border-radius:6px;background:var(--surface2);border:1px solid var(--line)}
+.advice button{font-size:12px;padding:2px 8px;margin-left:6px}
+.foot{color:var(--muted);font-size:12px;max-width:95ch}
+.toolbar{display:flex;gap:6px;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.node{transition:border-color .15s}}
+</style>
+
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Конструктор <span>очистных</span> НДТ</h1>
+      <p class="sub">Задайте состав сточных вод, соберите схему из технологий справочника НДТ и посмотрите, что получится на выходе по каждому показателю.</p>
+    </div>
+    <div class="toolbar">
+      <button id="btn-reset" type="button">Сбросить к примеру</button>
+      <button id="btn-copy" type="button">Копировать схему (JSON)</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-in">
+      <div class="panel-head"><h2 id="h-in">Исходные стоки</h2></div>
+      <div class="presets" id="presets"></div>
+      <div class="fields" id="inputs"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-lib">
+      <div class="panel-head"><h2 id="h-lib">Каталог технологий</h2></div>
+      <p class="hint">Нажмите «+», чтобы добавить ступень в конец схемы. Эффективности типовые; их можно изменить в самой схеме.</p>
+      <div class="lib-list" id="library"></div>
+    </section>
+
+    <section class="panel col-scheme" aria-labelledby="h-sch">
+      <div class="panel-head"><h2 id="h-sch">Схема очистки</h2><span class="hint" id="sch-count"></span></div>
+      <div class="flow" id="scheme"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-res">
+    <div class="panel-head">
+      <h2 id="h-res">Результат</h2>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px">Нормативы
+        <select id="norm-set" style="width:auto"></select>
+      </label>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="tbl-wrap"><table id="results"></table></div>
+    <div class="advice" id="advice"></div>
+    <p class="foot">Модель коэффициентная: каждая ступень снижает концентрации на типовую долю, биологические ступени дополнительно учитывают нитрификацию, денитрификацию с ограничением по органике (≈4 мг БПК₅ на 1 мг N), ассимиляцию азота и фосфора и прирост ила. Это инструмент для подбора и сравнения схем, а не замена расчёта по ASM/ADM или проектного расчёта. ПДК рыбохозяйственных водоёмов даны в пересчёте на N и P; для фосфатов принято значение для эвтрофных водоёмов, для взвешенных веществ норматив задаётся как «фон + 0,25…0,75 мг/л», поэтому впишите своё значение.</p>
+  </section>
+</div>
+
+<script>
+const PARAMS=[
+ {k:'ss',n:'Взвешенные вещества',u:'мг/л'},
+ {k:'bod',n:'БПК₅',u:'мг O₂/л'},
+ {k:'cod',n:'ХПК',u:'мг O₂/л'},
+ {k:'nh4',n:'Азот аммонийный',u:'мг N/л'},
+ {k:'no2',n:'Азот нитритов',u:'мг N/л'},
+ {k:'no3',n:'Азот нитратов',u:'мг N/л'},
+ {k:'p',n:'Фосфор фосфатов',u:'мг P/л'},
+ {k:'oil',n:'Нефтепродукты',u:'мг/л'},
+ {k:'fat',n:'Жиры',u:'мг/л'}];
+const PK=PARAMS.map(p=>p.k);
+const SHORT={ss:'ВВ',bod:'БПК₅',cod:'ХПК',nh4:'N-NH₄',no2:'N-NO₂',no3:'N-NO₃',p:'P-PO₄',oil:'Нефть',fat:'Жиры',nit:'нитриф.',den:'денитр.',bioP:'био-P'};
+
+const STAGES=[
+ {id:'mech',n:'Механическая очистка',c:'var(--mech)'},
+ {id:'bio',n:'Биологическая очистка',c:'var(--bio)'},
+ {id:'tert',n:'Доочистка',c:'var(--tert)'},
+ {id:'dis',n:'Обеззараживание',c:'var(--dis)'}];
+
+const UNITS=[
+ {id:'screens',st:'mech',n:'Тонкие решётки (≤ 6 мм)',d:'Задержание отбросов, защита оборудования.',eff:{ss:8},en:.005},
+ {id:'sand',st:'mech',n:'Аэрируемые песколовки',d:'Удаление песка, частично жиров.',eff:{ss:5,fat:10,oil:10},en:.01},
+ {id:'grease',st:'mech',n:'Жироуловитель / нефтеловушка',d:'Гравитационное отделение жиров и нефтепродуктов.',eff:{oil:60,fat:60,ss:15,bod:5,cod:5},en:.005},
+ {id:'primary',st:'mech',n:'Первичные отстойники',d:'Осаждение взвеси, снятие части органики.',eff:{ss:50,bod:25,cod:25,p:10,oil:30,fat:30},en:.005},
+ {id:'daf',st:'mech',n:'Напорная флотация с реагентами',d:'Для жиро- и нефтесодержащих промстоков.',eff:{ss:85,bod:45,cod:50,p:70,oil:90,fat:90},en:.15,chem:true},
+ {id:'at',st:'bio',n:'Аэротенк (окисление органики)',d:'Классический аэротенк + вторичный отстойник, без удаления биогенов.',eff:{bod:92,cod:80,oil:70,fat:90,nit:30},bio:true,ssOut:15,en:.3},
+ {id:'mle',st:'bio',n:'Нитри-денитрификация (Д-Н)',d:'Аноксидная + аэробная зоны с рециклом, удаление азота.',eff:{bod:95,cod:85,oil:80,fat:92,nit:95,den:70},bio:true,ssOut:12,en:.4},
+ {id:'a2o',st:'bio',n:'A²/O, UCT (удаление N и P)',d:'Анаэробная, аноксидная и аэробная зоны, биологическое удаление N и P.',eff:{bod:95,cod:85,oil:80,fat:92,nit:95,den:75,bioP:60},bio:true,ssOut:12,en:.42},
+ {id:'sbr',st:'bio',n:'SBR (реактор периодического действия)',d:'Все зоны в одном резервуаре по циклам.',eff:{bod:95,cod:85,oil:80,fat:92,nit:93,den:70,bioP:40},bio:true,ssOut:15,en:.4},
+ {id:'mbbr',st:'bio',n:'МББР (плавающая биозагрузка)',d:'Компактная биология на носителе, устойчива к колебаниям.',eff:{bod:93,cod:82,oil:75,fat:90,nit:90,den:50},bio:true,ssOut:20,en:.35},
+ {id:'mbr',st:'bio',n:'Мембранный биореактор (МБР)',d:'Биология с отделением ила на мембранах, вода почти без взвеси.',eff:{bod:98,cod:90,oil:90,fat:95,nit:97,den:75,bioP:40},bio:true,ssOut:1,en:.8},
+ {id:'chemP',st:'tert',n:'Реагентная дефосфатация (Al/Fe)',d:'Осаждение фосфатов солями алюминия или железа.',eff:{p:80,cod:5,ss:5},en:.02,chem:true},
+ {id:'denf',st:'tert',n:'Денитрифицирующие фильтры',d:'Доудаление нитратов с дозированием внешнего углерода.',eff:{no3:80,no2:80,ss:50,bod:10},en:.1,extC:true},
+ {id:'filter',st:'tert',n:'Фильтрация (песчаная / дисковая)',d:'Доочистка от взвеси и связанных с ней загрязнений.',eff:{ss:70,bod:40,cod:15,p:30,oil:30},en:.05},
+ {id:'gac',st:'tert',n:'Сорбция на активированном угле',d:'Трудноокисляемая органика, нефтепродукты.',eff:{cod:50,bod:40,oil:90,fat:50},en:.1},
+ {id:'ozone',st:'tert',n:'Озонирование',d:'Окисление остаточной органики, цветности.',eff:{cod:25,oil:40},en:.15},
+ {id:'ro',st:'tert',n:'Обратный осмос',d:'Глубокое обессоливание, требует тщательной предочистки.',eff:{ss:99,bod:95,cod:95,nh4:90,no2:90,no3:90,p:98,oil:98,fat:99},en:1.5},
+ {id:'uv',st:'dis',n:'УФ-обеззараживание',d:'На химические показатели не влияет; микробиология не моделируется.',eff:{},en:.03}];
+const U=Object.fromEntries(UNITS.map(u=>[u.id,u]));
+const STG=Object.fromEntries(STAGES.map(s=>[s.id,s]));
+
+const PRESETS=[
+ {n:'Городские бытовые',q:20000,c:{ss:220,bod:200,cod:400,nh4:30,no2:0,no3:0.5,p:4.5,oil:2,fat:40},scheme:['screens','sand','primary','a2o','chemP','filter','uv']},
+ {n:'Молочный завод',q:800,c:{ss:450,bod:1500,cod:2600,nh4:40,no2:0,no3:1,p:20,oil:1,fat:300},scheme:['screens','grease','daf','mle','chemP','uv']},
+ {n:'Ливневые / АЗС',q:300,c:{ss:600,bod:30,cod:120,nh4:2,no2:0.05,no3:1,p:0.5,oil:60,fat:0},scheme:['sand','grease','primary','filter','gac']}];
+
+const NORMS={
+ pdk:{n:'ПДК рыбохоз. водоёмов',v:{ss:null,bod:2.1,cod:null,nh4:0.4,no2:0.02,no3:9,p:0.2,oil:0.05,fat:null}},
+ target:{n:'Целевые (пример)',v:{ss:10,bod:10,cod:50,nh4:2,no2:0.3,no3:9,p:1,oil:0.5,fat:2}},
+ custom:{n:'Свои значения',v:null}};
+
+let state;
+function fresh(i=0){const p=PRESETS[i];return {q:p.q,c:{...p.c},steps:p.scheme.map(mk),normSet:'pdk',norm:{...NORMS.pdk.v}}}
+function mk(id){return {u:id,eff:{...U[id].eff}}}
+function load(){try{const s=JSON.parse(localStorage.getItem('wwtp-state'));if(s&&s.steps&&s.c)return s}catch(e){}return fresh()}
+function save(){try{localStorage.setItem('wwtp-state',JSON.stringify(state))}catch(e){}}
+state=load();
+
+const fmt=v=>{if(v==null||isNaN(v))return '—';const a=Math.abs(v);if(a===0)return '0';if(a>=100)return Math.round(v).toLocaleString('ru-RU');if(a>=10)return v.toFixed(1).replace('.',',');if(a>=1)return v.toFixed(2).replace('.',',');return v.toFixed(3).replace('.',',')};
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+function simulate(){
+ let c={...state.c};PK.forEach(k=>c[k]=Math.max(0,+c[k]||0));
+ const prof=[{...c}],warns=[];let energy=0,sludge=0;const before=[];
+ state.steps.forEach((st,i)=>{
+  const u=U[st.u],e=st.eff,cin={...c},w=[];
+  // проверки применимости
+  if(u.bio){
+   if(cin.bod>0&&cin.cod/cin.bod>3)w.push(`Стоки трудно биоразлагаемы: ХПК/БПК₅ = ${fmt(cin.cod/cin.bod)} (норма ≤ 2,5–3).`);
+   if(cin.oil>20)w.push(`Нефтепродукты на входе ${fmt(cin.oil)} мг/л угнетают активный ил; нужна нефтеловушка или флотация до биологии.`);
+   if(cin.fat>100)w.push(`Жиры ${fmt(cin.fat)} мг/л на входе в биологию; поставьте жироуловитель или флотацию.`);
+   if(cin.bod<40)w.push('Мало органики для устойчивой работы активного ила.');
+   if(before.some(b=>U[b].bio))w.push('Это вторая биологическая ступень подряд; проверьте, нужна ли она.');
+  }
+  if(u.id==='mbr'&&!before.includes('screens'))w.push('Перед МБР нужны тонкие решётки (≤ 2–3 мм) для защиты мембран.');
+  if(u.id==='ro'&&cin.ss>5)w.push(`На вход обратного осмоса нужно ВВ < 5 мг/л, сейчас ${fmt(cin.ss)}.`);
+  if(u.id==='gac'&&cin.ss>15)w.push(`Уголь быстро забьётся взвесью (${fmt(cin.ss)} мг/л); поставьте фильтры перед ним.`);
+  if(u.id==='filter'&&cin.ss>60)w.push(`Фильтры перегружены взвесью (${fmt(cin.ss)} мг/л); обычно их ставят после отстаивания.`);
+  if(u.id==='uv'&&cin.ss>15)w.push(`Взвесь ${fmt(cin.ss)} мг/л снижает эффективность УФ; желательно < 10 мг/л.`);
+  if(u.id==='denf')w.push('Требуется дозирование внешнего углерода (метанол, ацетат), это расход реагента.');
+  // удаление
+  PK.forEach(k=>{if(e[k]!=null)c[k]*=1-Math.min(100,Math.max(0,e[k]))/100});
+  if(u.bio){
+   const dB=Math.max(0,cin.bod-c.bod);
+   const aN=Math.min(c.nh4,0.05*dB);c.nh4-=aN;const aP=Math.min(c.p,0.01*dB);c.p-=aP;
+   if(e.nit){const n=c.nh4*e.nit/100;c.nh4-=n;c.no3+=n*0.98;c.no2+=n*0.02}
+   if(e.den){const tot=c.no3+c.no2,need=tot*e.den/100,cap=cin.bod/4,got=Math.min(need,cap);
+     if(got<need-0.5)w.push(`Не хватает органики для денитрификации: удалено ${fmt(got)} из ${fmt(need)} мг N/л. Нужен внешний углерод или обход первичных отстойников.`);
+     if(tot>0){const f=got/tot;c.no3*=1-f;c.no2*=1-f}}
+   if(e.bioP){if(cin.p>0&&cin.bod/cin.p<20)w.push(`Для биоудаления фосфора мало органики: БПК₅/P = ${fmt(cin.bod/cin.p)} (нужно ≥ 20).`);c.p*=1-e.bioP/100}
+   if(u.ssOut!=null)c.ss=Math.min(c.ss,u.ssOut);
+   sludge+=0.6*dB;
+  }
+  c.cod=Math.max(c.cod,c.bod);
+  sludge+=Math.max(0,cin.ss-c.ss)*(u.bio?0:1)+(u.chem?5*Math.max(0,cin.p-c.p):0);
+  energy+=u.en;before.push(u.id);
+  prof.push({...c});warns.push(w);
+ });
+ return {prof,warns,energy,sludge:sludge*state.q/1000};
+}
+
+/* ---------- ввод ---------- */
+function renderPresets(){
+ const box=document.getElementById('presets');
+ box.innerHTML=PRESETS.map((p,i)=>`<button type="button" data-p="${i}">${esc(p.n)}</button>`).join('');
+ box.onclick=ev=>{const b=ev.target.closest('button');if(!b)return;const ns=fresh(+b.dataset.p);ns.normSet=state.normSet;ns.norm=state.norm;state=ns;renderInputs();update()};
+}
+function renderInputs(){
+ const box=document.getElementById('inputs');
+ box.innerHTML=`<label class="f qrow" for="in-q">Расход<small>м³/сут</small><input id="in-q" type="number" min="0" step="any" value="${state.q}"></label>`+
+  PARAMS.map(p=>`<label class="f" for="in-${p.k}">${p.n}<small>${p.u}</small><input id="in-${p.k}" type="number" min="0" step="any" value="${state.c[p.k]}"></label>`).join('');
+ box.oninput=ev=>{const t=ev.target;if(t.id==='in-q')state.q=+t.value||0;else state.c[t.id.slice(3)]=+t.value||0;update()};
+}
+/* ---------- каталог ---------- */
+function effChips(eff){return Object.entries(eff).filter(([,v])=>v>0).map(([k,v])=>`<span class="chip">${SHORT[k]} −${v}%</span>`).join('')}
+function renderLibrary(){
+ const box=document.getElementById('library');
+ box.innerHTML=STAGES.map(s=>`<div class="stage"><div class="stage-name"><span class="dot" style="background:${s.c}"></span>${s.n}</div>`+
+  UNITS.filter(u=>u.st===s.id).map(u=>`<div class="lib-item"><div><b>${esc(u.n)}</b><p>${esc(u.d)}</p></div><button type="button" data-add="${u.id}" aria-label="Добавить: ${esc(u.n)}">+</button></div>`).join('')+'</div>').join('');
+ box.onclick=ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps.push(mk(b.dataset.add));update()};
+}
+/* ---------- схема ---------- */
+function renderScheme(sim){
+ const box=document.getElementById('scheme');
+ document.getElementById('sch-count').textContent=state.steps.length?`${state.steps.length} ступ.`:'';
+ if(!state.steps.length){box.innerHTML=`<div class="empty">Схема пуста. Добавьте ступени из каталога, начиная с механической очистки.</div>`;return}
+ const open=new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.i));
+ let h=`<div class="terminal"><span>Вход: ${fmt(state.q)} м³/сут</span><span>БПК₅ ${fmt(state.c.bod)} · N-NH₄ ${fmt(state.c.nh4)} · P ${fmt(state.c.p)}</span></div>`;
+ state.steps.forEach((st,i)=>{
+  const u=U[st.u],s=STG[u.st],o=sim.prof[i+1];
+  h+=`<div class="arrow"></div>
+  <div class="node" style="--c:${s.c}"><div class="bar"></div><div class="node-body">
+   <div class="node-top"><div class="node-title">${i+1}. ${esc(u.n)}<small>${s.n}</small></div>
+    <div class="node-ctrl"><button type="button" data-mv="${i}" data-d="-1" aria-label="Выше" ${i===0?'disabled':''}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Ниже" ${i===state.steps.length-1?'disabled':''}>↓</button><button type="button" data-rm="${i}" aria-label="Удалить">✕</button></div></div>
+   <div class="effects">${effChips(st.eff)||'<span class="chip">без изменения химии</span>'}</div>
+   ${sim.warns[i].length?`<div class="warns">${sim.warns[i].map(x=>`<div class="w">${esc(x)}</div>`).join('')}</div>`:''}
+   ${Object.keys(st.eff).length?`<details class="tune" data-i="${i}" ${open.has(String(i))?'open':''}><summary>Настроить эффективность, %</summary><div class="tune-grid">${Object.keys(st.eff).map(k=>`<label for="t-${i}-${k}">${SHORT[k]}<input id="t-${i}-${k}" type="number" min="0" max="100" step="1" data-ti="${i}" data-tk="${k}" value="${st.eff[k]}"></label>`).join('')}</div></details>`:''}
+  </div></div>
+  ${i<state.steps.length-1?`<div class="arrow">БПК₅ ${fmt(o.bod)} · N-NH₄ ${fmt(o.nh4)} · P ${fmt(o.p)}</div>`:''}`;
+ });
+ const f=sim.prof[sim.prof.length-1];
+ h+=`<div class="arrow"></div><div class="terminal"><span>Выпуск</span><span>БПК₅ ${fmt(f.bod)} · N-NH₄ ${fmt(f.nh4)} · N-NO₃ ${fmt(f.no3)} · P ${fmt(f.p)}</span></div>`;
+ box.innerHTML=h;
+}
+document.getElementById('scheme').addEventListener('click',ev=>{
+ const m=ev.target.closest('[data-mv]'),r=ev.target.closest('[data-rm]');
+ if(m){const i=+m.dataset.mv,j=i+ +m.dataset.d;[state.steps[i],state.steps[j]]=[state.steps[j],state.steps[i]];update()}
+ if(r){state.steps.splice(+r.dataset.rm,1);update()}
+});
+document.getElementById('scheme').addEventListener('change',ev=>{
+ const t=ev.target;if(!t.dataset.ti)return;state.steps[+t.dataset.ti].eff[t.dataset.tk]=Math.min(100,Math.max(0,+t.value||0));update(true);
+});
+
+/* ---------- результаты ---------- */
+function spark(vals,norm,st){
+ const W=120,H=30,pad=3,pos=vals.map(v=>Math.max(v,1e-3));const all=norm?[...pos,norm]:pos;
+ const lo=Math.log10(Math.min(...all))-0.1,hi=Math.log10(Math.max(...all))+0.1;
+ const x=i=>pad+i*(W-2*pad)/Math.max(1,vals.length-1),y=v=>H-pad-(Math.log10(Math.max(v,1e-3))-lo)/(hi-lo||1)*(H-2*pad);
+ const pts=pos.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+ const col=st==='ok'?'var(--ok)':st==='bad'?'var(--bad)':'var(--accent)';
+ return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${norm?`<line x1="0" x2="${W}" y1="${y(norm)}" y2="${y(norm)}" stroke="var(--muted)" stroke-dasharray="3 3" stroke-width="1"/>`:''}<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/><circle cx="${x(vals.length-1)}" cy="${y(pos[pos.length-1])}" r="2.8" fill="${col}"/></svg>`;
+}
+function renderNormSelect(){
+ const s=document.getElementById('norm-set');
+ s.innerHTML=Object.entries(NORMS).map(([k,v])=>`<option value="${k}" ${state.normSet===k?'selected':''}>${v.n}</option>`).join('');
+ s.onchange=()=>{state.normSet=s.value;if(NORMS[s.value].v)state.norm={...NORMS[s.value].v};update()};
+}
+function renderResults(sim){
+ const f=sim.prof[sim.prof.length-1],tbl=document.getElementById('results');
+ const focus=document.activeElement&&document.activeElement.id;
+ let pass=0,tot=0;const fails=[];
+ let h=`<thead><tr><th class="p">Показатель</th><th>Профиль</th><th>Вход</th>${state.steps.map((s,i)=>`<th class="step">${i+1}. ${esc(U[s.u].n.split(' (')[0])}</th>`).join('')}<th>Выход</th><th>Эффект</th><th>Норматив</th><th>Статус</th></tr></thead><tbody>`;
+ PARAMS.forEach(p=>{
+  const n=state.norm[p.k],vals=sim.prof.map(c=>c[p.k]);let st='na';
+  if(n!=null&&n!==''&&!isNaN(n)){tot++;if(f[p.k]<=n){st='ok';pass++}else{st='bad';fails.push(p.k)}}
+  const inV=state.c[p.k],red=inV>0?(1-f[p.k]/inV)*100:null;
+  h+=`<tr><td class="p"><b>${p.n}</b><small>${p.u}</small></td><td>${spark(vals,n,st)}</td><td class="num">${fmt(inV)}</td>${sim.prof.slice(1).map(c=>`<td class="num">${fmt(c[p.k])}</td>`).join('')}<td class="num out">${fmt(f[p.k])}</td><td class="num">${red==null?'—':(red<0?'+':'−')+Math.abs(red).toFixed(0)+'%'}</td><td class="norm"><input id="n-${p.k}" type="number" min="0" step="any" value="${n??''}" placeholder="нет" aria-label="Норматив: ${p.n}"></td><td><span class="pill ${st}">${st==='ok'?'в норме':st==='bad'?'×'+fmt(f[p.k]/n):'не задан'}</span></td></tr>`;
+ });
+ tbl.innerHTML=h+'</tbody>';
+ tbl.oninput=ev=>{const t=ev.target;if(!t.id.startsWith('n-'))return;state.norm[t.id.slice(2)]=t.value===''?null:+t.value;state.normSet='custom';document.getElementById('norm-set').value='custom';update()};
+ if(focus&&focus.startsWith('n-')){const el=document.getElementById(focus);if(el){el.focus();const v=el.value;el.value='';el.value=v}}
+ const kwh=sim.energy*state.q;
+ document.getElementById('summary').innerHTML=`
+  <div class="kpi"><span>Соответствие нормативам</span><b style="color:${tot&&pass===tot?'var(--ok)':'var(--bad)'}">${pass} из ${tot}</b> <small>показателей</small></div>
+  <div class="kpi"><span>Удельная энергия</span><b>${fmt(sim.energy)}</b> <small>кВт·ч/м³</small></div>
+  <div class="kpi"><span>Энергия в сутки</span><b>${fmt(kwh)}</b> <small>кВт·ч/сут</small></div>
+  <div class="kpi"><span>Осадок и ил (сухое в-во)</span><b>${fmt(sim.sludge/1000)}</b> <small>т/сут</small></div>`;
+ // советы
+ const have=new Set(state.steps.map(s=>s.u));
+ const score=(u,k)=>k==='nh4'?(u.eff.nit||u.eff.nh4||0):k==='no3'||k==='no2'?Math.max(u.eff.den||0,u.eff[k]||0):k==='p'?Math.max(u.eff.bioP||0,u.eff.p||0):(u.eff[k]||0);
+ document.getElementById('advice').innerHTML=fails.map(k=>{
+  const p=PARAMS.find(x=>x.k===k);
+  const cand=UNITS.filter(u=>!have.has(u.id)&&u.id!=='ro'&&score(u,k)>=40).sort((a,b)=>score(b,k)-score(a,k)).slice(0,2);
+  if(!cand.length)cand.push(U.ro);
+  return `<div><b>${p.n}</b>: на выходе ${fmt(f[k])} при нормативе ${fmt(state.norm[k])}. Попробуйте: ${cand.map(u=>`${esc(u.n)}<button type="button" data-add="${u.id}">+ добавить</button>`).join(', ')}</div>`;
+ }).join('');
+}
+document.getElementById('advice').addEventListener('click',ev=>{const b=ev.target.closest('[data-add]');if(!b)return;
+ const u=U[b.dataset.add];const order=['mech','bio','tert','dis'];
+ let idx=state.steps.findIndex(s=>order.indexOf(U[s.u].st)>order.indexOf(u.st));if(idx<0)idx=state.steps.length;
+ state.steps.splice(idx,0,mk(u.id));update()});
+
+function update(keepScheme){const sim=simulate();if(!keepScheme)renderScheme(sim);else{ // обновить только подписи без пересборки полей
+  const box=document.getElementById('scheme');const open=box.querySelectorAll('details[open]');renderSchemeSoft(sim,open)}
+ renderResults(sim);save()}
+function renderSchemeSoft(sim){ // перерисовка с сохранением фокуса в поле эффективности
+ const a=document.activeElement,id=a&&a.id;renderScheme(sim);if(id){const el=document.getElementById(id);if(el)el.focus()}}
+
+document.getElementById('btn-reset').onclick=()=>{state=fresh();renderInputs();renderNormSelect();update()};
+document.getElementById('btn-copy').onclick=async ev=>{
+ const txt=JSON.stringify({q:state.q,influent:state.c,scheme:state.steps},null,2);
+ try{await navigator.clipboard.writeText(txt);ev.target.textContent='Скопировано'}catch(e){ev.target.textContent='Не удалось скопировать'}
+ setTimeout(()=>ev.target.textContent='Копировать схему (JSON)',1600)};
+
+renderPresets();renderInputs();renderLibrary();renderNormSelect();update();
+</script>
+
+</body>
+</html>

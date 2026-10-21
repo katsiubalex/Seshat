@@ -13,19 +13,22 @@ function mk(id) { return { u: id, eff: { ...U[id].eff } }; }
 // ref в state — какая запись сейчас открыта: 'b:<id>' — встроенный пример, 'u:<id>' — запись пользователя, null — без названия.
 const KINDS = {
   influent: {
-    label: 'Профиль стоков', what: 'профиль',
+    label: 'Профиль стоков', createLabel: 'Создать профиль', newName: 'Новый профиль стоков', draftLabel: 'Новый профиль (не сохранён)',
+    draftHint: 'Заполните показатели ниже и нажмите «Сохранить».',
     builtins: PRESETS.map((p, i) => ({ id: String(i), name: p.n, data: { q: p.q, c: { ...p.c } } })),
     get: () => ({ q: state.q, c: { ...state.c } }),
     apply: d => { state.q = d.q; state.c = { ...d.c }; renderInputs(); }
   },
   scheme: {
-    label: 'Схема очистки', what: 'схему',
+    label: 'Схема очистки', createLabel: 'Создать схему', newName: 'Новая схема', draftLabel: 'Новая схема (не сохранена)',
+    draftHint: 'Добавьте ступени из каталога и нажмите «Сохранить».',
     builtins: PRESETS.map((p, i) => ({ id: String(i), name: p.sn, data: { steps: p.scheme.map(mk) } })),
     get: () => ({ steps: clone(state.steps) }),
     apply: d => { state.steps = clone(d.steps); }
   },
   norm: {
-    label: 'Нормативы', what: 'нормативы',
+    label: 'Нормативы', createLabel: 'Создать норматив', newName: 'Новый норматив', draftLabel: 'Новый норматив (не сохранён)',
+    draftHint: 'Впишите значения в столбец «Норматив» таблицы и нажмите «Сохранить».',
     builtins: Object.entries(NORMS).filter(([, v]) => v.v).map(([k, v]) => ({ id: k, name: v.n, data: { v: { ...v.v } } })),
     get: () => ({ v: { ...state.norm } }),
     apply: d => { state.norm = { ...d.v }; }
@@ -50,8 +53,13 @@ function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(STATE_KEY));
     if (s && s.c && Array.isArray(s.steps) && s.steps.every(x => U[x.u]) && s.norm) {
-      s.ref = s.ref || { influent: null, scheme: null, norm: null };
-      for (const k of Object.keys(KINDS)) if (s.ref[k] && !refItem(k, s.ref[k])) s.ref[k] = null;
+      // Если запись не найдена (удалена, не сохранена до перезагрузки, старая версия) — открываем пример.
+      s.ref = s.ref || {};
+      const f = fresh();
+      for (const k of Object.keys(KINDS)) if (!s.ref[k] || !refItem(k, s.ref[k])) {
+        s.ref[k] = f.ref[k];
+        Object.assign(s, k === 'influent' ? { q: f.q, c: f.c } : k === 'scheme' ? { steps: f.steps } : { norm: f.norm });
+      }
       delete s.normSet;
       return s;
     }
@@ -73,34 +81,44 @@ function toast(msg, action) {
 }
 
 /* ---------- панель сохранения (одна на каждый вид данных) ---------- */
-const ui = { naming: {}, confirmDel: {} };
+// Состояния панели: открыт пример → «Создать»; открыта своя запись → «Создать», «Сохранить», «Удалить»;
+// создаётся новая запись (ref = 'new') → поле названия, «Сохранить», «Отмена».
+const ui = { draft: {}, confirmDel: {} };
+
+function uniqueName(kind, base) {
+  const names = new Set(store.list(kind).map(it => it.name));
+  if (!names.has(base)) return base;
+  let i = 2; while (names.has(`${base} ${i}`)) i++;
+  return `${base} ${i}`;
+}
 
 function renderBar(kind) {
   const K = KINDS[kind], el = document.getElementById('bar-' + kind);
   const ref = state.ref[kind], cur = refItem(kind, ref), mine = store.list(kind);
-  const dirty = isDirty(kind), isMine = ref && ref[0] === 'u';
+  const draft = ui.draft[kind], isMine = !!cur && ref[0] === 'u', dirty = !!cur && isDirty(kind);
   const opt = (v, n) => `<option value="${esc(v)}" ${v === ref ? 'selected' : ''}>${esc(n)}</option>`;
   let h = `<div class="saved-row">
-    <select id="sel-${kind}" aria-label="${K.label}: открыть сохранённое">
-      ${!cur ? '<option value="" selected>Без названия</option>' : ''}
+    <select id="sel-${kind}" aria-label="${K.label}: открыть">
+      ${draft ? `<option value="new" selected>${esc(K.draftLabel)}</option>` : ''}
       ${mine.length ? `<optgroup label="Мои">${mine.map(it => opt('u:' + it.id, it.name)).join('')}</optgroup>` : ''}
       <optgroup label="Примеры">${K.builtins.map(b => opt('b:' + b.id, b.name)).join('')}</optgroup>
     </select>
-    ${cur && dirty ? '<span class="mod" title="Есть несохранённые изменения">изменено</span>' : ''}
+    ${dirty ? '<span class="mod" title="Есть несохранённые изменения">изменено</span>' : ''}
   </div>`;
-  if (ui.naming[kind] != null) {
+  if (draft) {
     h += `<form class="name-form" data-kind="${kind}">
-      <input id="name-${kind}" type="text" maxlength="120" required placeholder="Название" aria-label="Название" value="${esc(ui.naming[kind])}">
+      <input id="name-${kind}" type="text" maxlength="120" required placeholder="Название" aria-label="Название" value="${esc(draft.name)}">
       <button type="submit" class="primary">Сохранить</button><button type="button" data-act="cancel">Отмена</button>
-    </form>`;
-  } else if (ui.confirmDel[kind]) {
+    </form>
+    <p class="saved-hint">${esc(K.draftHint)}</p>`;
+  } else if (ui.confirmDel[kind] && isMine) {
     h += `<div class="saved-actions"><span class="ask">Удалить «${esc(cur.name)}»?</span>
       <button type="button" data-act="del-yes" class="danger">Удалить</button><button type="button" data-act="del-no">Отмена</button></div>`;
   } else {
     h += `<div class="saved-actions">
-      ${isMine && dirty ? '<button type="button" data-act="save" class="primary">Сохранить изменения</button>' : ''}
-      <button type="button" data-act="saveas">${isMine ? 'Сохранить как новый' : 'Сохранить в мои'}</button>
-      ${isMine ? '<button type="button" data-act="del">Удалить</button>' : ''}
+      <button type="button" data-act="create">${K.createLabel}</button>
+      ${isMine ? `<button type="button" data-act="save" class="${dirty ? 'primary' : ''}" ${dirty ? '' : 'disabled title="Изменений нет"'}>Сохранить</button>
+      <button type="button" data-act="del">Удалить</button>` : ''}
     </div>`;
   }
   el.innerHTML = h;
@@ -110,54 +128,73 @@ function renderBars() { Object.keys(KINDS).forEach(renderBar); }
 function openItem(kind, ref) {
   const K = KINDS[kind], it = refItem(kind, ref);
   if (!it) return;
-  const prev = { data: K.get(), ref: state.ref[kind] }, wasDirty = isDirty(kind);
+  const draft = ui.draft[kind];
+  const prev = { data: K.get(), ref: state.ref[kind], draft };
+  const lose = draft || isDirty(kind);
+  delete ui.draft[kind]; delete ui.confirmDel[kind];
   K.apply(clone(it.data));
   state.ref[kind] = ref;
   update();
-  if (wasDirty) toast(`Открыто «${it.name}». Несохранённые изменения сброшены.`, { label: 'Вернуть', run: () => { K.apply(prev.data); state.ref[kind] = prev.ref; update(); } });
+  if (lose) toast(`Открыто «${it.name}». Несохранённые изменения сброшены.`, { label: 'Вернуть', run: () => {
+    K.apply(prev.data); state.ref[kind] = prev.ref; if (prev.draft) ui.draft[kind] = prev.draft; update();
+  } });
+}
+
+function startDraft(kind) {
+  const K = KINDS[kind];
+  ui.draft[kind] = { name: uniqueName(kind, K.newName), prev: { data: K.get(), ref: state.ref[kind] } };
+  delete ui.confirmDel[kind];
+  state.ref[kind] = 'new';
+  renderBar(kind);
+  const inp = document.getElementById('name-' + kind); inp.focus(); inp.select();
 }
 
 function bindBar(kind) {
   const el = document.getElementById('bar-' + kind);
-  el.addEventListener('change', ev => { if (ev.target.id === 'sel-' + kind && ev.target.value) openItem(kind, ev.target.value); });
+  el.addEventListener('change', ev => { if (ev.target.id === 'sel-' + kind && ev.target.value !== 'new') openItem(kind, ev.target.value); });
+  el.addEventListener('input', ev => { if (ev.target.id === 'name-' + kind && ui.draft[kind]) ui.draft[kind].name = ev.target.value; });
   el.addEventListener('click', ev => {
     const act = ev.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     const K = KINDS[kind], ref = state.ref[kind], cur = refItem(kind, ref);
-    if (act === 'save') {
+    if (act === 'create') { startDraft(kind); return; }
+    if (act === 'save' && cur) {
       const it = store.save(kind, { id: ref.slice(2), name: cur.name, data: K.get() });
       if (it) toast(`Сохранено: «${it.name}»`);
-    } else if (act === 'saveas') {
-      ui.naming[kind] = cur ? (ref[0] === 'u' ? cur.name + ' (копия)' : cur.name) : '';
-      renderBar(kind);
-      const inp = document.getElementById('name-' + kind); inp.focus(); inp.select();
+    } else if (act === 'cancel') {
+      const d = ui.draft[kind]; delete ui.draft[kind];
+      state.ref[kind] = d.prev.ref;
+      update();
       return;
-    } else if (act === 'cancel') { delete ui.naming[kind]; }
-    else if (act === 'del') { ui.confirmDel[kind] = true; }
+    } else if (act === 'del') { ui.confirmDel[kind] = true; }
     else if (act === 'del-no') { delete ui.confirmDel[kind]; }
-    else if (act === 'del-yes') {
+    else if (act === 'del-yes' && cur) {
       delete ui.confirmDel[kind];
-      const snapshot = clone(cur);
+      const snapshot = clone(cur), data = K.get();
       store.remove(kind, ref.slice(2));
-      state.ref[kind] = null;
+      const first = K.builtins[0];
+      K.apply(clone(first.data)); state.ref[kind] = 'b:' + first.id;
+      update();
       toast(`Удалено: «${snapshot.name}»`, { label: 'Восстановить', run: () => {
         const it = store.save(kind, { name: snapshot.name, data: snapshot.data });
-        if (it) { state.ref[kind] = 'u:' + it.id; update(); }
+        if (it) { K.apply(data); state.ref[kind] = 'u:' + it.id; update(); }
       } });
+      return;
     }
     renderBar(kind); saveState();
   });
   el.addEventListener('submit', ev => {
     ev.preventDefault();
     const name = document.getElementById('name-' + kind).value.trim();
-    if (!name) return;
+    if (!name) { toast('Введите название.'); return; }
     const it = store.save(kind, { name, data: KINDS[kind].get() });
-    delete ui.naming[kind];
-    if (it) { state.ref[kind] = 'u:' + it.id; toast(`Сохранено: «${it.name}»`); }
-    else toast('Не удалось сохранить: данные заполнены неверно.');
+    if (!it) { toast('Не удалось сохранить: данные заполнены неверно.'); return; }
+    delete ui.draft[kind];
+    state.ref[kind] = 'u:' + it.id;
+    toast(`Сохранено: «${it.name}»`);
     renderBar(kind); saveState();
   });
-  el.addEventListener('keydown', ev => { if (ev.key === 'Escape' && ui.naming[kind] != null) { delete ui.naming[kind]; renderBar(kind); } });
+  el.addEventListener('keydown', ev => { if (ev.key === 'Escape' && ui.draft[kind]) el.querySelector('[data-act=cancel]').click(); });
 }
 
 /* ---------- ввод ---------- */

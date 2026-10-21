@@ -10,7 +10,7 @@
     const input = { q: project.influent.q, c: project.influent.c, steps: variant.steps };
     const sim = M.simulate(input);
     const eco = E.costs(input, sim, project.prices);
-    const out = sim.prof[sim.prof.length - 1];
+    const out = sim.out;
     let pass = 0, tot = 0;
     const status = {};
     for (const p of D.PARAMS) {

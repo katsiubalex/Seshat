@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Сешат — конструктор очистных НДТ</title>
 <meta name="description" content="Сешат — конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.15.0">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.16.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.15.0">
+<link rel="stylesheet" href="css/style.css?v=0.16.0">
 </head>
 <body>
 <div class="app">
@@ -142,7 +142,7 @@
   <header>
     <div>
       <h1>Генплан</h1>
-      <p class="sub">Станция в плане, вид сверху. Размеры сооружений рассчитаны по расходу стоков, сооружения стоят по ходу очистки. Нажмите на любое, чтобы узнать, как оно работает.</p>
+      <p class="sub">Станция в плане, вид сверху. Размеры сооружений рассчитаны по расходу стоков. Сооружения можно передвигать и соединять трубами по-своему, в том числе параллельными линиями: расчёт качества воды и затрат сразу меняется. Нажмите на сооружение, чтобы узнать, как оно работает.</p>
     </div>
   </header>
   <section class="panel gp-top" aria-label="Выбор схемы">
@@ -151,6 +151,7 @@
   </section>
   <div class="gp-grid">
     <section class="panel gp-canvas-panel" aria-label="План станции">
+      <div class="gp-tools" id="gp-tools"></div>
       <div class="gp-canvas" id="gp-canvas"></div>
       <ul class="gp-legend">
         <li><i class="lg-water"></i>резервуары с водой</li>
@@ -248,20 +249,21 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.15.0"></script>
-<script src="js/model.js?v=0.15.0"></script>
-<script src="js/icons.js?v=0.15.0"></script>
-<script src="js/economics.js?v=0.15.0"></script>
-<script src="js/store.js?v=0.15.0"></script>
-<script src="js/compare.js?v=0.15.0"></script>
-<script src="js/app.js?v=0.15.0"></script>
-<script src="js/plan.js?v=0.15.0"></script>
-<script src="js/oracle.js?v=0.15.0"></script>
-<script src="js/projects.js?v=0.15.0"></script>
-<script src="js/docs.js?v=0.15.0"></script>
-<script src="js/docsview.js?v=0.15.0"></script>
-<script src="js/genplan.js?v=0.15.0"></script>
-<script src="js/seshat.js?v=0.15.0"></script>
-<script src="js/main.js?v=0.15.0"></script>
+<script src="js/data.js?v=0.16.0"></script>
+<script src="js/graph.js?v=0.16.0"></script>
+<script src="js/model.js?v=0.16.0"></script>
+<script src="js/icons.js?v=0.16.0"></script>
+<script src="js/economics.js?v=0.16.0"></script>
+<script src="js/store.js?v=0.16.0"></script>
+<script src="js/compare.js?v=0.16.0"></script>
+<script src="js/app.js?v=0.16.0"></script>
+<script src="js/plan.js?v=0.16.0"></script>
+<script src="js/oracle.js?v=0.16.0"></script>
+<script src="js/projects.js?v=0.16.0"></script>
+<script src="js/docs.js?v=0.16.0"></script>
+<script src="js/docsview.js?v=0.16.0"></script>
+<script src="js/genplan.js?v=0.16.0"></script>
+<script src="js/seshat.js?v=0.16.0"></script>
+<script src="js/main.js?v=0.16.0"></script>
 </body>
 </html>

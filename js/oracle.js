@@ -65,7 +65,7 @@
 
   function evaluate(ctx) {
     const input = { q: ctx.q, c: ctx.c, steps: ctx.steps };
-    const sim = M.simulate(input), eco = E.costs(input, sim, ctx.prices), out = sim.prof[sim.prof.length - 1];
+    const sim = M.simulate(input), eco = E.costs(input, sim, ctx.prices), out = sim.out;
     const fails = [], ok = [];
     for (const p of D.PARAMS) {
       const n = ctx.norm[p.k]; if (n == null) continue;

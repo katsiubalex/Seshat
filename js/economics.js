@@ -21,26 +21,26 @@
     const E = data.ECON, R = E.reagents, q = Math.max(0, input.q || 0);
     const pr = { ...defaultPrices(data), ...(prices || {}) };
     const U = Object.fromEntries(data.UNITS.map(u => [u.id, u]));
-    const scale = q > 0 ? Math.pow(q / E.qRef, E.scale) : 0;
-    const tm3 = q / 1000; // перевод мг/л × м³/сут → кг/сут
-
+    // Каждая ступень считается по своему расходу: у параллельных линий он делится, и эффект масштаба теряется.
     const steps = input.steps.map((st, i) => {
-      const u = U[st.u], ps = sim.perStep[i];
+      const u = U[st.u], ps = sim.perStep[i], qs = ps.q != null ? ps.q : q;
+      const scale = qs > 0 ? Math.pow(qs / E.qRef, E.scale) : 0, tm3 = qs / 1000; // мг/л × м³/сут → кг/сут
       const capex = (u.cx || 0) * scale * pr.capexIdx;
-      const kwh = ps.en * q;
+      const kwh = ps.en * qs;
       let coag = 0, floc = 0, meth = 0;
       if (u.id === 'chemP') coag = R.coagPerP * ps.dP * tm3;
-      if (u.id === 'daf') { coag = R.dafCoag * q; floc = R.dafFloc * q; }
-      if (u.id === 'coag') { coag = R.coagDose * q; floc = R.coagFloc * q; }
+      if (u.id === 'daf') { coag = R.dafCoag * qs; floc = R.dafFloc * qs; }
+      if (u.id === 'coag') { coag = R.coagDose * qs; floc = R.coagFloc * qs; }
       if (u.id === 'denf') meth = R.methPerN * ps.dNOx * tm3;
       const row = {
         u: u.id,
+        q: qs,
         capex,
         kwh,
         energy: kwh * pr.kwh,
         reagents: coag * pr.coag + floc * pr.floc + meth * pr.meth,
         reagentKg: { coag, floc, meth },
-        consumables: (u.cons || 0) * q,
+        consumables: (u.cons || 0) * qs,
         sludge: ps.sludge / 1000 / E.cakeDry * pr.sludge,
         repair: capex * 1e6 * pr.repair / 100 / 365
       };

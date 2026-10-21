@@ -271,7 +271,7 @@ function renderLibrary(){
  box.innerHTML=html||`<div class="empty">Ничего не найдено по запросу «${esc(libUI.q)}».</div>`;
  document.getElementById('lib-count').textContent=q?`${found} из ${UNITS.length}`:`${UNITS.length} технологий`;
 }
-document.getElementById('library').addEventListener('click',ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps.push(mk(b.dataset.add));update()});
+document.getElementById('library').addEventListener('click',ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps=SeshatGraph.append(SeshatGraph.norm(state.steps),mk(b.dataset.add));update()});
 document.getElementById('library').addEventListener('toggle',ev=>{
  const d=ev.target; if(!d.dataset||!d.dataset.st||libUI.q)return;
  if(d.open)libUI.closed.delete(d.dataset.st);else libUI.closed.add(d.dataset.st);
@@ -284,28 +284,31 @@ function renderScheme(sim){
  document.getElementById('sch-count').textContent=state.steps.length?`${state.steps.length} ступ.`:'';
  if(!state.steps.length){box.innerHTML=`<div class="empty">Натяните шнур: добавьте первую ступень из каталога. Обычно станция начинается с решёток и песколовок.</div>`;return}
  const open=new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.i));
- let h=`<div class="terminal"><span>Вход: ${fmt(state.q)} м³/сут</span><span>БПК₅ ${fmt(state.c.bod)} · N-NH₄ ${fmt(state.c.nh4)} · P ${fmt(state.c.p)}</span></div>`;
+ const chain=SeshatGraph.isChain(state.steps),fl=chain?null:SeshatGraph.flows(state.steps);
+ const pct=v=>Math.round(v*100)+'%',nm=k=>`${k+1}. ${U[state.steps[k].u].n.split(' (')[0]}`;
+ let h=(chain?'':`<div class="graph-note"><span>Схема с параллельными линиями: ступени соединены так, как проложены трубы на генплане. Кнопки ↑↓ меняют местами технологии, не трогая трубы.</span><a class="btn" href="#genplan" data-go="genplan">Открыть генплан</a></div>`)+`<div class="terminal"><span>Вход: ${fmt(state.q)} м³/сут</span><span>БПК₅ ${fmt(state.c.bod)} · N-NH₄ ${fmt(state.c.nh4)} · P ${fmt(state.c.p)}</span></div>`;
  state.steps.forEach((st,i)=>{
   const u=U[st.u],s=STG[u.st],o=sim.prof[i+1];
+  const links=chain?'':`<div class="node-links"><span>из: ${[...(fl.src[i]?['стоки']:[]),...fl.preds[i].map(k=>k+1)].join(', ')}</span><span>в: ${st.to.length?st.to.map((t,k)=>`${t+1}${st.to.length>1?` (${pct(SeshatGraph.share(st,k))})`:''}`).join(', '):'выпуск'}</span>${fl.f[i]<0.999?`<span>расход ${pct(fl.f[i])}</span>`:''}</div>`;
   h+=`<div class="arrow"></div>
   <div class="node" style="--c:${s.c}"><div class="bar"></div><div class="node-body">
    <div class="node-top"><div class="node-head">${SeshatIcons.icon(u.id,52)}<div class="node-title">${i+1}. ${esc(u.n)}<small>${s.n}</small></div></div>
     <div class="node-ctrl"><button type="button" data-mv="${i}" data-d="-1" aria-label="Выше" ${i===0?'disabled':''}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Ниже" ${i===state.steps.length-1?'disabled':''}>↓</button><button type="button" data-rm="${i}" aria-label="Удалить">✕</button></div></div>
-   <div class="effects">${effChips(st.eff)||'<span class="chip">без изменения химии</span>'}</div>
+   ${links}<div class="effects">${effChips(st.eff)||'<span class="chip">без изменения химии</span>'}</div>
    ${eco?`<div class="node-cost"><span>Капзатраты ≈ <b>${mln(eco.steps[i].capex)}</b></span><span>Эксплуатация <b>${money(eco.steps[i].opex)}</b>/сут</span></div>`:''}
    ${sim.warns[i].length?`<div class="warns">${sim.warns[i].map(x=>`<div class="w">${esc(x)}</div>`).join('')}</div>`:''}
    ${Object.keys(st.eff).length?`<details class="tune" data-i="${i}" ${open.has(String(i))?'open':''}><summary>Настроить эффективность, %</summary><div class="tune-grid">${Object.keys(st.eff).map(k=>`<label for="t-${i}-${k}">${SHORT[k]}<input id="t-${i}-${k}" ${NUM_ATTRS} data-ti="${i}" data-tk="${k}" value="${showNum(st.eff[k])}"></label>`).join('')}</div></details>`:''}
   </div></div>
-  ${i<state.steps.length-1?`<div class="arrow">БПК₅ ${fmt(o.bod)} · N-NH₄ ${fmt(o.nh4)} · P ${fmt(o.p)}</div>`:''}`;
+  ${i<state.steps.length-1?`<div class="arrow">${chain?'':'на выходе: '}БПК₅ ${fmt(o.bod)} · N-NH₄ ${fmt(o.nh4)} · P ${fmt(o.p)}</div>`:''}`;
  });
- const f=sim.prof[sim.prof.length-1];
+ const f=sim.out;
  h+=`<div class="arrow"></div><div class="terminal"><span>Выпуск</span><span>БПК₅ ${fmt(f.bod)} · N-NH₄ ${fmt(f.nh4)} · N-NO₃ ${fmt(f.no3)} · P ${fmt(f.p)}</span></div>`;
  box.innerHTML=h;
 }
 document.getElementById('scheme').addEventListener('click',ev=>{
  const m=ev.target.closest('[data-mv]'),r=ev.target.closest('[data-rm]');
- if(m){const i=+m.dataset.mv,j=i+ +m.dataset.d;[state.steps[i],state.steps[j]]=[state.steps[j],state.steps[i]];update()}
- if(r){state.steps.splice(+r.dataset.rm,1);update()}
+ if(m){const i=+m.dataset.mv,j=i+ +m.dataset.d;state.steps=SeshatGraph.swap(state.steps,i,j);update()}
+ if(r){state.steps=SeshatGraph.remove(SeshatGraph.norm(state.steps),+r.dataset.rm);update()}
 });
 document.getElementById('scheme').addEventListener('change',ev=>{
  const t=ev.target;if(!t.dataset.ti)return;const v=parseNum(t.value);if(Number.isNaN(v)){markInvalid(t,v);return}state.steps[+t.dataset.ti].eff[t.dataset.tk]=Math.min(100,v||0);update(true);
@@ -321,7 +324,7 @@ function spark(vals,norm,st){
  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${norm?`<line x1="0" x2="${W}" y1="${y(norm)}" y2="${y(norm)}" stroke="var(--muted)" stroke-dasharray="3 3" stroke-width="1"/>`:''}<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/><circle cx="${x(vals.length-1)}" cy="${y(pos[pos.length-1])}" r="2.8" fill="${col}"/></svg>`;
 }
 function renderResults(sim){
- const f=sim.prof[sim.prof.length-1],tbl=document.getElementById('results');
+ const f=sim.out,tbl=document.getElementById('results');
  // Таблица перестраивается при каждом вводе: сохраняем набранный текст (например «0,») и положение курсора.
  const ae=document.activeElement,typing=ae&&ae.id&&ae.id.startsWith('n-')?{id:ae.id,raw:ae.value,pos:ae.selectionStart}:null;
  let pass=0,tot=0;const fails=[];
@@ -356,11 +359,12 @@ function renderResults(sim){
 document.getElementById('advice').addEventListener('click',ev=>{const b=ev.target.closest('[data-add]');if(!b)return;
  const u=U[b.dataset.add];const order=['mech','bio','tert','dis'];
  let idx=state.steps.findIndex(s=>order.indexOf(U[s.u].st)>order.indexOf(u.st));if(idx<0)idx=state.steps.length;
- state.steps.splice(idx,0,mk(u.id));update()});
+ state.steps=SeshatGraph.insertBefore(SeshatGraph.norm(state.steps),idx,mk(u.id));update()});
 
 
 let eco=null;
 function update(keepFocus){
+ state.steps=SeshatGraph.norm(state.steps);
  const sim=SeshatModel.simulate(state);
  eco=SeshatEconomics.costs(state,sim,state.prices);
  const a=document.activeElement,id=keepFocus&&a&&a.id;
@@ -429,12 +433,19 @@ function renderDiagram(sim) {
   if (!state.steps.length) { box.innerHTML = '<p class="hint">Схема пуста.</p>'; return; }
   const arrow = '<svg class="pfd-arrow" viewBox="0 0 28 12" width="22" height="10" aria-hidden="true"><path d="M1 6h24M20 2l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const end = (t, sub) => `<div class="pfd-end"><b>${t}</b><small>${sub}</small></div>`;
-  const f = sim.prof[sim.prof.length - 1];
+  const f = sim.out;
   let h = end('Сточные воды', `${rub(state.q)} м³/сут`);
-  state.steps.forEach((st, i) => {
-    const u = U[st.u], s = STG[u.st], ps = sim.perStep[i];
-    const sl = ps.sludge > 0.5 ? `<span class="pfd-sludge" title="Осадок: ${rub(ps.sludge)} кг сухого вещества в сутки">↓ осадок</span>` : '';
-    h += arrow + `<figure class="pfd-step" style="--c:${s.c}"><span class="pfd-n">${i + 1}</span>${SeshatIcons.icon(u.id, 72, u.n)}<figcaption>${esc(u.n.split(' (')[0])}</figcaption>${sl}</figure>`;
+  // ступени одной колонки (параллельные линии) — друг под другом
+  const dep = SeshatGraph.depth(state.steps), cols = [];
+  state.steps.forEach((st, i) => { (cols[dep[i]] = cols[dep[i]] || []).push(i); });
+  cols.filter(Boolean).forEach(col => {
+    const figs = col.map(i => {
+      const st = state.steps[i], u = U[st.u], s = STG[u.st], ps = sim.perStep[i];
+      const sl = ps.sludge > 0.5 ? `<span class="pfd-sludge" title="Осадок: ${rub(ps.sludge)} кг сухого вещества в сутки">↓ осадок</span>` : '';
+      const share = ps.f < 0.999 ? `<span class="pfd-share">${Math.round(ps.f * 100)}% расхода</span>` : '';
+      return `<figure class="pfd-step" style="--c:${s.c}"><span class="pfd-n">${i + 1}</span>${SeshatIcons.icon(u.id, 72, u.n)}<figcaption>${esc(u.n.split(' (')[0])}</figcaption>${share}${sl}</figure>`;
+    });
+    h += arrow + (figs.length > 1 ? `<div class="pfd-par">${figs.join('')}</div>` : figs[0]);
   });
   h += arrow + end('Выпуск', `БПК₅ ${fmt(f.bod)} · N-NH₄ ${fmt(f.nh4)} · P ${fmt(f.p)}`);
   box.innerHTML = h;

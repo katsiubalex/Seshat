@@ -1,6 +1,7 @@
 // Генплан: размеры сооружений в плане, их раскладка по ходу очистки и описания принципа работы.
 // Площади — ориентировочные, по типовым удельным нагрузкам (время пребывания, гидравлическая нагрузка).
 (function (root) {
+  const G = root.SeshatGraph || (typeof require !== 'undefined' ? require('./graph.js') : null);
   // kind — как рисовать в плане: tank (резервуар), clar (радиальные отстойники), bld (здание),
   //        cells (фильтры-ячейки), cols (колонны), sbr (несколько реакторов), channel (канал)
   // a — м² на 1 м³/сут; min — минимальная площадь, м²; ratio — длина/ширина;
@@ -162,54 +163,97 @@
   }
 
   /**
-   * Раскладка генплана: ступени по ходу очистки «змейкой», ниже — цех обезвоживания и АБК.
-   * @returns {{blocks:Object[], aux:Object[], pipes:number[][][], site:{w,h}, area:{structures,site}}}
+   * Раскладка генплана. Ступени одной «колонки» схемы (параллельные линии) стоят друг под другом,
+   * колонки идут по ходу воды «змейкой»; ниже — цех обезвоживания и АБК.
+   * Если у ступени есть сохранённое место (x, y), она стоит там, где её поставил пользователь.
+   * @param {number} q — расход станции, м³/сут
+   * @param {(string|Object)[]} input — id технологий (последовательная схема) или ступени схемы
+   * @returns {{blocks:Object[], aux:Object[], pipes:number[][][], edges:Object[], site:{w,h}, area:{structures,site}}}
    */
-  function layout(q, stepIds) {
-    const sizes = stepIds.map(id => unitSize(id, q));
-    const total = sizes.reduce((s, b) => s + b.w, 0) + GAP * Math.max(0, sizes.length - 1);
-    const maxH = Math.max(20, ...sizes.map(b => b.h));
-    const rowW = Math.max(120, Math.min(total, Math.sqrt(total * maxH) * 2.2));
-    // разбиваем на ряды
-    const rows = [[]]; let x = 0;
-    sizes.forEach(b => { if (x > 0 && x + b.w > rowW) { rows.push([]); x = 0; } rows[rows.length - 1].push(b); x += b.w + GAP; });
+  function layout(q, input) {
+    const steps = G.norm(input.map(s => typeof s === 'string' ? { u: s, eff: {} } : s));
+    const fl = G.flows(steps), dep = G.depth(steps);
+    const sizes = steps.map((s, i) => ({ ...unitSize(s.u, q * fl.f[i]), index: i, f: fl.f[i] }));
     const margin = 22; // от ограды до сооружений (с учётом проезда)
-    const blocks = []; let y = margin; let widest = 0;
+
+    // автоматическая раскладка: колонки по глубине, колонки — рядами «змейкой»
+    const layers = [];
+    sizes.forEach((b, i) => { (layers[dep[i]] = layers[dep[i]] || []).push(b); });
+    const cols = layers.filter(Boolean).map(list => ({ list, w: Math.max(...list.map(b => b.w)), h: list.reduce((s, b) => s + b.h, 0) + GAP * 1.2 * (list.length - 1) }));
+    const total = cols.reduce((s, c) => s + c.w, 0) + GAP * Math.max(0, cols.length - 1);
+    const maxH = Math.max(20, ...cols.map(c => c.h));
+    const rowW = Math.max(120, Math.min(total, Math.sqrt(total * maxH) * 2.2));
+    const rows = [[]]; let x = 0;
+    cols.forEach(c => { if (x > 0 && x + c.w > rowW) { rows.push([]); x = 0; } rows[rows.length - 1].push(c); x += c.w + GAP; });
+    const auto = []; let y = margin;
     rows.forEach((row, ri) => {
-      const h = Math.max(...row.map(b => b.h)), w = row.reduce((s, b) => s + b.w, 0) + GAP * (row.length - 1);
-      widest = Math.max(widest, w);
+      const h = Math.max(...row.map(c => c.h)), w = row.reduce((s, c) => s + c.w, 0) + GAP * (row.length - 1);
       let cx = 0;
-      const placed = row.map(b => { const o = { ...b, x: cx, y: y + (h - b.h) / 2, row: ri }; cx += b.w + GAP; return o; });
-      if (ri % 2 === 1) placed.forEach(o => { o.x = w - o.x - o.w; }); // обратный ход во втором ряду
-      blocks.push(...placed);
+      row.forEach(c => {
+        const colX = ri % 2 === 1 ? w - cx - c.w : cx; // обратный ход в нечётных рядах
+        let yy = y + (h - c.h) / 2;
+        c.list.forEach(b => { auto[b.index] = { x: margin + colX + (c.w - b.w) / 2, y: yy, row: ri }; yy += b.h + GAP * 1.2; });
+        cx += c.w + GAP;
+      });
       y += h + GAP * 2.2;
     });
-    blocks.forEach(b => { b.x += margin; b.cx = b.x + b.w / 2; b.cy = b.y + b.h / 2; });
-    blocks.forEach((b, i) => { b.index = i; });
-    // вспомогательные здания
-    let ax = margin; const auxY = y;
+
+    // сохранённые места; ступени без места — отдельным рядом ниже
+    const placed = steps.map((s, i) => s.x != null ? { x: s.x, y: s.y, row: 0, fixed: true } : null);
+    const anyFixed = placed.some(Boolean);
+    if (anyFixed) {
+      const bottom = Math.max(...placed.map((p, i) => p ? p.y + sizes[i].h : -Infinity));
+      let nx = margin; const ny = bottom + GAP * 1.5;
+      sizes.forEach((b, i) => { if (!placed[i]) { placed[i] = { x: nx, y: ny, row: 1 }; nx += b.w + GAP; } });
+    }
+    const blocks = sizes.map((b, i) => ({ ...b, ...(anyFixed ? placed[i] : auto[i]) }));
+    // всё, что вытащили за левый или верхний край, сдвигаем внутрь участка
+    if (blocks.length) {
+      const dx = Math.max(0, margin - Math.min(...blocks.map(b => b.x))), dy = Math.max(0, margin - Math.min(...blocks.map(b => b.y)));
+      blocks.forEach(b => { b.x += dx; b.y += dy; });
+    }
+    blocks.forEach(b => { b.cx = b.x + b.w / 2; b.cy = b.y + b.h / 2; });
+    const right = blocks.length ? Math.max(...blocks.map(b => b.x + b.w)) : margin;
+    const auxY = (blocks.length ? Math.max(...blocks.map(b => b.y + b.h)) : margin) + GAP * 2.2;
+    let ax = margin;
     const aux = AUX.map(a => { const area = Math.max(a.min, a.a * q), r = rect(area, a.ratio); const o = { ...a, area, ...r, x: ax, y: auxY }; ax += r.w + GAP * 2; return o; });
     const auxH = Math.max(...aux.map(a => a.h));
-    const site = { w: round(Math.max(widest, ax - GAP * 2) + margin * 2), h: round(auxY + auxH + margin) };
-    // трубопровод по ходу воды: выход из блока → вход в следующий
-    const flowY = b => b.y + (b.parts[0].h) / 2;
-    const pipes = [];
-    for (let i = 0; i < blocks.length - 1; i++) {
-      const a = blocks[i], b = blocks[i + 1];
-      if (a.row === b.row) {
-        const rev = a.row % 2 === 1;
-        pipes.push([[rev ? a.x : a.x + a.w, flowY(a)], [rev ? b.x + b.w : b.x, flowY(b)]]);
-      } else {
-        const ex = a.row % 2 === 0 ? a.x + a.w : a.x, side = a.row % 2 === 0 ? 1 : -1;
-        const turn = side > 0 ? Math.max(a.x + a.w, b.x + b.w) + GAP * 0.8 : Math.min(a.x, b.x) - GAP * 0.8;
-        const ix = b.row % 2 === 0 ? b.x : b.x + b.w;
-        pipes.push([[ex, flowY(a)], [turn, flowY(a)], [turn, flowY(b)], [ix, flowY(b)]]);
-      }
-    }
+    const site = { w: round(Math.max(right, ax - GAP * 2) + margin), h: round(auxY + auxH + margin) };
+    const edges = fl.edges.map(e => ({ ...e, pts: route(blocks[e.a], blocks[e.b], site.w / 2, blocks) }));
     const structures = sizes.reduce((s, b) => s + b.area, 0) + aux.reduce((s, a) => s + a.area, 0);
-    return { blocks, aux, pipes, site, area: { structures, site: site.w * site.h }, inlet: blocks[0], outlet: blocks[blocks.length - 1] };
+    return { blocks, aux, edges, pipes: edges.map(e => e.pts), site, area: { structures, site: site.w * site.h }, sources: blocks.filter((_, i) => fl.src[i] > 0), sinks: fl.sinks.map(i => blocks[i]), steps };
   }
 
-  root.SeshatPlan = { PLAN, layout, unitSize, GAP };
+  /** Уровень воды в сооружении для рисования трубы: середина первой части */
+  const flowY = b => b.y + b.parts[0].h / 2;
+  /** Трасса трубы от выхода сооружения a ко входу сооружения b (ломаная из прямых участков).
+   *  Если прямая трасса проходит сквозь другие сооружения, труба обходит их сверху или снизу. */
+  function route(a, b, mid, blocks) {
+    const ya = flowY(a), yb = flowY(b), ax2 = a.x + a.w, bx2 = b.x + b.w, g = GAP * 0.45;
+    const others = (blocks || []).filter(o => o !== a && o !== b);
+    const hits = pts => others.some(o => pts.slice(1).some((p, k) => {
+      const [x1, y1] = pts[k], [x2, y2] = p;
+      const lx = Math.min(x1, x2), hx = Math.max(x1, x2), ly = Math.min(y1, y2), hy = Math.max(y1, y2);
+      return lx < o.x + o.w - 0.5 && hx > o.x + 0.5 && ly < o.y + o.h - 0.5 && hy > o.y + 0.5;
+    }));
+    const z = (x1, x2) => { const mx = (x1 + x2) / 2; return Math.abs(ya - yb) < 0.05 ? [[x1, ya], [x2, yb]] : [[x1, ya], [mx, ya], [mx, yb], [x2, yb]]; };
+    let pts, fwd = null;
+    if (b.x >= ax2 + 2) { pts = z(ax2, b.x); fwd = [ax2 + g, b.x - g]; }
+    else if (bx2 <= a.x - 2) { pts = z(a.x, bx2); fwd = [a.x - g, bx2 + g]; }
+    else if (a.cx >= mid) { const t = Math.max(ax2, bx2) + GAP * 0.8; pts = [[ax2, ya], [t, ya], [t, yb], [bx2, yb]]; }
+    else { const t = Math.min(a.x, b.x) - GAP * 0.8; pts = [[a.x, ya], [t, ya], [t, yb], [b.x, yb]]; }
+    if (!fwd || !hits(pts)) return pts;
+    // обход: над или под сооружениями, которые лежат между a и b
+    const lo = Math.min(fwd[0], fwd[1]), hi = Math.max(fwd[0], fwd[1]);
+    const between = others.filter(o => o.x < hi && o.x + o.w > lo);
+    const top = Math.min(a.y, b.y, ...between.map(o => o.y)) - g, bot = Math.max(a.y + a.h, b.y + b.h, ...between.map(o => o.y + o.h)) + g;
+    const via = y => [pts[0], [fwd[0], ya], [fwd[0], y], [fwd[1], y], [fwd[1], yb], pts[pts.length - 1]];
+    const up = via(top), down = via(bot);
+    if (!hits(up)) return up;
+    if (!hits(down)) return down;
+    return up;
+  }
+
+  root.SeshatPlan = { PLAN, layout, route, flowY, unitSize, GAP };
   if (typeof module !== 'undefined') module.exports = root.SeshatPlan;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

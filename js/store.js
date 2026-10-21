@@ -3,6 +3,7 @@
 // для аккаунтов достаточно добавить адаптер, который синхронизирует тот же объект с сервером.
 (function (root) {
   const D = root.SeshatData || (typeof require !== 'undefined' ? require('./data.js') : null);
+  const G = root.SeshatGraph || (typeof require !== 'undefined' ? require('./graph.js') : null);
   const KINDS = ['influent', 'scheme', 'norm', 'project'];
   const MAX_VARIANTS = 6;
   const FORMAT = 'seshat-library';
@@ -28,9 +29,10 @@
         if (!s || !ids.has(s.u)) return null;
         const eff = {};
         for (const [k, v] of Object.entries(s.eff || {})) if (typeof v === 'number' && isFinite(v)) eff[k] = Math.min(100, Math.max(0, v));
-        steps.push({ u: s.u, eff });
+        steps.push({ ...s, eff });
       }
-      return { steps };
+      // трубы между ступенями и места на генплане (см. graph.js)
+      return { steps: G.norm(steps) };
     },
     norm(d) {
       if (!d || !d.v || typeof d.v !== 'object') return null;

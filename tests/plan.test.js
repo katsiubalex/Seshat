@@ -59,3 +59,25 @@ test('генплан со всеми 40 технологиями сразу: б�
     assert.ok(Math.max(...L.blocks.map(b => b.row)) >= 1, 'длинная схема переносится на несколько рядов');
   }
 });
+
+test('параллельные линии стоят друг под другом, меньшего размера, трубы ведут к обеим', () => {
+  const G = require('../js/graph.js');
+  const mk = id => ({ u: id, eff: {} });
+  const { steps } = G.parallel(G.norm(city.scheme.map(mk)), city.scheme.indexOf('a2o') >= 0 ? city.scheme.indexOf('a2o') : 2);
+  const L = layout(city.q, steps), one = layout(city.q, city.scheme);
+  const i = steps.findIndex((s, k) => k > 0 && s.u === steps[k - 1].u);
+  assert.ok(i > 0);
+  const a = L.blocks[i - 1], b = L.blocks[i];
+  assert.ok(Math.abs(a.cx - b.cx) < 1 && !overlap(a, b), 'одна колонка, без перекрытия');
+  assert.ok(a.area < one.blocks[i - 1].area, 'каждая линия на половину расхода');
+  assert.equal(L.pipes.length, G.flows(steps).edges.length);
+});
+
+test('сохранённые места сооружений соблюдаются', () => {
+  const G = require('../js/graph.js');
+  const s = G.norm(['screens', 'sand', 'at'].map(u => ({ u, eff: {} })));
+  s[0].x = 200; s[0].y = 40; s[1].x = 30; s[1].y = 40; s[2].x = 30; s[2].y = 120;
+  const L = layout(1000, s);
+  assert.equal(L.blocks[0].x, 200);
+  assert.equal(L.blocks[2].y, 120);
+});

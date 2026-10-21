@@ -424,7 +424,7 @@ document.getElementById('btn-export').onclick=()=>{
  if(!store.count()){toast('В библиотеке пока ничего нет. Сохраните профиль, схему или нормативы.');return}
  const blob=new Blob([JSON.stringify(store.exportAll(),null,2)],{type:'application/json'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
- a.download=`seshat-библиотека-${new Date().toISOString().slice(0,10)}.json`;
+ a.download=`сешат-библиотека-${new Date().toISOString().slice(0,10)}.json`;
  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 document.getElementById('file-import').addEventListener('change',async ev=>{

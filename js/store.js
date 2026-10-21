@@ -102,7 +102,7 @@
       exportAll() { return { format: FORMAT, version: VERSION, exported: new Date().toISOString(), ...JSON.parse(JSON.stringify(lib)) }; },
       /** Добавить записи из файла. Записи с тем же id заменяются. Возвращает {added, updated, skipped}. */
       importAll(obj) {
-        if (!obj || obj.format !== FORMAT) throw new Error('Это не файл библиотеки Seshat.');
+        if (!obj || obj.format !== FORMAT) throw new Error('Это не файл библиотеки Сешат.');
         const res = { added: 0, updated: 0, skipped: 0 };
         for (const k of KINDS) for (const it of (Array.isArray(obj[k]) ? obj[k] : [])) {
           const clean = it && validate[k](it.data);

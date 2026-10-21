@@ -1,9 +1,10 @@
-// Библиотека пользователя: сохранённые профили стоков, схемы очистки и наборы нормативов.
+// Библиотека пользователя: сохранённые профили стоков, схемы очистки, наборы нормативов и проекты.
 // Хранилище подключается через адаптер { read(), write(obj) }. Сейчас это localStorage браузера;
 // для аккаунтов достаточно добавить адаптер, который синхронизирует тот же объект с сервером.
 (function (root) {
   const D = root.SeshatData || (typeof require !== 'undefined' ? require('./data.js') : null);
-  const KINDS = ['influent', 'scheme', 'norm'];
+  const KINDS = ['influent', 'scheme', 'norm', 'project'];
+  const MAX_VARIANTS = 6;
   const FORMAT = 'seshat-library';
   const VERSION = 1;
 
@@ -36,11 +37,32 @@
       const v = {};
       for (const k of paramKeys()) v[k] = isNum(d.v[k]) ? d.v[k] : null;
       return { v };
+    },
+    // Проект: общие для всех вариантов стоки, нормативы и цены + до 6 вариантов схем (копии, не ссылки).
+    project(d) {
+      if (!d || !d.influent || !d.norm || !Array.isArray(d.variants)) return null;
+      const inf = validate.influent(d.influent), nm = validate.norm(d.norm);
+      if (!inf || !nm) return null;
+      const prices = {};
+      for (const [k, p] of Object.entries(D.ECON.prices)) prices[k] = isNum(d.prices && d.prices[k]) ? d.prices[k] : p.v;
+      const variants = [];
+      for (const v of d.variants.slice(0, MAX_VARIANTS)) {
+        const sc = v && validate.scheme(v);
+        if (!sc || !v.id || !String(v.name || '').trim()) return null;
+        variants.push({ id: String(v.id), name: String(v.name).trim().slice(0, 80), steps: sc.steps });
+      }
+      const label = (o, def) => String((o && o.name) || def).trim().slice(0, 120) || def;
+      return {
+        influent: { name: label(d.influent, 'Стоки'), ...inf },
+        norm: { name: label(d.norm, 'Нормативы'), ...nm },
+        prices,
+        variants
+      };
     }
   };
 
   function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-  function empty() { return { influent: [], scheme: [], norm: [] }; }
+  function empty() { return { influent: [], scheme: [], norm: [], project: [] }; }
 
   function createStore(adapter) {
     let lib = empty();
@@ -103,6 +125,6 @@
   }
   function memoryAdapter(init) { let v = init || null; return { read: () => v, write: o => { v = JSON.parse(JSON.stringify(o)); } }; }
 
-  root.SeshatStore = { createStore, localAdapter, memoryAdapter, validate, KINDS };
+  root.SeshatStore = { createStore, localAdapter, memoryAdapter, validate, KINDS, MAX_VARIANTS, newId };
   if (typeof module !== 'undefined') module.exports = root.SeshatStore;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -86,3 +86,39 @@ test('переименование меняет только название', 
   assert.equal(s.rename('scheme', it.id, '   '), null);
   assert.equal(s.rename('scheme', 'нет', 'X'), null);
 });
+
+const project = () => ({
+  influent: { name: 'Город', ...influent },
+  norm: { name: 'ПДК', ...norm },
+  prices: { kwh: 9 },
+  variants: [{ id: 'v1', name: 'Вариант 1', ...scheme }, { id: 'v2', name: 'Вариант 2', steps: [{ u: 'mbr', eff: { bod: 98 } }] }]
+});
+
+test('проект сохраняется: стоки, нормативы, цены (недостающие — по умолчанию), варианты', () => {
+  const { s } = fresh();
+  const p = s.save('project', { name: 'Пос. Н.', data: project() });
+  assert.ok(p);
+  assert.equal(p.data.influent.name, 'Город');
+  assert.equal(p.data.prices.kwh, 9);
+  assert.equal(p.data.prices.sludge, D.ECON.prices.sludge.v);
+  assert.equal(p.data.variants.length, 2);
+  assert.equal(p.data.variants[1].steps[0].u, 'mbr');
+});
+
+test('проект с негодным вариантом или без стоков не сохраняется; вариантов не больше 6', () => {
+  const { s } = fresh();
+  const bad = project(); bad.variants[0].steps = [{ u: 'нет' }];
+  assert.equal(s.save('project', { name: 'X', data: bad }), null);
+  const noInf = project(); delete noInf.influent;
+  assert.equal(s.save('project', { name: 'X', data: noInf }), null);
+  const many = project(); many.variants = Array.from({ length: 9 }, (_, i) => ({ id: 'v' + i, name: 'В' + i, ...scheme }));
+  assert.equal(s.save('project', { name: 'X', data: many }).data.variants.length, S.MAX_VARIANTS);
+});
+
+test('проекты попадают в выгрузку и загружаются обратно', () => {
+  const { s } = fresh();
+  s.save('project', { name: 'П', data: project() });
+  const { s: s2 } = fresh();
+  assert.equal(s2.importAll(s.exportAll()).added, 1);
+  assert.equal(s2.list('project')[0].data.variants.length, 2);
+});

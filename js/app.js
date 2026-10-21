@@ -40,9 +40,19 @@ const KINDS = {
   }
 };
 
+// 'p:<проект>' и 'p:<проект>:<вариант>' — данные открытого в конструкторе варианта проекта.
 function refItem(kind, ref) {
   if (!ref) return null;
   const [t, id] = [ref[0], ref.slice(2)];
+  if (t === 'p') {
+    const [pid, vid] = id.split(':'), pr = store.get('project', pid);
+    if (!pr) return null;
+    const d = pr.data;
+    if (kind === 'influent') return { name: `${pr.name}: ${d.influent.name}`, data: { q: d.influent.q, c: d.influent.c } };
+    if (kind === 'norm') return { name: `${pr.name}: ${d.norm.name}`, data: { v: d.norm.v } };
+    const v = d.variants.find(x => x.id === vid);
+    return v ? { name: `${pr.name}: ${v.name}`, data: { steps: v.steps } } : null;
+  }
   return t === 'b' ? KINDS[kind].builtins.find(b => b.id === id) || null : store.get(kind, id);
 }
 function sameData(kind, a, b) { const v = SeshatStore.validate[kind]; return JSON.stringify(v(a)) === JSON.stringify(v(b)); }
@@ -106,6 +116,7 @@ function renderBar(kind) {
   let h = `<div class="saved-row">
     <select id="sel-${kind}" aria-label="${K.label}: открыть">
       ${draft ? `<option value="new" selected>${esc(K.draftLabel)}</option>` : ''}
+      ${!draft && ref && ref[0] === 'p' && cur ? `<optgroup label="Проект">${opt(ref, cur.name)}</optgroup>` : ''}
       ${mine.length ? `<optgroup label="Мои">${mine.map(it => opt('u:' + it.id, it.name)).join('')}</optgroup>` : ''}
       <optgroup label="Примеры">${K.builtins.map(b => opt('b:' + b.id, b.name)).join('')}</optgroup>
     </select>
@@ -335,6 +346,7 @@ function update(keepFocus){
  renderScheme(sim);
  if(id){const el=document.getElementById(id);if(el)el.focus()}
  renderDiagram(sim);renderResults(sim);renderEconomy(eco);renderBars();saveState();
+ if(typeof renderCtx==='function')renderCtx();
 }
 
 /* ---------- экономика ---------- */

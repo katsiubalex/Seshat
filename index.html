@@ -7,24 +7,36 @@
 <meta name="description" content="Конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.6.0">
+<link rel="stylesheet" href="css/style.css?v=0.7.0">
 </head>
 <body>
-<div class="wrap">
+<div class="app">
+<nav class="sidenav" aria-label="Разделы">
+  <a class="brand" href="#constructor"><b>Seshat</b><small>очистные НДТ</small></a>
+  <div class="nav-links">
+    <a class="nav-link" href="#constructor" data-view="constructor">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5h6v5H4zM14 14h6v5h-6zM10 7.5h4v9h0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 14.5l2 2-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Конструктор</span></a>
+    <a class="nav-link" href="#projects" data-view="projects">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 16v-3M12 16v-5M16 16v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Проекты</span><span class="nav-count" id="nav-projects-count"></span></a>
+  </div>
+  <div class="nav-foot">
+    <p class="lib-note">Всё сохранённое хранится в этом браузере. Чтобы перенести на другой компьютер, выгрузите библиотеку в файл.</p>
+    <button id="btn-export" type="button">Выгрузить библиотеку</button>
+    <input id="file-import" type="file" accept=".json,application/json" class="visually-hidden">
+    <label class="btn" for="file-import">Загрузить из файла</label>
+  </div>
+</nav>
+<main class="main">
+<div class="wrap view" id="view-constructor">
   <header>
     <div>
       <h1>Конструктор <span>очистных</span> НДТ</h1>
       <p class="sub">Задайте состав сточных вод, соберите схему из технологий справочника НДТ и посмотрите, что получится на выходе по каждому показателю.</p>
     </div>
-    <div class="toolbar">
-      <p class="lib-note">Сохранённое хранится в этом браузере. Чтобы перенести на другой компьютер, выгрузите библиотеку в файл.</p>
-      <div class="toolbar-btns">
-        <button id="btn-export" type="button">Выгрузить библиотеку</button>
-        <input id="file-import" type="file" accept=".json,application/json" class="visually-hidden">
-        <label class="btn" for="file-import">Загрузить из файла</label>
-      </div>
-    </div>
   </header>
+  <div class="ctx" id="ctx" hidden></div>
 
   <div class="grid">
     <section class="panel" aria-labelledby="h-in">
@@ -78,12 +90,26 @@
     <p class="foot">Капзатраты ступени заданы для производительности 10 000 м³/сут и пересчитываются на ваш расход с эффектом масштаба (показатель 0,7): крупная станция дешевле в пересчёте на кубометр. Учтены оборудование, сооружения и монтаж; не учтены обработка осадка, сети, проектирование и земля. Эксплуатация включает электроэнергию, реагенты (коагулянт при дефосфатации и флотации, метанол на денитрифицирующих фильтрах), расходные материалы, вывоз обезвоженного осадка (22% сухого вещества) и ремонт; зарплата персонала и налоги не учтены. Значения по умолчанию — ориентиры, замените их ценами вашего региона.</p>
   </section>
 </div>
+<div class="wrap view" id="view-projects" hidden>
+  <header>
+    <div>
+      <h1>Проекты</h1>
+      <p class="sub">Проект — один объект и несколько вариантов схем очистки. Стоки, нормативы и цены у вариантов общие, поэтому их можно честно сравнить по качеству воды и деньгам.</p>
+    </div>
+  </header>
+  <section class="panel proj-bar-panel" aria-label="Выбор проекта"><div id="proj-bar"></div></section>
+  <div id="proj-body" class="proj-body"></div>
+</div>
+</main>
+</div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.6.0"></script>
-<script src="js/model.js?v=0.6.0"></script>
-<script src="js/icons.js?v=0.6.0"></script>
-<script src="js/economics.js?v=0.6.0"></script>
-<script src="js/store.js?v=0.6.0"></script>
-<script src="js/app.js?v=0.6.0"></script>
+<script src="js/data.js?v=0.7.0"></script>
+<script src="js/model.js?v=0.7.0"></script>
+<script src="js/icons.js?v=0.7.0"></script>
+<script src="js/economics.js?v=0.7.0"></script>
+<script src="js/store.js?v=0.7.0"></script>
+<script src="js/compare.js?v=0.7.0"></script>
+<script src="js/app.js?v=0.7.0"></script>
+<script src="js/projects.js?v=0.7.0"></script>
 </body>
 </html>

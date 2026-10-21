@@ -1,33 +1,172 @@
-// Интерфейс конструктора. Данные — в data.js, расчёт — в model.js.
+// Интерфейс конструктора. Данные — в data.js, расчёт — в model.js, библиотека пользователя — в store.js.
 const { PARAMS, SHORT, STAGES, UNITS, PRESETS, NORMS } = SeshatData;
 const { fmt } = SeshatModel;
 const U = Object.fromEntries(UNITS.map(u => [u.id, u]));
 const STG = Object.fromEntries(STAGES.map(s => [s.id, s]));
-const STORE_KEY = 'seshat-state';
-
-let state;
+const STATE_KEY = 'seshat-state';
+const store = SeshatStore.createStore(SeshatStore.localAdapter('seshat-library'));
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const clone = o => JSON.parse(JSON.stringify(o));
 function mk(id) { return { u: id, eff: { ...U[id].eff } }; }
-function fresh(i = 0) { const p = PRESETS[i]; return { q: p.q, c: { ...p.c }, steps: p.scheme.map(mk), normSet: 'pdk', norm: { ...NORMS.pdk.v } }; }
-function load() {
-  try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if (s && s.steps && s.c && s.steps.every(x => U[x.u])) return s; } catch (e) {}
+
+/* ---------- три вида сохраняемых данных ---------- */
+// ref в state — какая запись сейчас открыта: 'b:<id>' — встроенный пример, 'u:<id>' — запись пользователя, null — без названия.
+const KINDS = {
+  influent: {
+    label: 'Профиль стоков', what: 'профиль',
+    builtins: PRESETS.map((p, i) => ({ id: String(i), name: p.n, data: { q: p.q, c: { ...p.c } } })),
+    get: () => ({ q: state.q, c: { ...state.c } }),
+    apply: d => { state.q = d.q; state.c = { ...d.c }; renderInputs(); }
+  },
+  scheme: {
+    label: 'Схема очистки', what: 'схему',
+    builtins: PRESETS.map((p, i) => ({ id: String(i), name: p.sn, data: { steps: p.scheme.map(mk) } })),
+    get: () => ({ steps: clone(state.steps) }),
+    apply: d => { state.steps = clone(d.steps); }
+  },
+  norm: {
+    label: 'Нормативы', what: 'нормативы',
+    builtins: Object.entries(NORMS).filter(([, v]) => v.v).map(([k, v]) => ({ id: k, name: v.n, data: { v: { ...v.v } } })),
+    get: () => ({ v: { ...state.norm } }),
+    apply: d => { state.norm = { ...d.v }; }
+  }
+};
+
+function refItem(kind, ref) {
+  if (!ref) return null;
+  const [t, id] = [ref[0], ref.slice(2)];
+  return t === 'b' ? KINDS[kind].builtins.find(b => b.id === id) || null : store.get(kind, id);
+}
+function sameData(kind, a, b) { const v = SeshatStore.validate[kind]; return JSON.stringify(v(a)) === JSON.stringify(v(b)); }
+function isDirty(kind) { const it = refItem(kind, state.ref[kind]); return !it || !sameData(kind, KINDS[kind].get(), it.data); }
+
+/* ---------- текущее состояние ---------- */
+let state;
+function fresh() {
+  const p = PRESETS[0];
+  return { q: p.q, c: { ...p.c }, steps: p.scheme.map(mk), norm: { ...NORMS.pdk.v }, ref: { influent: 'b:0', scheme: 'b:0', norm: 'b:pdk' } };
+}
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STATE_KEY));
+    if (s && s.c && Array.isArray(s.steps) && s.steps.every(x => U[x.u]) && s.norm) {
+      s.ref = s.ref || { influent: null, scheme: null, norm: null };
+      for (const k of Object.keys(KINDS)) if (s.ref[k] && !refItem(k, s.ref[k])) s.ref[k] = null;
+      delete s.normSet;
+      return s;
+    }
+  } catch (e) {}
   return fresh();
 }
-function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
-const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
-state = load();
+function saveState() { try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {} }
+state = loadState();
+
+/* ---------- уведомления ---------- */
+let toastTimer;
+function toast(msg, action) {
+  const el = document.getElementById('toast');
+  el.innerHTML = `<span>${esc(msg)}</span>${action ? `<button type="button" id="toast-act">${esc(action.label)}</button>` : ''}`;
+  el.hidden = false;
+  if (action) document.getElementById('toast-act').onclick = () => { action.run(); el.hidden = true; };
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, action ? 7000 : 2600);
+}
+
+/* ---------- панель сохранения (одна на каждый вид данных) ---------- */
+const ui = { naming: {}, confirmDel: {} };
+
+function renderBar(kind) {
+  const K = KINDS[kind], el = document.getElementById('bar-' + kind);
+  const ref = state.ref[kind], cur = refItem(kind, ref), mine = store.list(kind);
+  const dirty = isDirty(kind), isMine = ref && ref[0] === 'u';
+  const opt = (v, n) => `<option value="${esc(v)}" ${v === ref ? 'selected' : ''}>${esc(n)}</option>`;
+  let h = `<div class="saved-row">
+    <select id="sel-${kind}" aria-label="${K.label}: открыть сохранённое">
+      ${!cur ? '<option value="" selected>Без названия</option>' : ''}
+      ${mine.length ? `<optgroup label="Мои">${mine.map(it => opt('u:' + it.id, it.name)).join('')}</optgroup>` : ''}
+      <optgroup label="Примеры">${K.builtins.map(b => opt('b:' + b.id, b.name)).join('')}</optgroup>
+    </select>
+    ${cur && dirty ? '<span class="mod" title="Есть несохранённые изменения">изменено</span>' : ''}
+  </div>`;
+  if (ui.naming[kind] != null) {
+    h += `<form class="name-form" data-kind="${kind}">
+      <input id="name-${kind}" type="text" maxlength="120" required placeholder="Название" aria-label="Название" value="${esc(ui.naming[kind])}">
+      <button type="submit" class="primary">Сохранить</button><button type="button" data-act="cancel">Отмена</button>
+    </form>`;
+  } else if (ui.confirmDel[kind]) {
+    h += `<div class="saved-actions"><span class="ask">Удалить «${esc(cur.name)}»?</span>
+      <button type="button" data-act="del-yes" class="danger">Удалить</button><button type="button" data-act="del-no">Отмена</button></div>`;
+  } else {
+    h += `<div class="saved-actions">
+      ${isMine && dirty ? '<button type="button" data-act="save" class="primary">Сохранить изменения</button>' : ''}
+      <button type="button" data-act="saveas">${isMine ? 'Сохранить как новый' : 'Сохранить в мои'}</button>
+      ${isMine ? '<button type="button" data-act="del">Удалить</button>' : ''}
+    </div>`;
+  }
+  el.innerHTML = h;
+}
+function renderBars() { Object.keys(KINDS).forEach(renderBar); }
+
+function openItem(kind, ref) {
+  const K = KINDS[kind], it = refItem(kind, ref);
+  if (!it) return;
+  const prev = { data: K.get(), ref: state.ref[kind] }, wasDirty = isDirty(kind);
+  K.apply(clone(it.data));
+  state.ref[kind] = ref;
+  update();
+  if (wasDirty) toast(`Открыто «${it.name}». Несохранённые изменения сброшены.`, { label: 'Вернуть', run: () => { K.apply(prev.data); state.ref[kind] = prev.ref; update(); } });
+}
+
+function bindBar(kind) {
+  const el = document.getElementById('bar-' + kind);
+  el.addEventListener('change', ev => { if (ev.target.id === 'sel-' + kind && ev.target.value) openItem(kind, ev.target.value); });
+  el.addEventListener('click', ev => {
+    const act = ev.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    const K = KINDS[kind], ref = state.ref[kind], cur = refItem(kind, ref);
+    if (act === 'save') {
+      const it = store.save(kind, { id: ref.slice(2), name: cur.name, data: K.get() });
+      if (it) toast(`Сохранено: «${it.name}»`);
+    } else if (act === 'saveas') {
+      ui.naming[kind] = cur ? (ref[0] === 'u' ? cur.name + ' (копия)' : cur.name) : '';
+      renderBar(kind);
+      const inp = document.getElementById('name-' + kind); inp.focus(); inp.select();
+      return;
+    } else if (act === 'cancel') { delete ui.naming[kind]; }
+    else if (act === 'del') { ui.confirmDel[kind] = true; }
+    else if (act === 'del-no') { delete ui.confirmDel[kind]; }
+    else if (act === 'del-yes') {
+      delete ui.confirmDel[kind];
+      const snapshot = clone(cur);
+      store.remove(kind, ref.slice(2));
+      state.ref[kind] = null;
+      toast(`Удалено: «${snapshot.name}»`, { label: 'Восстановить', run: () => {
+        const it = store.save(kind, { name: snapshot.name, data: snapshot.data });
+        if (it) { state.ref[kind] = 'u:' + it.id; update(); }
+      } });
+    }
+    renderBar(kind); saveState();
+  });
+  el.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const name = document.getElementById('name-' + kind).value.trim();
+    if (!name) return;
+    const it = store.save(kind, { name, data: KINDS[kind].get() });
+    delete ui.naming[kind];
+    if (it) { state.ref[kind] = 'u:' + it.id; toast(`Сохранено: «${it.name}»`); }
+    else toast('Не удалось сохранить: данные заполнены неверно.');
+    renderBar(kind); saveState();
+  });
+  el.addEventListener('keydown', ev => { if (ev.key === 'Escape' && ui.naming[kind] != null) { delete ui.naming[kind]; renderBar(kind); } });
+}
 
 /* ---------- ввод ---------- */
-function renderPresets(){
- const box=document.getElementById('presets');
- box.innerHTML=PRESETS.map((p,i)=>`<button type="button" data-p="${i}">${esc(p.n)}</button>`).join('');
- box.onclick=ev=>{const b=ev.target.closest('button');if(!b)return;const ns=fresh(+b.dataset.p);ns.normSet=state.normSet;ns.norm=state.norm;state=ns;renderInputs();update()};
-}
 function renderInputs(){
  const box=document.getElementById('inputs');
- box.innerHTML=`<label class="f qrow" for="in-q">Расход<small>м³/сут</small><input id="in-q" type="number" min="0" step="any" value="${state.q}"></label>`+
-  PARAMS.map(p=>`<label class="f" for="in-${p.k}">${p.n}<small>${p.u}</small><input id="in-${p.k}" type="number" min="0" step="any" value="${state.c[p.k]}"></label>`).join('');
- box.oninput=ev=>{const t=ev.target;if(t.id==='in-q')state.q=+t.value||0;else state.c[t.id.slice(3)]=+t.value||0;update()};
+ box.innerHTML=`<label class="f qrow" for="in-q"><span>Расход<small>м³/сут</small></span><input id="in-q" type="number" min="0" step="any" value="${state.q}"></label>`+
+  PARAMS.map(p=>`<label class="f" for="in-${p.k}"><span>${p.n}<small>${p.u}</small></span><input id="in-${p.k}" type="number" min="0" step="any" value="${state.c[p.k]}"></label>`).join('');
 }
+document.getElementById('inputs').addEventListener('input',ev=>{const t=ev.target;if(t.id==='in-q')state.q=+t.value||0;else state.c[t.id.slice(3)]=+t.value||0;update()});
 /* ---------- каталог ---------- */
 function effChips(eff){return Object.entries(eff).filter(([,v])=>v>0).map(([k,v])=>`<span class="chip">${SHORT[k]} −${v}%</span>`).join('')}
 function renderLibrary(){
@@ -77,11 +216,6 @@ function spark(vals,norm,st){
  const col=st==='ok'?'var(--ok)':st==='bad'?'var(--bad)':'var(--accent)';
  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${norm?`<line x1="0" x2="${W}" y1="${y(norm)}" y2="${y(norm)}" stroke="var(--muted)" stroke-dasharray="3 3" stroke-width="1"/>`:''}<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/><circle cx="${x(vals.length-1)}" cy="${y(pos[pos.length-1])}" r="2.8" fill="${col}"/></svg>`;
 }
-function renderNormSelect(){
- const s=document.getElementById('norm-set');
- s.innerHTML=Object.entries(NORMS).map(([k,v])=>`<option value="${k}" ${state.normSet===k?'selected':''}>${v.n}</option>`).join('');
- s.onchange=()=>{state.normSet=s.value;if(NORMS[s.value].v)state.norm={...NORMS[s.value].v};update()};
-}
 function renderResults(sim){
  const f=sim.prof[sim.prof.length-1],tbl=document.getElementById('results');
  const focus=document.activeElement&&document.activeElement.id;
@@ -94,7 +228,7 @@ function renderResults(sim){
   h+=`<tr><td class="p"><b>${p.n}</b><small>${p.u}</small></td><td>${spark(vals,n,st)}</td><td class="num">${fmt(inV)}</td>${sim.prof.slice(1).map(c=>`<td class="num">${fmt(c[p.k])}</td>`).join('')}<td class="num out">${fmt(f[p.k])}</td><td class="num">${red==null?'—':(red<0?'+':'−')+Math.abs(red).toFixed(0)+'%'}</td><td class="norm"><input id="n-${p.k}" type="number" min="0" step="any" value="${n??''}" placeholder="нет" aria-label="Норматив: ${p.n}"></td><td><span class="pill ${st}">${st==='ok'?'в норме':st==='bad'?'×'+fmt(f[p.k]/n):'не задан'}</span></td></tr>`;
  });
  tbl.innerHTML=h+'</tbody>';
- tbl.oninput=ev=>{const t=ev.target;if(!t.id.startsWith('n-'))return;state.norm[t.id.slice(2)]=t.value===''?null:+t.value;state.normSet='custom';document.getElementById('norm-set').value='custom';update()};
+ tbl.oninput=ev=>{const t=ev.target;if(!t.id.startsWith('n-'))return;state.norm[t.id.slice(2)]=t.value===''?null:+t.value;update()};
  if(focus&&focus.startsWith('n-')){const el=document.getElementById(focus);if(el){el.focus();const v=el.value;el.value='';el.value=v}}
  const kwh=sim.energy*state.q;
  document.getElementById('summary').innerHTML=`
@@ -117,16 +251,31 @@ document.getElementById('advice').addEventListener('click',ev=>{const b=ev.targe
  let idx=state.steps.findIndex(s=>order.indexOf(U[s.u].st)>order.indexOf(u.st));if(idx<0)idx=state.steps.length;
  state.steps.splice(idx,0,mk(u.id));update()});
 
-function update(keepScheme){const sim=SeshatModel.simulate(state);if(!keepScheme)renderScheme(sim);else{ // обновить только подписи без пересборки полей
-  const box=document.getElementById('scheme');const open=box.querySelectorAll('details[open]');renderSchemeSoft(sim,open)}
- renderResults(sim);save()}
-function renderSchemeSoft(sim){ // перерисовка с сохранением фокуса в поле эффективности
- const a=document.activeElement,id=a&&a.id;renderScheme(sim);if(id){const el=document.getElementById(id);if(el)el.focus()}}
 
-document.getElementById('btn-reset').onclick=()=>{state=fresh();renderInputs();renderNormSelect();update()};
-document.getElementById('btn-copy').onclick=async ev=>{
- const txt=JSON.stringify({q:state.q,influent:state.c,scheme:state.steps},null,2);
- try{await navigator.clipboard.writeText(txt);ev.target.textContent='Скопировано'}catch(e){ev.target.textContent='Не удалось скопировать'}
- setTimeout(()=>ev.target.textContent='Копировать схему (JSON)',1600)};
+function update(keepFocus){
+ const sim=SeshatModel.simulate(state);
+ const a=document.activeElement,id=keepFocus&&a&&a.id;
+ renderScheme(sim);
+ if(id){const el=document.getElementById(id);if(el)el.focus()}
+ renderResults(sim);renderBars();saveState();
+}
 
-renderPresets();renderInputs();renderLibrary();renderNormSelect();update();
+/* ---------- выгрузка и загрузка библиотеки ---------- */
+document.getElementById('btn-export').onclick=()=>{
+ if(!store.count()){toast('В библиотеке пока ничего нет. Сохраните профиль, схему или нормативы.');return}
+ const blob=new Blob([JSON.stringify(store.exportAll(),null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download=`seshat-библиотека-${new Date().toISOString().slice(0,10)}.json`;
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+document.getElementById('file-import').addEventListener('change',async ev=>{
+ const f=ev.target.files[0];ev.target.value='';if(!f)return;
+ try{
+  const r=store.importAll(JSON.parse(await f.text()));
+  toast(`Загружено: ${r.added} новых, ${r.updated} обновлено${r.skipped?`, ${r.skipped} пропущено с ошибками`:''}.`);
+  renderBars();
+ }catch(e){toast(e instanceof SyntaxError?'Файл повреждён: это не JSON.':e.message)}
+});
+
+Object.keys(KINDS).forEach(bindBar);
+renderInputs();renderLibrary();update();

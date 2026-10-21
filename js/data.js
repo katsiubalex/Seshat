@@ -47,10 +47,11 @@
     { id: 'uv', st: 'dis', n: 'УФ-обеззараживание', d: 'На химические показатели не влияет; микробиология не моделируется.', eff: {}, en: 0.03 }
   ];
 
+  // n — название профиля стоков, sn — название схемы-примера для него
   const PRESETS = [
-    { n: 'Городские бытовые', q: 20000, c: { ss: 220, bod: 200, cod: 400, nh4: 30, no2: 0, no3: 0.5, p: 4.5, oil: 2, fat: 40 }, scheme: ['screens', 'sand', 'primary', 'a2o', 'chemP', 'filter', 'uv'] },
-    { n: 'Молочный завод', q: 800, c: { ss: 450, bod: 1500, cod: 2600, nh4: 40, no2: 0, no3: 1, p: 20, oil: 1, fat: 300 }, scheme: ['screens', 'grease', 'daf', 'mle', 'chemP', 'uv'] },
-    { n: 'Ливневые / АЗС', q: 300, c: { ss: 600, bod: 30, cod: 120, nh4: 2, no2: 0.05, no3: 1, p: 0.5, oil: 60, fat: 0 }, scheme: ['sand', 'grease', 'primary', 'filter', 'gac'] }
+    { n: 'Городские бытовые', sn: 'Городские: A²/O + доочистка', q: 20000, c: { ss: 220, bod: 200, cod: 400, nh4: 30, no2: 0, no3: 0.5, p: 4.5, oil: 2, fat: 40 }, scheme: ['screens', 'sand', 'primary', 'a2o', 'chemP', 'filter', 'uv'] },
+    { n: 'Молочный завод', sn: 'Молочный завод: флотация + Д-Н', q: 800, c: { ss: 450, bod: 1500, cod: 2600, nh4: 40, no2: 0, no3: 1, p: 20, oil: 1, fat: 300 }, scheme: ['screens', 'grease', 'daf', 'mle', 'chemP', 'uv'] },
+    { n: 'Ливневые / АЗС', sn: 'Ливневые: отстаивание + сорбция', q: 300, c: { ss: 600, bod: 30, cod: 120, nh4: 2, no2: 0.05, no3: 1, p: 0.5, oil: 60, fat: 0 }, scheme: ['sand', 'grease', 'primary', 'filter', 'gac'] }
   ];
 
   // ПДК рыбохозяйственных водоёмов (Приказ Минсельхоза России № 552) в пересчёте на N и P.

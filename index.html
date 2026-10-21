@@ -17,15 +17,19 @@
       <p class="sub">Задайте состав сточных вод, соберите схему из технологий справочника НДТ и посмотрите, что получится на выходе по каждому показателю.</p>
     </div>
     <div class="toolbar">
-      <button id="btn-reset" type="button">Сбросить к примеру</button>
-      <button id="btn-copy" type="button">Копировать схему (JSON)</button>
+      <p class="lib-note">Сохранённое хранится в этом браузере. Чтобы перенести на другой компьютер, выгрузите библиотеку в файл.</p>
+      <div class="toolbar-btns">
+        <button id="btn-export" type="button">Выгрузить библиотеку</button>
+        <input id="file-import" type="file" accept=".json,application/json" class="visually-hidden">
+        <label class="btn" for="file-import">Загрузить из файла</label>
+      </div>
     </div>
   </header>
 
   <div class="grid">
     <section class="panel" aria-labelledby="h-in">
       <div class="panel-head"><h2 id="h-in">Исходные стоки</h2></div>
-      <div class="presets" id="presets"></div>
+      <div class="saved" id="bar-influent"></div>
       <div class="fields" id="inputs"></div>
     </section>
 
@@ -37,6 +41,7 @@
 
     <section class="panel col-scheme" aria-labelledby="h-sch">
       <div class="panel-head"><h2 id="h-sch">Схема очистки</h2><span class="hint" id="sch-count"></span></div>
+      <div class="saved" id="bar-scheme"></div>
       <div class="flow" id="scheme"></div>
     </section>
   </div>
@@ -44,18 +49,18 @@
   <section class="panel" aria-labelledby="h-res">
     <div class="panel-head">
       <h2 id="h-res">Результат</h2>
-      <label style="display:flex;gap:8px;align-items:center;font-size:13px">Нормативы
-        <select id="norm-set" style="width:auto"></select>
-      </label>
     </div>
+    <div class="norm-pick"><span class="norm-label">Нормативы</span><div class="saved" id="bar-norm"></div></div>
     <div class="summary" id="summary"></div>
     <div class="tbl-wrap"><table id="results"></table></div>
     <div class="advice" id="advice"></div>
     <p class="foot">Модель коэффициентная: каждая ступень снижает концентрации на типовую долю, биологические ступени дополнительно учитывают нитрификацию, денитрификацию с ограничением по органике (≈4 мг БПК₅ на 1 мг N), ассимиляцию азота и фосфора и прирост ила. Это инструмент для подбора и сравнения схем, а не замена расчёта по ASM/ADM или проектного расчёта. ПДК рыбохозяйственных водоёмов даны в пересчёте на N и P; для фосфатов принято значение для эвтрофных водоёмов, для взвешенных веществ норматив задаётся как «фон + 0,25…0,75 мг/л», поэтому впишите своё значение.</p>
   </section>
 </div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="js/data.js"></script>
 <script src="js/model.js"></script>
+<script src="js/store.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -66,3 +66,9 @@ test('цены по умолчанию заданы для всех статей
   const p = defaultPrices();
   for (const k of ['kwh', 'sludge', 'coag', 'floc', 'meth', 'repair', 'capexIdx']) assert.ok(p[k] > 0, k);
 });
+
+test('у всех технологий есть капзатраты и энергия; коагуляция считает реагенты', () => {
+  for (const u of D.UNITS) { assert.ok(u.cx > 0, u.id); assert.ok(u.en >= 0, u.id); }
+  const r = calc(input(city, ['screens', 'coag'], 10000));
+  assert.ok(r.steps[1].reagentKg.coag > 0 && r.steps[1].reagents > 0);
+});

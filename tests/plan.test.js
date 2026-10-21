@@ -46,3 +46,16 @@ test('участок больше суммарной площади сооруж
   const L = layout(city.q, city.scheme);
   assert.ok(L.area.site > L.area.structures);
 });
+
+test('генплан со всеми 40 технологиями сразу: без перекрытий, внутри участка', () => {
+  for (const q of [300, 20000]) {
+    const L = layout(q, D.UNITS.map(u => u.id));
+    const all = [...L.blocks, ...L.aux];
+    for (let i = 0; i < all.length; i++) {
+      const a = all[i];
+      assert.ok(a.x >= 0 && a.y >= 0 && a.x + a.w <= L.site.w && a.y + a.h <= L.site.h, `${q}: ${a.id} вне участка`);
+      for (let j = i + 1; j < all.length; j++) assert.ok(!overlap(a, all[j]), `${q}: ${a.id} и ${all[j].id}`);
+    }
+    assert.ok(Math.max(...L.blocks.map(b => b.row)) >= 1, 'длинная схема переносится на несколько рядов');
+  }
+});

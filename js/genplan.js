@@ -35,21 +35,23 @@ function drawTank(g, x, y, w, h, p, fs) {
   zones.forEach(([name, share], i) => {
     const zw = w * share;
     if (i > 0) el('line', { x1: zx, x2: zx, y1: y, y2: y + h, class: 'gp-wall' }, g);
-    if (name === 'АН' || name === 'АКС') {
+    if (['АН', 'АКС', 'СМ', 'ФЛ', 'pH'].includes(name)) {
       const mx = zx + zw / 2, my = y + h / 2, r = Math.min(zw, h) * 0.16;
       el('circle', { cx: mx, cy: my, r, class: 'gp-mixer' }, g);
       el('path', { d: `M${mx - r} ${my}h${2 * r}M${mx} ${my - r}v${2 * r}`, class: 'gp-mixer gp-spin', style: `transform-origin:${mx}px ${my}px` }, g);
-    } else if (name === 'АЭР' || name === 'O₃' || name === 'МББР') {
+    } else if (name === 'АЭР' || name === 'O₃' || name === 'МББР' || (name === 'АММ' && p.carrier)) {
       const nx = Math.max(2, Math.round(zw / Math.max(4, h / 4))), ny = 3;
       for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) {
         const cx = zx + zw * (a + 0.5) / nx, cy = y + h * (b + 0.5) / ny;
-        el('circle', { cx, cy, r: Math.min(zw / nx, h / ny) * (name === 'МББР' ? 0.22 : 0.12), class: name === 'МББР' ? 'gp-carrier' : 'gp-bubble', style: `animation-delay:${((a * 7 + b * 3) % 10) / 10 * 2}s` }, g);
+        const car = name === 'МББР' || name === 'АММ';
+        el('circle', { cx, cy, r: Math.min(zw / nx, h / ny) * (car ? 0.22 : 0.12), class: car ? 'gp-carrier' : 'gp-bubble', style: `animation-delay:${((a * 7 + b * 3) % 10) / 10 * 2}s` }, g);
       }
     } else if (name === 'МБР') {
       const k = 4;
       for (let a = 0; a < k; a++) el('rect', { x: zx + zw * 0.15 + a * zw * 0.7 / k, y: y + h * 0.2, width: zw * 0.7 / k * 0.6, height: h * 0.6, class: 'gp-membrane' }, g);
     }
-    if (zones.length > 1 || name !== 'АЭР') el('text', { x: zx + zw / 2, y: y + h - fs * 0.35, class: 'gp-zone', 'font-size': fs * 0.75 }, g).textContent = name;
+    // подпись зоны — только если помещается в неё
+    if ((zones.length > 1 || name !== 'АЭР') && zw > name.length * fs * 0.6 + fs * 0.4 && h > fs * 1.3) el('text', { x: zx + zw / 2, y: y + h - fs * 0.35, class: 'gp-zone', 'font-size': fs * 0.75 }, g).textContent = name;
     zx += zw;
   });
   if (p.aer && !zones.length) {
@@ -57,6 +59,7 @@ function drawTank(g, x, y, w, h, p, fs) {
     for (let a = 0; a < nx; a++) el('circle', { cx: x + w * (a + 0.5) / nx, cy: y + h * 0.25, r: Math.min(h * 0.08, 0.8), class: 'gp-bubble', style: `animation-delay:${(a % 5) * 0.4}s` }, g);
   }
   if (p.baffle) el('line', { x1: x + w * 0.75, x2: x + w * 0.75, y1: y, y2: y + h, class: 'gp-wall gp-dash' }, g);
+  if (p.lamella) { const k = Math.max(4, Math.round(w / 2)); for (let i = 1; i < k; i++) el('line', { x1: x + w * i / k - h * 0.15, x2: x + w * i / k + h * 0.15, y1: y + h * 0.15, y2: y + h * 0.85, class: 'gp-wall' }, g); }
   if (p.float) el('rect', { x, y, width: w, height: h * 0.22, class: 'gp-foam' }, g);
   if (p.carrier && !zones.length) { /* носители рисуются в зоне МББР */ }
   el('rect', { x, y, width: w, height: h, class: 'gp-edge' }, g);
@@ -102,15 +105,37 @@ function drawCols(g, x, y, w, h) {
   }
   el('rect', { x, y, width: w, height: h, class: 'gp-edge' }, g);
 }
-function drawSbr(g, x, y, w, h, fs) {
+function drawSbr(g, x, y, w, h, fs, label) {
   const n = 4, cw = w / 2, ch = h / 2, gp = Math.min(cw, ch) * 0.08;
   for (let i = 0; i < n; i++) {
     const px = x + (i % 2) * cw + gp / 2, py = y + Math.floor(i / 2) * ch + gp / 2;
     el('rect', { x: px, y: py, width: cw - gp, height: ch - gp, class: 'gp-water' }, g);
     el('rect', { x: px, y: py, width: cw - gp, height: ch - gp, class: 'gp-edge' }, g);
     el('line', { x1: px + (cw - gp) * 0.2, x2: px + (cw - gp) * 0.8, y1: py + (ch - gp) * 0.8, y2: py + (ch - gp) * 0.8, class: 'gp-wall' }, g);
-    el('text', { x: px + (cw - gp) / 2, y: py + (ch - gp) / 2 + fs * 0.25, class: 'gp-zone', 'font-size': fs * 0.7 }, g).textContent = 'SBR ' + (i + 1);
+    if (cw > fs * 3.2 && ch > fs * 1.2) el('text', { x: px + (cw - gp) / 2, y: py + (ch - gp) / 2 + fs * 0.25, class: 'gp-zone', 'font-size': fs * 0.7 }, g).textContent = (label || 'SBR') + ' ' + (i + 1);
   }
+}
+// Окислительный канал: кольцо воды вокруг разделительной стенки, аэраторы на прямых участках
+function drawDitch(g, x, y, w, h) {
+  const r = h / 2;
+  el('rect', { x, y, width: w, height: h, rx: r, class: 'gp-water' }, g);
+  el('rect', { x, y, width: w, height: h, rx: r, class: 'gp-edge' }, g);
+  const iw = w - h * 0.9, ih = h * 0.22;
+  el('rect', { x: x + (w - iw) / 2, y: y + (h - ih) / 2, width: iw, height: ih, rx: ih / 2, class: 'gp-bld' }, g);
+  for (const fx of [0.3, 0.7]) {
+    el('line', { x1: x + w * fx, x2: x + w * fx, y1: y + h * 0.04, y2: y + (h - ih) / 2 - h * 0.04, class: 'gp-mixer' }, g);
+    el('line', { x1: x + w * (1 - fx), x2: x + w * (1 - fx), y1: y + (h + ih) / 2 + h * 0.04, y2: y + h * 0.96, class: 'gp-mixer' }, g);
+  }
+}
+// Биоплато: поля с тростником
+function drawWetland(g, x, y, w, h) {
+  el('rect', { x, y, width: w, height: h, class: 'gp-reed-bed' }, g);
+  const k = Math.max(2, Math.round(w / h * 2));
+  for (let i = 1; i < k; i++) el('line', { x1: x + w * i / k, x2: x + w * i / k, y1: y, y2: y + h, class: 'gp-wall' }, g);
+  const n = Math.min(160, Math.round(w * h / 60));
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++) el('circle', { cx: x + rnd() * w, cy: y + rnd() * h, r: Math.min(w, h) * 0.012 + 0.3, class: 'gp-reed' }, g);
+  el('rect', { x, y, width: w, height: h, class: 'gp-edge' }, g);
 }
 function drawChannel(g, x, y, w, h) {
   el('rect', { x, y, width: w, height: h, class: 'gp-bld' }, g);
@@ -130,7 +155,9 @@ function drawUnit(svg, b, i, stepEco, fs) {
     else if (part.kind === 'bld') drawBld(g, x, y, part.w, part.h, P.label, fs);
     else if (part.kind === 'cells') drawCells(g, x, y, part.w, part.h);
     else if (part.kind === 'cols') drawCols(g, x, y, part.w, part.h);
-    else if (part.kind === 'sbr') drawSbr(g, x, y, part.w, part.h, fs);
+    else if (part.kind === 'sbr') drawSbr(g, x, y, part.w, part.h, fs, P.reactor);
+    else if (part.kind === 'ditch') drawDitch(g, x, y, part.w, part.h);
+    else if (part.kind === 'wetland') drawWetland(g, x, y, part.w, part.h);
     else if (part.kind === 'channel') drawChannel(g, x, y, part.w, part.h);
     else drawTank(g, x, y, part.w, part.h, P, fs);
     y += part.h + SeshatPlan.GAP * 0.6;

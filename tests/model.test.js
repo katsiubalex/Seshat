@@ -81,3 +81,16 @@ test('нормативы НДТ (ПП № 1430): категории по рас�
   assert.equal(D.NORMS.ndt_sБ.v.oil, 1);
   assert.equal(D.NORMS.ndt_sБ.v.nh4, null);
 });
+
+test('новые технологии: UASB для концентрированных стоков, предупреждения применимости', () => {
+  const dairy = D.PRESETS[1];
+  const r = run(dairy, ['screens', 'daf', 'uasb', 'mle']);
+  assert.ok(r.warns[2].every(w => !/вторая аэробная/.test(w)), 'UASB + аэробная ступень — не «вторая подряд»');
+  assert.ok(r.warns[3].every(w => !/вторая аэробная/.test(w)));
+  assert.ok(run(city, ['uasb']).warns[0].some(w => /концентрированные стоки/.test(w)));
+  assert.ok(run(city, ['uasb']).warns[0].some(w => /аэробная доочистка/.test(w)));
+  assert.ok(run(city, ['anammox']).warns[0].some(w => /Анаммокс/.test(w)));
+  assert.ok(run(city, ['screens', 'sand', 'primary', 'a2o', 'hypo']).warns[4].some(w => /дехлорация/.test(w)));
+  const bard = last(run(city, ['screens', 'sand', 'bardenpho'])), mle = last(run(city, ['screens', 'sand', 'mle']));
+  assert.ok(bard.no3 < mle.no3 && bard.p < mle.p, 'Bardenpho удаляет азот и фосфор глубже Д-Н');
+});

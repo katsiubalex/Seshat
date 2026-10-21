@@ -31,6 +31,7 @@
       let coag = 0, floc = 0, meth = 0;
       if (u.id === 'chemP') coag = R.coagPerP * ps.dP * tm3;
       if (u.id === 'daf') { coag = R.dafCoag * q; floc = R.dafFloc * q; }
+      if (u.id === 'coag') { coag = R.coagDose * q; floc = R.coagFloc * q; }
       if (u.id === 'denf') meth = R.methPerN * ps.dNOx * tm3;
       const row = {
         u: u.id,

@@ -251,12 +251,33 @@ function renderInputs(){
 document.getElementById('inputs').addEventListener('input',ev=>{const t=ev.target,v=parseNum(t.value);markInvalid(t,v);if(Number.isNaN(v))return;if(t.id==='in-q')state.q=v||0;else state.c[t.id.slice(3)]=v||0;update()});
 /* ---------- каталог ---------- */
 function effChips(eff){return Object.entries(eff).filter(([,v])=>v>0).map(([k,v])=>`<span class="chip">${SHORT[k]} −${v}%</span>`).join('')}
+// Каталог: поиск по названию и описанию, стадии сворачиваются. Открытость стадий запоминается.
+const libUI = { q: '', closed: new Set() };
+try { JSON.parse(localStorage.getItem('seshat-lib-closed') || '[]').forEach(x => libUI.closed.add(x)); } catch (e) {}
 function renderLibrary(){
- const box=document.getElementById('library');
- box.innerHTML=STAGES.map(s=>`<div class="stage"><div class="stage-name"><span class="dot" style="background:${s.c}"></span>${s.n}</div>`+
-  UNITS.filter(u=>u.st===s.id).map(u=>`<div class="lib-item" style="--c:${s.c}">${SeshatIcons.icon(u.id,44)}<div><b>${esc(u.n)}</b><p>${esc(u.d)}</p></div><button type="button" data-add="${u.id}" aria-label="Добавить: ${esc(u.n)}">+</button></div>`).join('')+'</div>').join('');
- box.onclick=ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps.push(mk(b.dataset.add));update()};
+ const box=document.getElementById('library'), q=libUI.q.trim().toLowerCase().replace(/ё/g,'е');
+ // ищем по названию, краткому описанию и описанию принципа работы (plan.js)
+ const text=u=>(u.n+' '+u.d+' '+((window.SeshatPlan&&SeshatPlan.PLAN[u.id]||{}).how||'')).toLowerCase().replace(/ё/g,'е');
+ const stem=q.length>5?q.slice(0,-2):q; // грубая основа слова: «фосфор» найдёт и «фосфаты»
+ const match=u=>!q||text(u).includes(stem);
+ let found=0;
+ const html=STAGES.map(s=>{
+  const list=UNITS.filter(u=>u.st===s.id&&match(u)); found+=list.length;
+  if(!list.length)return '';
+  const open=q||!libUI.closed.has(s.id);
+  return `<details class="stage" data-st="${s.id}" ${open?'open':''}><summary class="stage-name"><span class="dot" style="background:${s.c}"></span>${s.n}<span class="stage-count">${list.length}</span></summary><div class="stage-items">`+
+   list.map(u=>`<div class="lib-item" style="--c:${s.c}">${SeshatIcons.icon(u.id,44)}<div><b>${esc(u.n)}</b><p>${esc(u.d)}</p></div><button type="button" data-add="${u.id}" aria-label="Добавить: ${esc(u.n)}">+</button></div>`).join('')+'</div></details>';
+ }).join('');
+ box.innerHTML=html||`<div class="empty">Ничего не найдено по запросу «${esc(libUI.q)}».</div>`;
+ document.getElementById('lib-count').textContent=q?`${found} из ${UNITS.length}`:`${UNITS.length} технологий`;
 }
+document.getElementById('library').addEventListener('click',ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps.push(mk(b.dataset.add));update()});
+document.getElementById('library').addEventListener('toggle',ev=>{
+ const d=ev.target; if(!d.dataset||!d.dataset.st||libUI.q)return;
+ if(d.open)libUI.closed.delete(d.dataset.st);else libUI.closed.add(d.dataset.st);
+ try{localStorage.setItem('seshat-lib-closed',JSON.stringify([...libUI.closed]))}catch(e){}
+},true);
+document.getElementById('lib-search').addEventListener('input',ev=>{libUI.q=ev.target.value;renderLibrary()});
 /* ---------- схема ---------- */
 function renderScheme(sim){
  const box=document.getElementById('scheme');

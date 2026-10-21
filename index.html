@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Сешат — конструктор очистных НДТ</title>
 <meta name="description" content="Сешат — конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.13.0">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.14.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.13.0">
+<link rel="stylesheet" href="css/style.css?v=0.14.0">
 </head>
 <body>
 <div class="app">
@@ -82,7 +82,8 @@
     </section>
 
     <section class="panel" aria-labelledby="h-lib">
-      <div class="panel-head"><h2 id="h-lib">Каталог технологий</h2></div>
+      <div class="panel-head"><h2 id="h-lib">Каталог технологий</h2><span class="hint" id="lib-count"></span></div>
+      <input id="lib-search" class="lib-search" type="search" placeholder="Найти технологию: «мембран», «азот», «фосфор»…" aria-label="Поиск по каталогу технологий">
       <p class="hint">Нажмите «+», чтобы добавить ступень в конец схемы. Эффективности типовые; их можно изменить в самой схеме.</p>
       <div class="lib-list" id="library"></div>
     </section>
@@ -216,7 +217,7 @@
     <h2 id="ab-learn">Чему можно научиться</h2>
     <ul class="about-list">
       <li>Как состав сточных вод влияет на выбор технологий: городские стоки, жирные стоки пищевого производства, ливневые стоки с нефтепродуктами.</li>
-      <li>Что делает каждое из 18 сооружений — от решёток и песколовок до мембранного биореактора и обратного осмоса.</li>
+      <li>Что делает каждое из 40 сооружений — от решёток и песколовок до анаэробных реакторов, мембран и обратного осмоса.</li>
       <li>Как удаляют азот и фосфор и почему для этого нужны отдельные зоны и реагенты.</li>
       <li>Как сравнивать варианты: по выполнению нормативов, капитальным и эксплуатационным затратам, энергии и количеству осадка.</li>
       <li>Как станция выглядит на генплане и сколько места она занимает.</li>
@@ -281,18 +282,18 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.13.0"></script>
-<script src="js/model.js?v=0.13.0"></script>
-<script src="js/icons.js?v=0.13.0"></script>
-<script src="js/economics.js?v=0.13.0"></script>
-<script src="js/store.js?v=0.13.0"></script>
-<script src="js/compare.js?v=0.13.0"></script>
-<script src="js/app.js?v=0.13.0"></script>
-<script src="js/plan.js?v=0.13.0"></script>
-<script src="js/oracle.js?v=0.13.0"></script>
-<script src="js/projects.js?v=0.13.0"></script>
-<script src="js/genplan.js?v=0.13.0"></script>
-<script src="js/seshat.js?v=0.13.0"></script>
-<script src="js/main.js?v=0.13.0"></script>
+<script src="js/data.js?v=0.14.0"></script>
+<script src="js/model.js?v=0.14.0"></script>
+<script src="js/icons.js?v=0.14.0"></script>
+<script src="js/economics.js?v=0.14.0"></script>
+<script src="js/store.js?v=0.14.0"></script>
+<script src="js/compare.js?v=0.14.0"></script>
+<script src="js/app.js?v=0.14.0"></script>
+<script src="js/plan.js?v=0.14.0"></script>
+<script src="js/oracle.js?v=0.14.0"></script>
+<script src="js/projects.js?v=0.14.0"></script>
+<script src="js/genplan.js?v=0.14.0"></script>
+<script src="js/seshat.js?v=0.14.0"></script>
+<script src="js/main.js?v=0.14.0"></script>
 </body>
 </html>

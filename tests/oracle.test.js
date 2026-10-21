@@ -68,3 +68,11 @@ test('внешний источник ответов используется д
   assert.match((await O.ask({ text: 'как работает МБР' }, ctx())).text, /Мембранный/);
   O.setProvider(null);
 });
+
+test('Сешат знает новые технологии и предлагает UASB для концентрированных стоков', () => {
+  for (const [q, id] of [['что такое окислительный канал', 'oxid'], ['как работает анаммокс', 'anammox'], ['биоплато', 'wetland'], ['хлорирование', 'hypo'], ['ультрафильтрация', 'uf'], ['гранулированный ил', 'ags'], ['UASB', 'uasb']]) {
+    assert.ok(O.local({ text: q }, ctx()).text.startsWith(U[id].n), q);
+  }
+  const dairy = D.PRESETS[1];
+  assert.ok(O.recommendSteps(ctx({ q: dairy.q, c: dairy.c })).steps.includes('uasb'));
+});

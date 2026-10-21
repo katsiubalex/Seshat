@@ -261,7 +261,7 @@ function renderLibrary(){
 function renderScheme(sim){
  const box=document.getElementById('scheme');
  document.getElementById('sch-count').textContent=state.steps.length?`${state.steps.length} ступ.`:'';
- if(!state.steps.length){box.innerHTML=`<div class="empty">Схема пуста. Добавьте ступени из каталога, начиная с механической очистки.</div>`;return}
+ if(!state.steps.length){box.innerHTML=`<div class="empty">Натяните шнур: добавьте первую ступень из каталога. Обычно станция начинается с решёток и песколовок.</div>`;return}
  const open=new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.i));
  let h=`<div class="terminal"><span>Вход: ${fmt(state.q)} м³/сут</span><span>БПК₅ ${fmt(state.c.bod)} · N-NH₄ ${fmt(state.c.nh4)} · P ${fmt(state.c.p)}</span></div>`;
  state.steps.forEach((st,i)=>{

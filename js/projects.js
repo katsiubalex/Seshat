@@ -2,10 +2,11 @@
 // Использует общие функции и состояние конструктора из app.js. Проекты сохраняются сразу при любом изменении.
 
 /* ---------- навигация ---------- */
-const VIEWS = ['home', 'constructor', 'projects', 'genplan', 'docs', 'about'];
+const VIEWS = ['seshat', 'constructor', 'projects', 'genplan', 'docs', 'about'];
 const VIEW_RENDER = { projects: () => renderProjects() }; // разделы, которые перерисовываются при открытии
 function showView(view) {
-  if (!VIEWS.includes(view)) view = 'home';
+  if (view === 'home') view = 'seshat'; // старые ссылки на главную
+  if (!VIEWS.includes(view)) view = 'seshat';
   for (const v of VIEWS) document.getElementById('view-' + v).hidden = v !== view;
   document.querySelectorAll('.nav-link').forEach(a => {
     if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -14,7 +15,7 @@ function showView(view) {
   if (VIEW_RENDER[view]) VIEW_RENDER[view]();
   window.scrollTo(0, 0);
 }
-function viewFromHash() { return (location.hash || '#home').slice(1); }
+function viewFromHash() { return (location.hash || '#seshat').slice(1); }
 window.addEventListener('hashchange', () => showView(viewFromHash()));
 function go(view) { if (viewFromHash() === view) showView(view); else location.hash = view; }
 

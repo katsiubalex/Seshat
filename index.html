@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Сешат — конструктор очистных НДТ</title>
 <meta name="description" content="Сешат — конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.11.1">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.12.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.11.1">
+<link rel="stylesheet" href="css/style.css?v=0.12.0">
 </head>
 <body>
 <div class="app">
@@ -195,7 +195,68 @@
     </section>
   </div>
 </div>
-<div class="wrap view" id="view-about" hidden></div>
+<div class="wrap view about-page" id="view-about" hidden>
+  <header class="about-head">
+    <h1>О проекте</h1>
+    <p class="about-lead">Сешат — обучающая программа по очистке сточных вод. Она помогает разобраться, как устроены очистные сооружения, зачем нужна каждая ступень и от чего зависят качество очищенной воды и стоимость станции.</p>
+  </header>
+
+  <section class="panel about-block" aria-labelledby="ab-who">
+    <h2 id="ab-who">Для кого</h2>
+    <ul class="about-list">
+      <li><b>Студенты</b> направлений «Водоснабжение и водоотведение», «Экология и природопользование», «Техносферная безопасность» — чтобы увидеть на практике то, что изучают в курсе очистки сточных вод.</li>
+      <li><b>Преподаватели</b> — чтобы показывать на занятиях, как меняется вода от ступени к ступени и как выбор технологии отражается на затратах.</li>
+      <li><b>Начинающие инженеры</b> — чтобы быстро прикинуть варианты схем и понять, какие вопросы задавать при проектировании.</li>
+    </ul>
+  </section>
+
+  <section class="panel about-block" aria-labelledby="ab-learn">
+    <h2 id="ab-learn">Чему можно научиться</h2>
+    <ul class="about-list">
+      <li>Как состав сточных вод влияет на выбор технологий: городские стоки, жирные стоки пищевого производства, ливневые стоки с нефтепродуктами.</li>
+      <li>Что делает каждое из 18 сооружений — от решёток и песколовок до мембранного биореактора и обратного осмоса.</li>
+      <li>Как удаляют азот и фосфор и почему для этого нужны отдельные зоны и реагенты.</li>
+      <li>Как сравнивать варианты: по выполнению нормативов, капитальным и эксплуатационным затратам, энергии и количеству осадка.</li>
+      <li>Как станция выглядит на генплане и сколько места она занимает.</li>
+    </ul>
+  </section>
+
+  <section class="panel about-block" aria-labelledby="ab-how">
+    <h2 id="ab-how">С чего начать</h2>
+    <ol class="about-steps">
+      <li>Откройте <a href="#constructor" data-go="constructor">конструктор</a> и выберите один из примеров стоков.</li>
+      <li>Соберите схему из каталога и посмотрите, как меняются показатели воды после каждой ступени.</li>
+      <li>Сравните результат с нормативами. Если какой-то показатель не проходит, воспользуйтесь подсказками под таблицей.</li>
+      <li>Создайте <a href="#projects" data-go="projects">проект</a> и добавьте в него два-три варианта схемы, чтобы сравнить их по качеству воды и затратам.</li>
+      <li>Откройте <a href="#genplan" data-go="genplan">генплан</a> и нажимайте на сооружения, чтобы прочитать, как они работают.</li>
+      <li>Если что-то непонятно, спросите Сешат: нажмите на эмблему в правом верхнем углу.</li>
+    </ol>
+  </section>
+
+  <section class="panel about-block about-note" aria-labelledby="ab-limits">
+    <h2 id="ab-limits">Важно знать</h2>
+    <p>Расчёты в программе упрощены для обучения. Эффективности сооружений, площади и цены — типовые ориентиры, а не результаты проектного расчёта. Для реального объекта сооружения рассчитывают по своду правил СП&nbsp;32.13330 и справочникам наилучших доступных технологий, а биологическую очистку — по моделям активного ила.</p>
+    <p>Программа названа в честь древнеегипетской богини Сешат, покровительницы письма, счёта и измерений. Все ваши схемы и проекты хранятся только в этом браузере.</p>
+  </section>
+
+  <section class="panel contacts" aria-labelledby="ab-contacts">
+    <h2 id="ab-contacts">Контакты</h2>
+    <p>Разработчик — <b>Александр Кацюба</b>. Буду рад сотрудничеству и обратной связи: идеям, замечаниям и сообщениям о найденных ошибках.</p>
+    <ul class="contact-list">
+      <li>
+        <span class="contact-k">Telegram</span>
+        <a class="contact-v" href="https://t.me/katsiubalex_DM" target="_blank" rel="noopener">@katsiubalex_DM</a>
+        <button type="button" class="copy" data-copy="@katsiubalex_DM">Копировать</button>
+      </li>
+      <li>
+        <span class="contact-k">Почта</span>
+        <a class="contact-v" href="mailto:katsiubalex@proton.me">katsiubalex@proton.me</a>
+        <button type="button" class="copy" data-copy="katsiubalex@proton.me">Копировать</button>
+      </li>
+    </ul>
+    <p class="contact-meta">Версия <span data-app-version>—</span> · <a href="https://github.com/katsiubalex/Seshat" target="_blank" rel="noopener">исходный код на GitHub</a></p>
+  </section>
+</div>
 </main>
 </div>
 <button type="button" class="orb" id="orb" aria-label="Поговорить с Сешат" title="Поговорить с Сешат" aria-haspopup="dialog" aria-controls="mini" aria-expanded="false">
@@ -218,18 +279,18 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.11.1"></script>
-<script src="js/model.js?v=0.11.1"></script>
-<script src="js/icons.js?v=0.11.1"></script>
-<script src="js/economics.js?v=0.11.1"></script>
-<script src="js/store.js?v=0.11.1"></script>
-<script src="js/compare.js?v=0.11.1"></script>
-<script src="js/app.js?v=0.11.1"></script>
-<script src="js/plan.js?v=0.11.1"></script>
-<script src="js/oracle.js?v=0.11.1"></script>
-<script src="js/projects.js?v=0.11.1"></script>
-<script src="js/genplan.js?v=0.11.1"></script>
-<script src="js/seshat.js?v=0.11.1"></script>
-<script src="js/main.js?v=0.11.1"></script>
+<script src="js/data.js?v=0.12.0"></script>
+<script src="js/model.js?v=0.12.0"></script>
+<script src="js/icons.js?v=0.12.0"></script>
+<script src="js/economics.js?v=0.12.0"></script>
+<script src="js/store.js?v=0.12.0"></script>
+<script src="js/compare.js?v=0.12.0"></script>
+<script src="js/app.js?v=0.12.0"></script>
+<script src="js/plan.js?v=0.12.0"></script>
+<script src="js/oracle.js?v=0.12.0"></script>
+<script src="js/projects.js?v=0.12.0"></script>
+<script src="js/genplan.js?v=0.12.0"></script>
+<script src="js/seshat.js?v=0.12.0"></script>
+<script src="js/main.js?v=0.12.0"></script>
 </body>
 </html>

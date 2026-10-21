@@ -7,5 +7,11 @@
     const a = ev.target.closest('[data-go]'); if (!a) return;
     ev.preventDefault(); go(a.dataset.go);
   });
+  // Кнопки «Копировать» в контактах
+  document.addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-copy]'); if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.copy); toast('Скопировано: ' + b.dataset.copy); }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); toast('Выделено — нажмите Ctrl+C'); }
+  });
   showView(viewFromHash());
 })();

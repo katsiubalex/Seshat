@@ -14,6 +14,7 @@ function showView(view) {
   document.body.dataset.view = view;
   if (VIEW_RENDER[view]) VIEW_RENDER[view]();
   window.scrollTo(0, 0);
+  document.dispatchEvent(new CustomEvent('viewchange', { detail: view }));
 }
 function viewFromHash() { return (location.hash || '#seshat').slice(1); }
 window.addEventListener('hashchange', () => showView(viewFromHash()));

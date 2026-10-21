@@ -109,3 +109,32 @@ document.addEventListener('keydown', ev => {
 window.addEventListener('resize', () => { if (document.body.dataset.view === 'seshat') drawSky(); });
 
 VIEW_RENDER.seshat = () => { drawSky(); startTalk(); };
+
+/* ---------- эмблема: перелетает между центром экрана диалога и правым верхним углом ---------- */
+const orb = document.getElementById('orb');
+const DOCK = 56;
+function placeOrb(animate) {
+  const big = document.body.dataset.view === 'seshat';
+  const vw = document.documentElement.clientWidth;
+  let x, y, size;
+  if (big) {
+    const r = document.getElementById('orb-slot').getBoundingClientRect();
+    x = r.left; y = r.top; size = r.width;
+  } else {
+    const small = vw <= 860; // на телефоне меню сверху — эмблема поменьше, в строке с логотипом
+    size = small ? 38 : DOCK; x = vw - size - (small ? 12 : 16); y = small ? 9 : 16;
+  }
+  if (!animate) orb.classList.add('no-anim');
+  orb.classList.toggle('big', big);
+  orb.tabIndex = big ? -1 : 0;
+  if (big) orb.setAttribute('aria-hidden', 'true'); else orb.removeAttribute('aria-hidden');
+  Object.assign(orb.style, { left: x + 'px', top: y + 'px', width: size + 'px', height: size + 'px' });
+  if (!animate) { orb.getBoundingClientRect(); requestAnimationFrame(() => orb.classList.remove('no-anim')); }
+}
+let orbReady = false;
+document.addEventListener('viewchange', () => { placeOrb(orbReady); orbReady = true; });
+window.addEventListener('resize', () => placeOrb(false));
+// место под эмблему может сдвинуться (шрифты, длина диалога) — следим за ним
+if (window.ResizeObserver) new ResizeObserver(() => { if (document.body.dataset.view === 'seshat' && orbReady) placeOrb(false); }).observe(document.getElementById('view-seshat'));
+window.addEventListener('scroll', () => { if (document.body.dataset.view === 'seshat') placeOrb(false); }, { passive: true });
+orb.addEventListener('click', () => { if (document.body.dataset.view !== 'seshat') go('seshat'); });

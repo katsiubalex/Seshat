@@ -368,13 +368,9 @@ a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .temple .dune{fill:#0A1A22}
 .temple .cols rect{fill:#0D222C;stroke:rgba(217,182,106,.18);stroke-width:1}
 .cord-scene path{fill:none;stroke:rgba(217,182,106,.45);stroke-width:1.5;stroke-dasharray:6 5}
-.leader{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px 24px}
+.leader{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;align-self:start;padding:36px 16px 24px}
 .leader-portrait{position:relative;margin:0;width:min(32vh,270px);aspect-ratio:1;max-width:100%;display:grid;place-items:center}
-.leader-portrait svg{position:relative;width:78%;height:auto;color:#D9B66A;filter:drop-shadow(0 0 18px rgba(217,182,106,.35))}
-.halo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(217,182,106,.28) 0%,rgba(217,182,106,.08) 45%,transparent 70%);border:1px solid rgba(217,182,106,.25)}
-@media (prefers-reduced-motion:no-preference){.halo{animation:halo 6s ease-in-out infinite}.leader-portrait svg{animation:rise .9s ease-out both}}
 @keyframes halo{50%{transform:scale(1.04);opacity:.8}}
-@keyframes rise{from{transform:translateY(10px);opacity:.4}}
 .dialog{position:relative;width:min(940px,100%);margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:0 22px;display:flex;flex-direction:column;gap:10px}
 .dlg-log{max-height:34vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:16px 18px;border:1px solid rgba(217,182,106,.45);border-radius:6px;background:rgba(8,19,28,.86);box-shadow:0 10px 40px rgba(0,0,0,.4)}
 .dlg-line{display:flex;flex-direction:column;gap:3px}
@@ -397,3 +393,21 @@ a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dlg-ask button:focus-visible{outline:2px solid #F1DDA8;outline-offset:2px}
 .dlg-note{margin:0;font-size:11.5px;color:#8A93A0;text-align:center}
 @media (max-width:600px){.leader{padding-top:24px}.leader-portrait{width:150px}.dlg-log{max-height:42vh}.dlg-line p{font-size:14.5px}}
+
+/* ---------- эмблема Сешат: большая на экране диалога, маленькая в правом верхнем углу везде ---------- */
+.orb{position:fixed;z-index:30;left:0;top:0;width:56px;height:56px;padding:0;border-radius:50%;border:1px solid rgba(217,182,106,.55);
+  background:radial-gradient(circle,#17394A 0%,#0B1B26 75%);color:#D9B66A;display:grid;place-items:center;cursor:pointer;
+  box-shadow:0 6px 18px rgba(8,19,28,.35)}
+.orb svg{position:relative;width:74%;height:74%;filter:drop-shadow(0 0 6px rgba(217,182,106,.35))}
+.orb-halo{position:absolute;inset:0;border-radius:50%;opacity:0;background:radial-gradient(circle,rgba(217,182,106,.28) 0%,rgba(217,182,106,.08) 45%,transparent 70%)}
+.orb:hover{border-color:#D9B66A;box-shadow:0 6px 22px rgba(217,182,106,.3)}
+.orb:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.orb.big{background:transparent;border-color:rgba(217,182,106,.25);box-shadow:none;cursor:default;pointer-events:none}
+.orb.big .orb-halo{opacity:1}
+.orb.big svg{width:78%;height:78%;filter:drop-shadow(0 0 18px rgba(217,182,106,.35))}
+@media (prefers-reduced-motion:no-preference){
+  .orb{transition:left .7s cubic-bezier(.65,0,.25,1),top .7s cubic-bezier(.65,0,.25,1),width .7s cubic-bezier(.65,0,.25,1),height .7s cubic-bezier(.65,0,.25,1),background-color .4s,border-color .4s,box-shadow .4s}
+  .orb-halo{transition:opacity .5s}
+  .orb.big .orb-halo{animation:halo 6s ease-in-out infinite}
+}
+.orb.no-anim,.orb.no-anim .orb-halo{transition:none!important}

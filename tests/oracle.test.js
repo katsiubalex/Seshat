@@ -12,6 +12,7 @@ test('приветствие с вариантами ответа', () => {
   const r = O.greet(ctx({ projects: 3 }));
   assert.match(r.text, /Доброе утро/);
   assert.match(r.text, /3 проекта/);
+  assert.doesNotMatch(r.text, /зодчий|шнур|дом книг/);
   assert.equal(r.options.length, O.MENU.length);
 });
 
@@ -27,17 +28,17 @@ test('темы: азот, фосфор, затраты, НДТ, кто ты', ()
   assert.match(O.local({ text: 'фосфор не проходит' }, ctx()).text, /A²\/O/);
   assert.match(O.local({ text: 'дорого, как сэкономить' }, ctx()).text, /электроэнерги/);
   assert.match(O.local({ text: 'что такое НДТ' }, ctx()).text, /ИТС 10/);
-  assert.match(O.local({ text: 'кто ты?' }, ctx()).text, /дома книг/);
+  assert.match(O.local({ text: 'что ты умеешь?' }, ctx()).text, /проверить схему/);
 });
 
 test('разбор схемы: нормативы, совет, затраты', () => {
   const r = O.local({ id: 'review' }, ctx());
-  assert.match(r.text, /из 7 ступеней/);
+  assert.match(r.text, /В вашей схеме 7 ступеней/);
   assert.match(r.text, /Нормативы выполнены по \d+ из \d+/);
-  assert.match(r.text, /добавила/);
+  assert.match(r.text, /Рекомендую добавить/);
   assert.match(r.text, /₽ за кубометр/);
-  assert.match(O.local({ id: 'review' }, ctx({ steps: [] })).text, /Шнур ещё не натянут/);
-  assert.match(O.local({ id: 'review' }, ctx({ steps: [{ u: 'at', eff: { ...U.at.eff } }] })).text, /из 1 ступени/);
+  assert.match(O.local({ id: 'review' }, ctx({ steps: [] })).text, /нет ни одной ступени/);
+  assert.match(O.local({ id: 'review' }, ctx({ steps: [{ u: 'at', eff: { ...U.at.eff } }] })).text, /1 ступень,/);
 });
 
 test('подбор схемы учитывает состав стоков и строгость нормативов', () => {
@@ -62,7 +63,7 @@ test('неизвестный вопрос — честный ответ и ме�
 test('внешний источник ответов используется для свободных вопросов, при ошибке — локальный ответ', async () => {
   O.setProvider(async (q) => ({ text: 'модель: ' + q }));
   assert.equal((await O.ask({ text: 'привет' }, ctx())).text, 'модель: привет');
-  assert.match((await O.ask({ id: 'who' }, ctx())).text, /дома книг/); // варианты меню — без модели
+  assert.match((await O.ask({ id: 'who' }, ctx())).text, /проверить схему/); // варианты меню — без модели
   O.setProvider(async () => { throw new Error('offline'); });
   assert.match((await O.ask({ text: 'как работает МБР' }, ctx())).text, /Мембранный/);
   O.setProvider(null);

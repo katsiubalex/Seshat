@@ -85,7 +85,7 @@ document.getElementById('dlg-options').addEventListener('click', ev => {
       state.ctx = null;
       if (state.ref.scheme && state.ref.scheme[0] !== 'b') state.ref.scheme = fresh().ref.scheme;
       update(); renderCtx();
-      toast('Схема Сешат собрана в конструкторе. Сохраните её кнопкой «Создать схему».');
+      toast('Предложенная схема собрана в конструкторе. Сохраните её кнопкой «Создать схему».');
       go('constructor');
     }
     return;

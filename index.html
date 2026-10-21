@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Сешат — конструктор очистных НДТ</title>
 <meta name="description" content="Сешат — конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.14.0">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.15.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.14.0">
+<link rel="stylesheet" href="css/style.css?v=0.15.0">
 </head>
 <body>
 <div class="app">
@@ -163,41 +163,7 @@
     <aside class="panel gp-info" id="gp-info" aria-live="polite"></aside>
   </div>
 </div>
-<div class="wrap view" id="view-docs" hidden>
-  <header>
-    <div>
-      <h1>Нормативные документы</h1>
-      <p class="sub">Документы, на которые опираются проектирование и оценка очистных сооружений в России. Перед использованием проверяйте действующую редакцию в КонсультантПлюс, «Гаранте» или «Кодексе».</p>
-    </div>
-  </header>
-  <div class="docs" id="docs-list">
-    <section class="panel doc-group">
-      <h2>Законы</h2>
-      <article class="doc"><span class="doc-id">416-ФЗ</span><h3>Федеральный закон от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»</h3><p>Основы работы централизованных систем водоотведения: обязанности организаций водопроводно-канализационного хозяйства, программы повышения экологической эффективности, требования к составу сточных вод.</p></article>
-      <article class="doc"><span class="doc-id">7-ФЗ</span><h3>Федеральный закон от 10.01.2002 № 7-ФЗ «Об охране окружающей среды»</h3><p>Вводит наилучшие доступные технологии и технологическое нормирование, комплексные экологические разрешения и плату за негативное воздействие.</p><p class="doc-use">В Сешат: принцип подбора схем из технологий НДТ.</p></article>
-      <article class="doc"><span class="doc-id">74-ФЗ</span><h3>Водный кодекс Российской Федерации от 03.06.2006 № 74-ФЗ</h3><p>Использование и охрана водных объектов, условия сброса сточных вод, нормативы допустимого воздействия.</p></article>
-    </section>
-    <section class="panel doc-group">
-      <h2>Наилучшие доступные технологии</h2>
-      <article class="doc"><span class="doc-id">ИТС 10-2019</span><h3>Информационно-технический справочник «Очистка сточных вод с использованием централизованных систем водоотведения поселений, городских округов»</h3><p>Описывает технологии очистки городских сточных вод, относит их к НДТ и приводит достижимые показатели.</p><p class="doc-use">В Сешат: каталог технологий конструктора; эффективности ступеней нужно сверять с этим справочником.</p><p class="doc-link"><a href="https://www.consultant.ru/law/podborki/csv_poselenij_i_gorodskih_okrugov/" target="_blank" rel="noopener">Подборка КонсультантПлюс по ЦСВ поселений ↗</a></p></article>
-      <article class="doc"><span class="doc-id">ПП № 1430</span><h3>Постановление Правительства РФ от 15.09.2020 № 1430</h3><p>Утверждает технологические показатели наилучших доступных технологий в области очистки сточных вод с использованием централизованных систем водоотведения поселений и городских округов.</p><p class="doc-use">В Сешат: наборы нормативов «НДТ» для городских и ливневых стоков; в конструкторе их можно подобрать по расходу и категории водного объекта.</p></article>
-      <article class="doc"><span class="doc-id">ПП № 1379</span><h3>Постановление Правительства РФ от 26.10.2019 № 1379</h3><p>Правила отнесения водных объектов (их частей) к категориям А, Б, В и Г. От категории водного объекта зависят технологические показатели НДТ по постановлению № 1430.</p><p class="doc-use">В Сешат: подсказки к выбору категории водного объекта в конструкторе.</p></article>
-      <article class="doc"><span class="doc-id">ИТС 8-2022</span><h3>Информационно-технический справочник «Очистка сточных вод при производстве продукции (товаров), выполнении работ и оказании услуг на крупных предприятиях»</h3><p>Технологии очистки промышленных сточных вод: локальные очистные, реагентные и физико-химические методы.</p><p class="doc-use">В Сешат: примеры «Молочный завод» и «Ливневые / АЗС», флотация, сорбция.</p><p class="doc-link"><a href="https://meganorm.ru/mega_doc/norm/perechen/3/its_8-2022_informatsionno-tekhnicheskiy_spravochnik_po.html" target="_blank" rel="noopener">Текст справочника на «Меганорм» ↗</a></p></article>
-    </section>
-    <section class="panel doc-group">
-      <h2>Проектирование</h2>
-      <article class="doc"><span class="doc-id">СП 32.13330.2018</span><h3>Свод правил «Канализация. Наружные сети и сооружения» (актуализированная редакция СНиП 2.04.03-85)</h3><p>Основной документ для расчёта очистных сооружений: расчётные расходы, решётки, песколовки, отстойники, аэротенки, обработка осадка, обеззараживание.</p><p class="doc-use">В Сешат: ориентир для типовых параметров сооружений в описаниях на генплане.</p></article>
-      <article class="doc"><span class="doc-id">СанПиН 2.2.1/2.1.1.1200-03</span><h3>«Санитарно-защитные зоны и санитарная классификация предприятий, сооружений и иных объектов»</h3><p>Размер санитарно-защитной зоны вокруг очистных сооружений в зависимости от производительности и способа обработки осадка.</p><p class="doc-use">В Сешат: понадобится для размещения станции относительно жилой застройки.</p></article>
-    </section>
-    <section class="panel doc-group">
-      <h2>Нормативы качества воды</h2>
-      <article class="doc"><span class="doc-id">Приказ № 552</span><h3>Приказ Минсельхоза России от 13.12.2016 № 552 «Об утверждении нормативов качества воды водных объектов рыбохозяйственного значения…»</h3><p>Предельно допустимые концентрации веществ в водоёмах рыбохозяйственного значения — самые строгие нормативы для сброса.</p><p class="doc-use">В Сешат: набор нормативов «ПДК рыбохоз. водоёмов».</p></article>
-      <article class="doc"><span class="doc-id">СанПиН 1.2.3685-21</span><h3>«Гигиенические нормативы и требования к обеспечению безопасности и (или) безвредности для человека факторов среды обитания»</h3><p>ПДК веществ в воде водных объектов хозяйственно-питьевого и культурно-бытового водопользования.</p></article>
-      <article class="doc"><span class="doc-id">СанПиН 2.1.3684-21</span><h3>«Санитарно-эпидемиологические требования к содержанию территорий городских и сельских поселений, к водным объектам, питьевой воде…»</h3><p>Требования к охране водных объектов и к условиям отведения сточных вод.</p></article>
-      <article class="doc"><span class="doc-id">ПП № 644</span><h3>Постановление Правительства РФ от 29.07.2013 № 644 «Об утверждении Правил холодного водоснабжения и водоотведения…»</h3><p>Требования к составу сточных вод абонентов, сбрасываемых в централизованную канализацию, — пригодится для промышленных стоков перед городскими очистными.</p></article>
-    </section>
-  </div>
-</div>
+<div class="wrap view" id="view-docs" hidden><div id="docs-root" class="docs-root"></div></div>
 <div class="wrap view about-page" id="view-about" hidden>
   <header class="about-head">
     <h1>О проекте</h1>
@@ -282,18 +248,20 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.14.0"></script>
-<script src="js/model.js?v=0.14.0"></script>
-<script src="js/icons.js?v=0.14.0"></script>
-<script src="js/economics.js?v=0.14.0"></script>
-<script src="js/store.js?v=0.14.0"></script>
-<script src="js/compare.js?v=0.14.0"></script>
-<script src="js/app.js?v=0.14.0"></script>
-<script src="js/plan.js?v=0.14.0"></script>
-<script src="js/oracle.js?v=0.14.0"></script>
-<script src="js/projects.js?v=0.14.0"></script>
-<script src="js/genplan.js?v=0.14.0"></script>
-<script src="js/seshat.js?v=0.14.0"></script>
-<script src="js/main.js?v=0.14.0"></script>
+<script src="js/data.js?v=0.15.0"></script>
+<script src="js/model.js?v=0.15.0"></script>
+<script src="js/icons.js?v=0.15.0"></script>
+<script src="js/economics.js?v=0.15.0"></script>
+<script src="js/store.js?v=0.15.0"></script>
+<script src="js/compare.js?v=0.15.0"></script>
+<script src="js/app.js?v=0.15.0"></script>
+<script src="js/plan.js?v=0.15.0"></script>
+<script src="js/oracle.js?v=0.15.0"></script>
+<script src="js/projects.js?v=0.15.0"></script>
+<script src="js/docs.js?v=0.15.0"></script>
+<script src="js/docsview.js?v=0.15.0"></script>
+<script src="js/genplan.js?v=0.15.0"></script>
+<script src="js/seshat.js?v=0.15.0"></script>
+<script src="js/main.js?v=0.15.0"></script>
 </body>
 </html>

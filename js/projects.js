@@ -6,13 +6,16 @@ const VIEWS = ['seshat', 'constructor', 'projects', 'genplan', 'docs', 'about'];
 const VIEW_RENDER = { projects: () => renderProjects() }; // разделы, которые перерисовываются при открытии
 function showView(view) {
   if (view === 'home') view = 'seshat'; // старые ссылки на главную
+  let param = null;
+  const m = /^doc-([a-z0-9]+)$/.exec(view); // #doc-<id> — страница документа
+  if (m) { param = m[1]; view = 'docs'; }
   if (!VIEWS.includes(view)) view = 'seshat';
   for (const v of VIEWS) document.getElementById('view-' + v).hidden = v !== view;
   document.querySelectorAll('.nav-link').forEach(a => {
     if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   document.body.dataset.view = view;
-  if (VIEW_RENDER[view]) VIEW_RENDER[view]();
+  if (VIEW_RENDER[view]) VIEW_RENDER[view](param);
   window.scrollTo(0, 0);
   document.dispatchEvent(new CustomEvent('viewchange', { detail: view }));
 }

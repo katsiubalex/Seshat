@@ -411,3 +411,23 @@ a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .orb.big .orb-halo{animation:halo 6s ease-in-out infinite}
 }
 .orb.no-anim,.orb.no-anim .orb-halo{transition:none!important}
+
+/* ---------- мини-окно разговора под эмблемой ---------- */
+.mini{position:fixed;z-index:29;top:84px;right:16px;width:min(400px,calc(100vw - 32px));max-height:min(620px,calc(100vh - 100px));display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px;
+  border:1px solid rgba(217,182,106,.55);border-radius:10px;color:#EDE6D6;
+  background:radial-gradient(140% 90% at 50% 0%,#17394A 0%,#0E2230 50%,#08131C 100%);box-shadow:0 18px 50px rgba(8,19,28,.45)}
+.mini-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mini-title{font-family:var(--f-display);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#F1DDA8}
+.mini-btns{display:flex;gap:6px}
+.mini-btns button{font-size:12px;padding:3px 9px;border-radius:4px;border:1px solid rgba(217,182,106,.4);background:transparent;color:#EDE6D6}
+.mini-btns button:hover,.mini-btns button:focus-visible{border-color:#D9B66A;outline:none}
+.mini .dlg-log{max-height:none;flex:1 1 auto;min-height:120px;padding:10px 12px;box-shadow:none}
+.mini .dlg-line p{font-size:14px;line-height:1.55}
+.mini .dlg-options{gap:4px;max-height:38%;overflow-y:auto;flex:none}
+.mini .dlg-opt{padding:5px 10px;font-size:13px;gap:8px}
+.mini .dlg-num{width:19px;height:19px;font-size:11px}
+.mini .dlg-ask input{padding:8px 10px;font-size:13.5px}
+.mini .dlg-ask button{padding:7px 12px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.mini:not([hidden]){animation:mini-in .22s ease-out}}
+@keyframes mini-in{from{opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top right}}
+@media (max-width:860px){.mini{top:56px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 72px)}}

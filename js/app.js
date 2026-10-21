@@ -34,7 +34,7 @@ const KINDS = {
   norm: {
     label: 'Нормативы', createLabel: 'Создать норматив', newName: 'Новый норматив', draftLabel: 'Новый норматив (не сохранён)',
     draftHint: 'Впишите значения в столбец «Норматив» таблицы и нажмите «Сохранить».',
-    builtins: Object.entries(NORMS).filter(([, v]) => v.v).map(([k, v]) => ({ id: k, name: v.n, data: { v: { ...v.v } } })),
+    builtins: Object.entries(NORMS).filter(([, v]) => v.v).map(([k, v]) => ({ id: k, name: v.n, group: v.g, data: { v: { ...v.v } } })),
     get: () => ({ v: { ...state.norm } }),
     apply: d => { state.norm = { ...d.v }; }
   }
@@ -118,7 +118,7 @@ function renderBar(kind) {
       ${draft ? `<option value="new" selected>${esc(K.draftLabel)}</option>` : ''}
       ${!draft && ref && ref[0] === 'p' && cur ? `<optgroup label="Проект">${opt(ref, cur.name)}</optgroup>` : ''}
       ${mine.length ? `<optgroup label="Мои">${mine.map(it => opt('u:' + it.id, it.name)).join('')}</optgroup>` : ''}
-      <optgroup label="Примеры">${K.builtins.map(b => opt('b:' + b.id, b.name)).join('')}</optgroup>
+      ${[...new Set(K.builtins.map(b => b.group || 'Примеры'))].map(g => `<optgroup label="${esc(g)}">${K.builtins.filter(b => (b.group || 'Примеры') === g).map(b => opt('b:' + b.id, b.name)).join('')}</optgroup>`).join('')}
     </select>
     ${dirty ? '<span class="mod" title="Есть несохранённые изменения">изменено</span>' : ''}
   </div>`;
@@ -345,7 +345,7 @@ function update(keepFocus){
  const a=document.activeElement,id=keepFocus&&a&&a.id;
  renderScheme(sim);
  if(id){const el=document.getElementById(id);if(el)el.focus()}
- renderDiagram(sim);renderResults(sim);renderEconomy(eco);renderBars();saveState();
+ renderDiagram(sim);renderResults(sim);renderEconomy(eco);renderBars();renderNdtHelp();saveState();
  if(typeof renderCtx==='function')renderCtx();
 }
 
@@ -418,6 +418,30 @@ function renderDiagram(sim) {
   h += arrow + end('Выпуск', `БПК₅ ${fmt(f.bod)} · N-NH₄ ${fmt(f.nh4)} · P ${fmt(f.p)}`);
   box.innerHTML = h;
 }
+
+/* ---------- подбор нормативов НДТ по расходу и категории водного объекта ---------- */
+function renderNdtHelp() {
+  const box = document.getElementById('ndt-help'); if (!box) return;
+  const D = SeshatData, q = state.q, ref = state.ref.norm || '';
+  const btns = ['А', 'Б', 'В', 'Г'].map(c => {
+    const k = D.ndtKey(q, c), on = ref === 'b:' + k;
+    return `<button type="button" class="ndt-cat${on ? ' on' : ''}" data-ndt="${k}" title="${esc(D.WATER_CATS[c])}" aria-pressed="${on}">${c}</button>`;
+  }).join('');
+  const cur = ref.startsWith('b:ndt') ? NORMS[ref.slice(2)] : null;
+  const m = ref.match(/^b:ndt_m(\d+)$/), curCat = m ? D.NDT_MIXED[+m[1]][0] : null;
+  const mismatch = curCat && D.ndtKey(q, curCat) !== ref.slice(2);
+  box.innerHTML = `<div class="ndt-row"><span>Нормативы НДТ для городских стоков. При расходе ${rub(q)} м³/сут очистные сооружения — <b>${D.capacityName(q)}</b>. Водный объект:</span><span class="ndt-cats">${btns}</span></div>
+    ${mismatch ? `<p class="ndt-note">Выбранный набор НДТ рассчитан на очистные другой мощности. Нажмите «${curCat}», чтобы подобрать набор для расхода ${rub(q)} м³/сут.</p>` : ''}
+    ${cur && cur.note ? `<p class="ndt-note">Примечание: ${esc(cur.note)}.</p>` : ''}
+    <details class="ndt-more"><summary>Какая категория у водного объекта?</summary>
+      <dl>${['А', 'Б', 'В', 'Г'].map(c => `<dt>${c}</dt><dd>${esc(D.WATER_CATS[c])}</dd>`).join('')}</dl>
+      <p>Категории установлены постановлением Правительства РФ № 1379, значения показателей — постановлением № 1430 (среднегодовые концентрации). Для водоёмов — источников питьевого водоснабжения двух и более регионов ХПК не выше 40 мг/л. Ливневые стоки — отдельные наборы в списке нормативов.</p>
+    </details>`;
+}
+document.getElementById('ndt-help').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-ndt]'); if (!b || !b.dataset.ndt || b.dataset.ndt === 'null') return;
+  openItem('norm', 'b:' + b.dataset.ndt);
+});
 
 /* ---------- выгрузка и загрузка библиотеки ---------- */
 document.getElementById('btn-export').onclick=()=>{

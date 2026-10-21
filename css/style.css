@@ -452,3 +452,17 @@ a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .copy{font-size:12px;padding:3px 9px}
 @media (max-width:480px){.contact-list li{grid-template-columns:minmax(0,1fr) auto}.contact-k{grid-column:1 / -1}}
 .contact-meta{font-size:12.5px!important;color:var(--muted)}
+
+/* ---------- подбор НДТ ---------- */
+.ndt-help{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px dashed var(--line);border-radius:8px;font-size:13px;color:var(--muted)}
+.ndt-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px}
+.ndt-row b{color:var(--ink)}
+.ndt-cats{display:flex;gap:6px}
+.ndt-cat{min-width:38px;font-weight:600;font-family:var(--f-display);padding:4px 10px}
+.ndt-cat.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ndt-note{margin:0;color:var(--warn)}
+.ndt-more summary{cursor:pointer;color:var(--accent);width:max-content;max-width:100%}
+.ndt-more dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;margin:8px 0}
+.ndt-more dt{font-family:var(--f-display);font-weight:600;color:var(--ink)}
+.ndt-more dd{margin:0;line-height:1.5}
+.ndt-more p{margin:0;line-height:1.5}

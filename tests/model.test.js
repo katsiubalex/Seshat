@@ -63,3 +63,21 @@ test('у каждой технологии есть пиктограмма', () 
     assert.match(icon(u.id, 48, u.n), /^<svg[\s\S]*<\/svg>$/);
   }
 });
+
+test('нормативы НДТ (ПП № 1430): категории по расходу и значения', () => {
+  assert.equal(D.capacityName(80), 'сверхмалые');
+  assert.equal(D.capacityName(20000), 'большие');
+  assert.equal(D.capacityName(700000), 'сверхкрупные');
+  const n = k => D.NORMS[D.ndtKey(...k)].v;
+  assert.deepEqual([n([20000, 'А']).bod, n([20000, 'А']).p, n([20000, 'А']).ss], [3, 0.5, 5]);
+  assert.equal(n([5000, 'Б']).p, 1);       // новые небольшие – средние
+  assert.equal(n([500, 'Б']).p, 1.5);      // малые
+  assert.equal(n([1000.5, 'Б']).p, 1);     // дробный расход попадает в следующий диапазон
+  assert.equal(n([50, 'Б']).nh4, 8);
+  assert.equal(n([6000, 'В']).nh4, 2);
+  assert.equal(n([3000, 'В']).nh4, 8);
+  assert.equal(n([50000, 'Г']).p, 5);
+  for (const c of ['А', 'Б', 'В', 'Г']) for (const q of [5, 100, 101, 4000, 10000, 10001, 1e6]) assert.ok(D.ndtKey(q, c), `${c} ${q}`);
+  assert.equal(D.NORMS.ndt_sБ.v.oil, 1);
+  assert.equal(D.NORMS.ndt_sБ.v.nh4, null);
+});

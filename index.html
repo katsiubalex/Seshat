@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Сешат — конструктор очистных НДТ</title>
 <meta name="description" content="Сешат — конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.12.0">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.13.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.12.0">
+<link rel="stylesheet" href="css/style.css?v=0.13.0">
 </head>
 <body>
 <div class="app">
@@ -104,6 +104,7 @@
       <h2 id="h-res">Результат</h2>
     </div>
     <div class="norm-pick"><span class="norm-label">Нормативы</span><div class="saved" id="bar-norm"></div></div>
+    <div class="ndt-help" id="ndt-help"></div>
     <div class="summary" id="summary"></div>
     <div class="tbl-wrap"><table id="results"></table></div>
     <div class="advice" id="advice"></div>
@@ -178,7 +179,8 @@
     <section class="panel doc-group">
       <h2>Наилучшие доступные технологии</h2>
       <article class="doc"><span class="doc-id">ИТС 10-2019</span><h3>Информационно-технический справочник «Очистка сточных вод с использованием централизованных систем водоотведения поселений, городских округов»</h3><p>Описывает технологии очистки городских сточных вод, относит их к НДТ и приводит достижимые показатели.</p><p class="doc-use">В Сешат: каталог технологий конструктора; эффективности ступеней нужно сверять с этим справочником.</p><p class="doc-link"><a href="https://www.consultant.ru/law/podborki/csv_poselenij_i_gorodskih_okrugov/" target="_blank" rel="noopener">Подборка КонсультантПлюс по ЦСВ поселений ↗</a></p></article>
-      <article class="doc"><span class="doc-id">ПП № 1430</span><h3>Постановление Правительства РФ от 15.09.2020 № 1430</h3><p>Утверждает технологические показатели наилучших доступных технологий в области очистки сточных вод с использованием централизованных систем водоотведения поселений и городских округов.</p><p class="doc-use">Пока не встроено: эти значения стоит добавить в конструктор как готовый набор нормативов «НДТ».</p></article>
+      <article class="doc"><span class="doc-id">ПП № 1430</span><h3>Постановление Правительства РФ от 15.09.2020 № 1430</h3><p>Утверждает технологические показатели наилучших доступных технологий в области очистки сточных вод с использованием централизованных систем водоотведения поселений и городских округов.</p><p class="doc-use">В Сешат: наборы нормативов «НДТ» для городских и ливневых стоков; в конструкторе их можно подобрать по расходу и категории водного объекта.</p></article>
+      <article class="doc"><span class="doc-id">ПП № 1379</span><h3>Постановление Правительства РФ от 26.10.2019 № 1379</h3><p>Правила отнесения водных объектов (их частей) к категориям А, Б, В и Г. От категории водного объекта зависят технологические показатели НДТ по постановлению № 1430.</p><p class="doc-use">В Сешат: подсказки к выбору категории водного объекта в конструкторе.</p></article>
       <article class="doc"><span class="doc-id">ИТС 8-2022</span><h3>Информационно-технический справочник «Очистка сточных вод при производстве продукции (товаров), выполнении работ и оказании услуг на крупных предприятиях»</h3><p>Технологии очистки промышленных сточных вод: локальные очистные, реагентные и физико-химические методы.</p><p class="doc-use">В Сешат: примеры «Молочный завод» и «Ливневые / АЗС», флотация, сорбция.</p><p class="doc-link"><a href="https://meganorm.ru/mega_doc/norm/perechen/3/its_8-2022_informatsionno-tekhnicheskiy_spravochnik_po.html" target="_blank" rel="noopener">Текст справочника на «Меганорм» ↗</a></p></article>
     </section>
     <section class="panel doc-group">
@@ -279,18 +281,18 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.12.0"></script>
-<script src="js/model.js?v=0.12.0"></script>
-<script src="js/icons.js?v=0.12.0"></script>
-<script src="js/economics.js?v=0.12.0"></script>
-<script src="js/store.js?v=0.12.0"></script>
-<script src="js/compare.js?v=0.12.0"></script>
-<script src="js/app.js?v=0.12.0"></script>
-<script src="js/plan.js?v=0.12.0"></script>
-<script src="js/oracle.js?v=0.12.0"></script>
-<script src="js/projects.js?v=0.12.0"></script>
-<script src="js/genplan.js?v=0.12.0"></script>
-<script src="js/seshat.js?v=0.12.0"></script>
-<script src="js/main.js?v=0.12.0"></script>
+<script src="js/data.js?v=0.13.0"></script>
+<script src="js/model.js?v=0.13.0"></script>
+<script src="js/icons.js?v=0.13.0"></script>
+<script src="js/economics.js?v=0.13.0"></script>
+<script src="js/store.js?v=0.13.0"></script>
+<script src="js/compare.js?v=0.13.0"></script>
+<script src="js/app.js?v=0.13.0"></script>
+<script src="js/plan.js?v=0.13.0"></script>
+<script src="js/oracle.js?v=0.13.0"></script>
+<script src="js/projects.js?v=0.13.0"></script>
+<script src="js/genplan.js?v=0.13.0"></script>
+<script src="js/seshat.js?v=0.13.0"></script>
+<script src="js/main.js?v=0.13.0"></script>
 </body>
 </html>

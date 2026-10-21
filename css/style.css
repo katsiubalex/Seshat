@@ -37,7 +37,7 @@ h2{font-family:var(--f-display);font-weight:500;font-size:13px;letter-spacing:.0
 .hint{color:var(--muted);font-size:12.5px;margin:0}
 label.f{display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:8px;font-size:13px}
 label.f small{display:block;color:var(--muted);font-size:11px;font-family:var(--f-mono)}
-input[type=number],select{font:inherit;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;width:100%;font-variant-numeric:tabular-nums}
+input[type=number],input[inputmode=decimal],select{font:inherit;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;width:100%;font-variant-numeric:tabular-nums}
 select{font-family:var(--f-body)}
 input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .fields{display:flex;flex-direction:column;gap:7px}
@@ -132,3 +132,23 @@ label.btn:hover{border-color:var(--accent)}
 button:disabled{opacity:.5;cursor:default}
 button:disabled:hover{border-color:var(--line)}
 input[aria-invalid=true]{border-color:var(--bad);background:var(--bad-bg)}
+/* экономика */
+.node-cost{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.node-cost b{color:var(--ink);font-weight:600}
+.eco-grid{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:start}
+@media (max-width:900px){.eco-grid{grid-template-columns:minmax(0,1fr)}}
+.eco-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.eco-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;gap:2px;background:var(--surface2)}
+.eco-bar span{flex-basis:0;min-width:3px}
+.eco-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px}
+.eco-legend li{display:flex;align-items:center;gap:6px}
+.eco-legend b{font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.eco-legend small{color:var(--muted)}
+.eco-prices{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+.eco-prices h3{margin:0;font-family:var(--f-display);font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.eco-prices button{font-size:12px;padding:3px 8px}
+.eco-prices input{background:var(--surface)}
+#eco-table th{white-space:normal;min-width:64px;line-height:1.25}
+.eco-caption{margin:0;font-size:12px;color:var(--muted)}
+#eco-table th.p{min-width:0}
+#eco-table tr.total td{border-top:2px solid var(--line);font-weight:600}

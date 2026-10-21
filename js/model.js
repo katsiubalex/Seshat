@@ -16,7 +16,7 @@
   /**
    * Рассчитать схему.
    * @param {{q:number, c:Object, steps:{u:string, eff:Object}[]}} input
-   * @returns {{prof:Object[], warns:string[][], energy:number, sludge:number}}
+   * @returns {{prof:Object[], warns:string[][], perStep:Object[], energy:number, sludge:number}}
    *   prof — концентрации на входе и после каждой ступени; energy — кВт·ч/м³; sludge — кг сухого вещества в сутки
    */
   function simulate(input, data) {
@@ -25,11 +25,12 @@
     const U = Object.fromEntries(data.UNITS.map(u => [u.id, u]));
     const c = {};
     PK.forEach(k => (c[k] = Math.max(0, +input.c[k] || 0)));
-    const prof = [{ ...c }], warns = [], before = [];
+    const prof = [{ ...c }], warns = [], before = [], perStep = [];
     let energy = 0, sludge = 0;
 
     input.steps.forEach(st => {
       const u = U[st.u], e = st.eff, cin = { ...c }, w = [];
+      let sl = 0; // осадок ступени, г сухого вещества на 1 м³
 
       // Проверки применимости технологии
       if (u.bio) {
@@ -66,17 +67,24 @@
           c.p *= 1 - e.bioP / 100;
         }
         if (u.ssOut != null) c.ss = Math.min(c.ss, u.ssOut);
-        sludge += 0.6 * dB; // прирост активного ила, г/м³
+        sl += 0.6 * dB; // прирост активного ила, г/м³
       }
       c.cod = Math.max(c.cod, c.bod);
-      sludge += Math.max(0, cin.ss - c.ss) * (u.bio ? 0 : 1) + (u.chem ? 5 * Math.max(0, cin.p - c.p) : 0);
+      sl += Math.max(0, cin.ss - c.ss) * (u.bio ? 0 : 1) + (u.chem ? 5 * Math.max(0, cin.p - c.p) : 0);
+      sludge += sl;
       energy += u.en;
+      perStep.push({
+        en: u.en,                                          // кВт·ч/м³
+        sludge: sl * input.q / 1000,                       // кг сухого вещества в сутки
+        dP: Math.max(0, cin.p - c.p),                      // удалено фосфора, мг/л
+        dNOx: Math.max(0, cin.no3 + cin.no2 - c.no3 - c.no2) // удалено азота нитратов и нитритов, мг/л
+      });
       before.push(u.id);
       prof.push({ ...c });
       warns.push(w);
     });
 
-    return { prof, warns, energy, sludge: sludge * input.q / 1000 };
+    return { prof, warns, perStep, energy, sludge: sludge * input.q / 1000 };
   }
 
   root.SeshatModel = { simulate, fmt };

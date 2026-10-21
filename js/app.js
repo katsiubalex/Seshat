@@ -52,7 +52,7 @@ function isDirty(kind) { const it = refItem(kind, state.ref[kind]); return !it |
 let state;
 function fresh() {
   const p = PRESETS[0];
-  return { q: p.q, c: { ...p.c }, steps: p.scheme.map(mk), norm: { ...NORMS.pdk.v }, ref: { influent: 'b:0', scheme: 'b:0', norm: 'b:pdk' } };
+  return { q: p.q, c: { ...p.c }, steps: p.scheme.map(mk), norm: { ...NORMS.pdk.v }, ref: { influent: 'b:0', scheme: 'b:0', norm: 'b:pdk' }, prices: SeshatEconomics.defaultPrices() };
 }
 function loadState() {
   try {
@@ -66,6 +66,7 @@ function loadState() {
         Object.assign(s, k === 'influent' ? { q: f.q, c: f.c } : k === 'scheme' ? { steps: f.steps } : { norm: f.norm });
       }
       delete s.normSet;
+      s.prices = { ...SeshatEconomics.defaultPrices(), ...(s.prices || {}) };
       return s;
     }
   } catch (e) {}
@@ -259,6 +260,7 @@ function renderScheme(sim){
    <div class="node-top"><div class="node-title">${i+1}. ${esc(u.n)}<small>${s.n}</small></div>
     <div class="node-ctrl"><button type="button" data-mv="${i}" data-d="-1" aria-label="Выше" ${i===0?'disabled':''}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Ниже" ${i===state.steps.length-1?'disabled':''}>↓</button><button type="button" data-rm="${i}" aria-label="Удалить">✕</button></div></div>
    <div class="effects">${effChips(st.eff)||'<span class="chip">без изменения химии</span>'}</div>
+   ${eco?`<div class="node-cost"><span>Капзатраты ≈ <b>${mln(eco.steps[i].capex)}</b></span><span>Эксплуатация <b>${money(eco.steps[i].opex)}</b>/сут</span></div>`:''}
    ${sim.warns[i].length?`<div class="warns">${sim.warns[i].map(x=>`<div class="w">${esc(x)}</div>`).join('')}</div>`:''}
    ${Object.keys(st.eff).length?`<details class="tune" data-i="${i}" ${open.has(String(i))?'open':''}><summary>Настроить эффективность, %</summary><div class="tune-grid">${Object.keys(st.eff).map(k=>`<label for="t-${i}-${k}">${SHORT[k]}<input id="t-${i}-${k}" ${NUM_ATTRS} data-ti="${i}" data-tk="${k}" value="${showNum(st.eff[k])}"></label>`).join('')}</div></details>`:''}
   </div></div>
@@ -304,8 +306,10 @@ function renderResults(sim){
  const kwh=sim.energy*state.q;
  document.getElementById('summary').innerHTML=`
   <div class="kpi"><span>Соответствие нормативам</span><b style="color:${tot&&pass===tot?'var(--ok)':'var(--bad)'}">${pass} из ${tot}</b> <small>показателей</small></div>
-  <div class="kpi"><span>Удельная энергия</span><b>${fmt(sim.energy)}</b> <small>кВт·ч/м³</small></div>
-  <div class="kpi"><span>Энергия в сутки</span><b>${fmt(kwh)}</b> <small>кВт·ч/сут</small></div>
+  <div class="kpi"><span>Капитальные затраты</span><b>${mln(eco.total.capex)}</b> <small>${state.q>0?rub(eco.total.capex*1e6/state.q)+' ₽ на м³/сут':''}</small></div>
+  <div class="kpi"><span>Эксплуатация</span><b>${money(eco.total.opex)}</b> <small>в сутки · ${money(eco.perYear)} в год</small></div>
+  <div class="kpi"><span>Себестоимость очистки</span><b>${eco.perM3.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})}</b> <small>₽/м³</small></div>
+  <div class="kpi"><span>Электроэнергия</span><b>${rub(kwh)}</b> <small>кВт·ч/сут · ${fmt(sim.energy)} кВт·ч/м³</small></div>
   <div class="kpi"><span>Осадок и ил (сухое в-во)</span><b>${fmt(sim.sludge/1000)}</b> <small>т/сут</small></div>`;
  // советы
  const have=new Set(state.steps.map(s=>s.u));
@@ -323,12 +327,67 @@ document.getElementById('advice').addEventListener('click',ev=>{const b=ev.targe
  state.steps.splice(idx,0,mk(u.id));update()});
 
 
+let eco=null;
 function update(keepFocus){
  const sim=SeshatModel.simulate(state);
+ eco=SeshatEconomics.costs(state,sim,state.prices);
  const a=document.activeElement,id=keepFocus&&a&&a.id;
  renderScheme(sim);
  if(id){const el=document.getElementById(id);if(el)el.focus()}
- renderResults(sim);renderBars();saveState();
+ renderResults(sim);renderEconomy(eco);renderBars();saveState();
+}
+
+/* ---------- экономика ---------- */
+const ECO_ITEMS = [
+  { k: 'energy', n: 'Электроэнергия', s: 'Энергия, ₽', c: 'var(--tert)' },
+  { k: 'reagents', n: 'Реагенты', s: 'Реагенты', c: 'var(--dis)' },
+  { k: 'consumables', n: 'Расходные материалы', s: 'Расходники', c: 'var(--warn)' },
+  { k: 'sludge', n: 'Вывоз осадка', s: 'Осадок', c: 'var(--mech)' },
+  { k: 'repair', n: 'Ремонт и обслуживание', s: 'Ремонт', c: 'var(--muted)' }
+];
+const rub = v => Math.round(v).toLocaleString('ru-RU');
+function mln(v) {
+  if (v >= 1000) return (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд ₽';
+  return v.toLocaleString('ru-RU', { maximumFractionDigits: v < 10 ? 1 : 0 }) + ' млн ₽';
+}
+function money(v) { // ₽ в сутки или в год, кратко
+  if (v >= 1e9) return (v / 1e9).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд ₽';
+  if (v >= 1e6) return (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млн ₽';
+  if (v >= 1e4) return (v / 1e3).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + ' тыс. ₽';
+  return rub(v) + ' ₽';
+}
+
+function renderPrices() {
+  const box = document.getElementById('prices');
+  box.innerHTML = Object.entries(SeshatData.ECON.prices).map(([k, p]) =>
+    `<label class="f" for="pr-${k}"><span>${p.n}<small>${p.u}</small></span><input id="pr-${k}" ${NUM_ATTRS} value="${showNum(state.prices[k])}" placeholder="${showNum(p.v)}"></label>`).join('');
+}
+document.getElementById('prices').addEventListener('input', ev => {
+  const t = ev.target; if (!t.id.startsWith('pr-')) return;
+  const k = t.id.slice(3), v = parseNum(t.value);
+  markInvalid(t, v); if (Number.isNaN(v)) return;
+  state.prices[k] = v == null ? SeshatData.ECON.prices[k].v : v;
+  update();
+});
+document.getElementById('btn-prices-reset').onclick = () => { state.prices = SeshatEconomics.defaultPrices(); renderPrices(); update(); };
+
+function renderEconomy(eco) {
+  const T = eco.total;
+  const parts = ECO_ITEMS.map(it => ({ ...it, v: T[it.k] })).filter(it => it.v > 0);
+  const bar = T.opex > 0 ? parts.map(it => `<span style="flex-grow:${it.v};background:${it.c}" title="${it.n}: ${rub(it.v)} ₽/сут"></span>`).join('') : '';
+  const legend = parts.map(it => `<li><span class="dot" style="background:${it.c}"></span>${it.n}<b>${rub(it.v)} ₽</b><small>${(it.v / T.opex * 100).toFixed(0)}%</small></li>`).join('');
+  document.getElementById('eco-structure').innerHTML = T.opex > 0
+    ? `<div class="eco-bar" role="img" aria-label="Структура эксплуатационных затрат">${bar}</div><ul class="eco-legend">${legend}</ul>`
+    : '<p class="hint">Добавьте ступени в схему, чтобы увидеть затраты.</p>';
+
+  const reagTitle = r => { const k = r.reagentKg, a = []; if (k.coag) a.push(`коагулянт ${rub(k.coag)} кг/сут`); if (k.floc) a.push(`флокулянт ${rub(k.floc)} кг/сут`); if (k.meth) a.push(`метанол ${rub(k.meth)} кг/сут`); return a.join(', '); };
+  const cell = (v, title) => `<td class="num"${title ? ` title="${esc(title)}"` : ''}>${v > 0 ? rub(v) : '—'}</td>`;
+  let h = `<thead><tr><th class="p">Ступень</th><th>Капзатраты</th><th>Энергия, кВт·ч</th>${ECO_ITEMS.map(it => `<th title="${it.n}">${it.s}</th>`).join('')}<th>Итого, ₽</th></tr></thead><tbody>`;
+  eco.steps.forEach((r, i) => {
+    h += `<tr><td class="p"><b>${i + 1}. ${esc(U[r.u].n.split(' (')[0])}</b></td><td class="num">${r.capex > 0 ? mln(r.capex) : '—'}</td>${cell(r.kwh)}${cell(r.energy)}${cell(r.reagents, reagTitle(r))}${cell(r.consumables)}${cell(r.sludge)}${cell(r.repair)}<td class="num out">${rub(r.opex)}</td></tr>`;
+  });
+  h += `<tr class="total"><td class="p"><b>Всего</b></td><td class="num">${mln(T.capex)}</td>${cell(T.kwh)}${ECO_ITEMS.map(it => cell(T[it.k])).join('')}<td class="num out">${rub(T.opex)}</td></tr></tbody>`;
+  document.getElementById('eco-table').innerHTML = h;
 }
 
 /* ---------- выгрузка и загрузка библиотеки ---------- */
@@ -349,4 +408,4 @@ document.getElementById('file-import').addEventListener('change',async ev=>{
 });
 
 Object.keys(KINDS).forEach(bindBar);
-renderInputs();renderLibrary();update();
+renderInputs();renderPrices();renderLibrary();update();

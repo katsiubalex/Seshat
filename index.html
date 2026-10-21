@@ -7,7 +7,7 @@
 <meta name="description" content="Конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.4.0">
+<link rel="stylesheet" href="css/style.css?v=0.5.0">
 </head>
 <body>
 <div class="wrap">
@@ -56,11 +56,28 @@
     <div class="advice" id="advice"></div>
     <p class="foot">Модель коэффициентная: каждая ступень снижает концентрации на типовую долю, биологические ступени дополнительно учитывают нитрификацию, денитрификацию с ограничением по органике (≈4 мг БПК₅ на 1 мг N), ассимиляцию азота и фосфора и прирост ила. Это инструмент для подбора и сравнения схем, а не замена расчёта по ASM/ADM или проектного расчёта. ПДК рыбохозяйственных водоёмов даны в пересчёте на N и P; для фосфатов принято значение для эвтрофных водоёмов, для взвешенных веществ норматив задаётся как «фон + 0,25…0,75 мг/л», поэтому впишите своё значение.</p>
   </section>
+
+  <section class="panel" aria-labelledby="h-eco">
+    <div class="panel-head"><h2 id="h-eco">Экономика</h2></div>
+    <div class="eco-grid">
+      <div class="eco-main">
+        <div id="eco-structure"></div>
+        <p class="eco-caption">По ступеням, в сутки. Капзатраты — единовременно.</p>
+        <div class="tbl-wrap"><table id="eco-table"></table></div>
+      </div>
+      <aside class="eco-prices" aria-labelledby="h-prices">
+        <div class="panel-head"><h3 id="h-prices">Цены</h3><button id="btn-prices-reset" type="button">По умолчанию</button></div>
+        <div class="fields" id="prices"></div>
+      </aside>
+    </div>
+    <p class="foot">Капзатраты ступени заданы для производительности 10 000 м³/сут и пересчитываются на ваш расход с эффектом масштаба (показатель 0,7): крупная станция дешевле в пересчёте на кубометр. Учтены оборудование, сооружения и монтаж; не учтены обработка осадка, сети, проектирование и земля. Эксплуатация включает электроэнергию, реагенты (коагулянт при дефосфатации и флотации, метанол на денитрифицирующих фильтрах), расходные материалы, вывоз обезвоженного осадка (22% сухого вещества) и ремонт; зарплата персонала и налоги не учтены. Значения по умолчанию — ориентиры, замените их ценами вашего региона.</p>
+  </section>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.4.0"></script>
-<script src="js/model.js?v=0.4.0"></script>
-<script src="js/store.js?v=0.4.0"></script>
-<script src="js/app.js?v=0.4.0"></script>
+<script src="js/data.js?v=0.5.0"></script>
+<script src="js/model.js?v=0.5.0"></script>
+<script src="js/economics.js?v=0.5.0"></script>
+<script src="js/store.js?v=0.5.0"></script>
+<script src="js/app.js?v=0.5.0"></script>
 </body>
 </html>

@@ -55,3 +55,11 @@ test('городская схема-пример выходит на целев�
   assert.ok(o.no3 <= D.NORMS.target.v.no3);
   assert.ok(o.p <= D.NORMS.target.v.p);
 });
+
+test('у каждой технологии есть пиктограмма', () => {
+  const { ICONS, icon } = require('../js/icons.js');
+  for (const u of D.UNITS) {
+    assert.ok(ICONS[u.id], u.id);
+    assert.match(icon(u.id, 48, u.n), /^<svg[\s\S]*<\/svg>$/);
+  }
+});

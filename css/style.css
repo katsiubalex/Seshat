@@ -49,7 +49,7 @@ button.primary{background:var(--accent);color:var(--accent-ink);border-color:var
 .stage{display:flex;flex-direction:column;gap:6px}
 .stage-name{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
-.lib-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+.lib-item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
 .lib-item b{font-weight:600;font-size:13.5px}
 .lib-item p{margin:2px 0 0;font-size:12px;color:var(--muted)}
 .lib-item button{font-size:18px;line-height:1;padding:4px 10px}
@@ -61,6 +61,9 @@ button.primary{background:var(--accent);color:var(--accent-ink);border-color:var
 .node-body{padding:9px 11px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .node-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .node-title{font-weight:600;font-size:13.5px}
+.node-head{display:flex;gap:10px;align-items:center;min-width:0}
+.node-head .ico{flex:none;color:var(--c)}
+.lib-item .ico{color:var(--c)}
 .node-title small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
 .node-ctrl{display:flex;gap:4px;flex:none}
 .node-ctrl button{padding:2px 7px;font-size:13px}
@@ -152,3 +155,14 @@ input[aria-invalid=true]{border-color:var(--bad);background:var(--bad-bg)}
 .eco-caption{margin:0;font-size:12px;color:var(--muted)}
 #eco-table th.p{min-width:0}
 #eco-table tr.total td{border-top:2px solid var(--line);font-weight:600}
+/* принципиальная схема */
+.ico{display:block;overflow:visible}
+.pfd-wrap{overflow-x:auto;padding-bottom:4px}
+.pfd{display:flex;align-items:flex-start;gap:4px;width:max-content;min-width:100%}
+.pfd-arrow{flex:none;color:var(--muted);margin-top:30px}
+.pfd-step{position:relative;margin:0;width:94px;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--c);text-align:center}
+.pfd-step figcaption{font-size:11.5px;line-height:1.25;color:var(--ink)}
+.pfd-n{position:absolute;top:-2px;left:4px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.pfd-sludge{font-size:11px;color:var(--mech)}
+.pfd-end{flex:none;display:flex;flex-direction:column;gap:2px;max-width:128px;margin-top:22px;padding:6px 10px;border:1px dashed var(--line);border-radius:8px;font-size:12px}
+.pfd-end small{color:var(--muted);font-family:var(--f-mono);font-size:11px}

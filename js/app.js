@@ -243,7 +243,7 @@ function effChips(eff){return Object.entries(eff).filter(([,v])=>v>0).map(([k,v]
 function renderLibrary(){
  const box=document.getElementById('library');
  box.innerHTML=STAGES.map(s=>`<div class="stage"><div class="stage-name"><span class="dot" style="background:${s.c}"></span>${s.n}</div>`+
-  UNITS.filter(u=>u.st===s.id).map(u=>`<div class="lib-item"><div><b>${esc(u.n)}</b><p>${esc(u.d)}</p></div><button type="button" data-add="${u.id}" aria-label="Добавить: ${esc(u.n)}">+</button></div>`).join('')+'</div>').join('');
+  UNITS.filter(u=>u.st===s.id).map(u=>`<div class="lib-item" style="--c:${s.c}">${SeshatIcons.icon(u.id,44)}<div><b>${esc(u.n)}</b><p>${esc(u.d)}</p></div><button type="button" data-add="${u.id}" aria-label="Добавить: ${esc(u.n)}">+</button></div>`).join('')+'</div>').join('');
  box.onclick=ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps.push(mk(b.dataset.add));update()};
 }
 /* ---------- схема ---------- */
@@ -257,7 +257,7 @@ function renderScheme(sim){
   const u=U[st.u],s=STG[u.st],o=sim.prof[i+1];
   h+=`<div class="arrow"></div>
   <div class="node" style="--c:${s.c}"><div class="bar"></div><div class="node-body">
-   <div class="node-top"><div class="node-title">${i+1}. ${esc(u.n)}<small>${s.n}</small></div>
+   <div class="node-top"><div class="node-head">${SeshatIcons.icon(u.id,52)}<div class="node-title">${i+1}. ${esc(u.n)}<small>${s.n}</small></div></div>
     <div class="node-ctrl"><button type="button" data-mv="${i}" data-d="-1" aria-label="Выше" ${i===0?'disabled':''}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Ниже" ${i===state.steps.length-1?'disabled':''}>↓</button><button type="button" data-rm="${i}" aria-label="Удалить">✕</button></div></div>
    <div class="effects">${effChips(st.eff)||'<span class="chip">без изменения химии</span>'}</div>
    ${eco?`<div class="node-cost"><span>Капзатраты ≈ <b>${mln(eco.steps[i].capex)}</b></span><span>Эксплуатация <b>${money(eco.steps[i].opex)}</b>/сут</span></div>`:''}
@@ -334,7 +334,7 @@ function update(keepFocus){
  const a=document.activeElement,id=keepFocus&&a&&a.id;
  renderScheme(sim);
  if(id){const el=document.getElementById(id);if(el)el.focus()}
- renderResults(sim);renderEconomy(eco);renderBars();saveState();
+ renderDiagram(sim);renderResults(sim);renderEconomy(eco);renderBars();saveState();
 }
 
 /* ---------- экономика ---------- */
@@ -388,6 +388,23 @@ function renderEconomy(eco) {
   });
   h += `<tr class="total"><td class="p"><b>Всего</b></td><td class="num">${mln(T.capex)}</td>${cell(T.kwh)}${ECO_ITEMS.map(it => cell(T[it.k])).join('')}<td class="num out">${rub(T.opex)}</td></tr></tbody>`;
   document.getElementById('eco-table').innerHTML = h;
+}
+
+/* ---------- принципиальная схема ---------- */
+function renderDiagram(sim) {
+  const box = document.getElementById('diagram');
+  if (!state.steps.length) { box.innerHTML = '<p class="hint">Схема пуста.</p>'; return; }
+  const arrow = '<svg class="pfd-arrow" viewBox="0 0 28 12" width="22" height="10" aria-hidden="true"><path d="M1 6h24M20 2l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const end = (t, sub) => `<div class="pfd-end"><b>${t}</b><small>${sub}</small></div>`;
+  const f = sim.prof[sim.prof.length - 1];
+  let h = end('Сточные воды', `${rub(state.q)} м³/сут`);
+  state.steps.forEach((st, i) => {
+    const u = U[st.u], s = STG[u.st], ps = sim.perStep[i];
+    const sl = ps.sludge > 0.5 ? `<span class="pfd-sludge" title="Осадок: ${rub(ps.sludge)} кг сухого вещества в сутки">↓ осадок</span>` : '';
+    h += arrow + `<figure class="pfd-step" style="--c:${s.c}"><span class="pfd-n">${i + 1}</span>${SeshatIcons.icon(u.id, 72, u.n)}<figcaption>${esc(u.n.split(' (')[0])}</figcaption>${sl}</figure>`;
+  });
+  h += arrow + end('Выпуск', `БПК₅ ${fmt(f.bod)} · N-NH₄ ${fmt(f.nh4)} · P ${fmt(f.p)}`);
+  box.innerHTML = h;
 }
 
 /* ---------- выгрузка и загрузка библиотеки ---------- */

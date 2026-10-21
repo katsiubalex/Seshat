@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seshat — конструктор очистных НДТ</title>
 <meta name="description" content="Конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды после каждой ступени.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.7.6">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.8.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.7.6">
+<link rel="stylesheet" href="css/style.css?v=0.8.0">
 </head>
 <body>
 <div class="app">
 <nav class="sidenav" aria-label="Разделы">
-  <a class="brand" href="#constructor" aria-label="Seshat — на главную"><svg class="brand-mark" viewBox="0 0 64 64" width="46" height="46" aria-hidden="true"><path d="M9 35C9 20.725 14.04 14.5 25.8 14.5Q28.0 14.5 28.0 12.3V11.0a4.0 4.0 0 0 1 8 0V12.3Q36.0 14.5 38.2 14.5C49.96 14.5 55 20.725 55 35" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.3 35h3.4V61.5a1.7 1.7 0 0 1-3.4 0Z" fill="currentColor"/><path d="M32.00 35.00Q24.84 36.31 20.47 44.67Q29.47 41.82 32.00 35.00ZM32.00 35.00Q24.87 30.98 14.53 33.98Q24.45 38.17 32.00 35.00ZM32.00 35.00Q29.57 27.18 19.99 22.27Q24.34 32.12 32.00 35.00ZM32.00 35.00Q35.60 27.65 32.00 17.50Q28.40 27.65 32.00 35.00ZM32.00 35.00Q39.66 32.12 44.01 22.27Q34.43 27.18 32.00 35.00ZM32.00 35.00Q39.55 38.17 49.47 33.98Q39.13 30.98 32.00 35.00ZM32.00 35.00Q34.53 41.82 43.53 44.67Q39.16 36.31 32.00 35.00Z" fill="currentColor"/><circle cx="32" cy="35" r="3" fill="currentColor"/></svg><span class="brand-text"><b>Seshat</b><small>очистные НДТ</small></span></a>
+  <a class="brand" href="#home" aria-label="Seshat — на главную"><svg class="brand-mark" viewBox="0 0 64 64" width="46" height="46" aria-hidden="true"><path d="M9 35C9 20.725 14.04 14.5 25.8 14.5Q28.0 14.5 28.0 12.3V11.0a4.0 4.0 0 0 1 8 0V12.3Q36.0 14.5 38.2 14.5C49.96 14.5 55 20.725 55 35" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.3 35h3.4V61.5a1.7 1.7 0 0 1-3.4 0Z" fill="currentColor"/><path d="M32.00 35.00Q24.84 36.31 20.47 44.67Q29.47 41.82 32.00 35.00ZM32.00 35.00Q24.87 30.98 14.53 33.98Q24.45 38.17 32.00 35.00ZM32.00 35.00Q29.57 27.18 19.99 22.27Q24.34 32.12 32.00 35.00ZM32.00 35.00Q35.60 27.65 32.00 17.50Q28.40 27.65 32.00 35.00ZM32.00 35.00Q39.66 32.12 44.01 22.27Q34.43 27.18 32.00 35.00ZM32.00 35.00Q39.55 38.17 49.47 33.98Q39.13 30.98 32.00 35.00ZM32.00 35.00Q34.53 41.82 43.53 44.67Q39.16 36.31 32.00 35.00Z" fill="currentColor"/><circle cx="32" cy="35" r="3" fill="currentColor"/></svg><span class="brand-text"><b>Seshat</b><small>очистные НДТ</small></span></a>
   <div class="nav-links">
     <a class="nav-link" href="#constructor" data-view="constructor">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5h6v5H4zM14 14h6v5h-6zM10 7.5h4v9h0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 14.5l2 2-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -21,6 +21,15 @@
     <a class="nav-link" href="#projects" data-view="projects">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 16v-3M12 16v-5M16 16v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <span>Проекты</span><span class="nav-count" id="nav-projects-count"></span></a>
+    <a class="nav-link" href="#genplan" data-view="genplan">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 8h4v4h-4zM6 16h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Генплан</span></a>
+    <a class="nav-link" href="#docs" data-view="docs">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 3v4h4M9 12h7M9 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Нормативные документы</span></a>
+    <a class="nav-link" href="#about" data-view="about">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 11v6M12 7.5v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>О проекте</span></a>
   </div>
   <div class="nav-foot">
     <p class="lib-note">Всё сохранённое хранится в этом браузере. Чтобы перенести на другой компьютер, выгрузите библиотеку в файл.</p>
@@ -30,6 +39,61 @@
   </div>
 </nav>
 <main class="main">
+<div class="view" id="view-home" hidden>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <p class="eyebrow">Конструктор очистных сооружений</p>
+        <h1 class="hero-title">Seshat</h1>
+        <p class="hero-lead">Соберите очистные сооружения из наилучших доступных технологий, посмотрите, какой будет вода на выпуске и сколько это стоит, сравните варианты и разложите станцию на генплане.</p>
+        <div class="hero-cta">
+          <a class="btn primary" href="#constructor" data-go="constructor">Открыть конструктор</a>
+          <a class="btn" href="#projects" data-go="projects">Сравнить варианты</a>
+        </div>
+      </div>
+      <figure class="hero-mark">
+        <svg viewBox="0 0 64 64" role="img" aria-label="Эмблема Сешат"><path d="M9 35C9 20.725 14.04 14.5 25.8 14.5Q28.0 14.5 28.0 12.3V11.0a4.0 4.0 0 0 1 8 0V12.3Q36.0 14.5 38.2 14.5C49.96 14.5 55 20.725 55 35" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.3 35h3.4V61.5a1.7 1.7 0 0 1-3.4 0Z" fill="currentColor"/><path d="M32.00 35.00Q24.84 36.31 20.47 44.67Q29.47 41.82 32.00 35.00ZM32.00 35.00Q24.87 30.98 14.53 33.98Q24.45 38.17 32.00 35.00ZM32.00 35.00Q29.57 27.18 19.99 22.27Q24.34 32.12 32.00 35.00ZM32.00 35.00Q35.60 27.65 32.00 17.50Q28.40 27.65 32.00 35.00ZM32.00 35.00Q39.66 32.12 44.01 22.27Q34.43 27.18 32.00 35.00ZM32.00 35.00Q39.55 38.17 49.47 33.98Q39.13 30.98 32.00 35.00ZM32.00 35.00Q34.53 41.82 43.53 44.67Q39.16 36.31 32.00 35.00Z" fill="currentColor"/><circle cx="32" cy="35" r="3" fill="currentColor"/></svg>
+      </figure>
+    </div>
+    <div class="cord" aria-hidden="true"><span></span></div>
+  </section>
+
+  <div class="wrap home-wrap">
+    <section class="home-sec seshat">
+      <div class="home-sec-head"><p class="eyebrow">Кто такая Сешат</p><h2>Богиня письма, счёта и разметки фундаментов</h2></div>
+      <div class="seshat-cols">
+        <div class="prose">
+          <p>Сешат — древнеегипетская богиня письма и измерений. Её имя переводят как «писец» в женском роде. Египтяне считали её хранительницей Дома жизни — храмовой библиотеки и мастерской писцов, а ещё покровительницей строителей: один из её эпитетов — «Владычица строителей».</p>
+          <p>Главный обряд, связанный с Сешат, — «натягивание верёвки». Перед строительством храма фараон вместе с богиней размечал основание: по звёздам с помощью визира-мерхета определяли стороны света, натягивали шнур между кольями и задавали контур будущего здания.</p>
+          <p>Сешат вела и летопись: записывала годы правления фараона, юбилеи, переписи и военную добычу. Её изображали в шкуре леопарда поверх платья, а на голове — эмблему: семилучевую звезду на древке под дугой.</p>
+        </div>
+        <figure class="seshat-fig">
+          <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M9 35C9 20.725 14.04 14.5 25.8 14.5Q28.0 14.5 28.0 12.3V11.0a4.0 4.0 0 0 1 8 0V12.3Q36.0 14.5 38.2 14.5C49.96 14.5 55 20.725 55 35" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.3 35h3.4V61.5a1.7 1.7 0 0 1-3.4 0Z" fill="currentColor"/><path d="M32.00 35.00Q24.84 36.31 20.47 44.67Q29.47 41.82 32.00 35.00ZM32.00 35.00Q24.87 30.98 14.53 33.98Q24.45 38.17 32.00 35.00ZM32.00 35.00Q29.57 27.18 19.99 22.27Q24.34 32.12 32.00 35.00ZM32.00 35.00Q35.60 27.65 32.00 17.50Q28.40 27.65 32.00 35.00ZM32.00 35.00Q39.66 32.12 44.01 22.27Q34.43 27.18 32.00 35.00ZM32.00 35.00Q39.55 38.17 49.47 33.98Q39.13 30.98 32.00 35.00ZM32.00 35.00Q34.53 41.82 43.53 44.67Q39.16 36.31 32.00 35.00Z" fill="currentColor"/><circle cx="32" cy="35" r="3" fill="currentColor"/></svg>
+          <figcaption>Наш знак — стилизация её эмблемы: семь лучей розетки на древке и купол-дуга над ними.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="home-sec">
+      <div class="home-sec-head"><p class="eyebrow">Почему Seshat</p><h2>То же, что делала богиня, только для очистных</h2></div>
+      <ol class="parallels">
+        <li><b>Измерять</b><p>Сешат отвечала за меру и счёт. Seshat считает концентрации загрязнений после каждой ступени, энергию, осадок, капитальные и эксплуатационные затраты.</p></li>
+        <li><b>Размечать основание</b><p>Как в обряде натягивания верёвки, генплан раскладывает сооружения на участке по ходу очистки и показывает, сколько места займёт станция.</p></li>
+        <li><b>Вести записи</b><p>Профили стоков, схемы, нормативы и проекты хранятся в библиотеке, а нормативные документы собраны в одном разделе.</p></li>
+      </ol>
+    </section>
+
+    <section class="home-sec">
+      <div class="home-sec-head"><p class="eyebrow">Что внутри</p><h2>Разделы сайта</h2></div>
+      <div class="home-cards">
+        <a class="home-card" href="#constructor" data-go="constructor"><b>Конструктор</b><p>Состав стоков, 18 технологий от решёток до обратного осмоса, качество воды на выпуске, нормативы и экономика.</p></a>
+        <a class="home-card" href="#projects" data-go="projects"><b>Проекты</b><p>Несколько вариантов схем для одного объекта, сравнение по качеству и затратам, вывод о лучшем и срок окупаемости.</p></a>
+        <a class="home-card" href="#genplan" data-go="genplan"><b>Генплан</b><p>Станция в плане, вид сверху. Нажмите на сооружение, чтобы узнать, как оно работает и что делает с водой.</p></a>
+        <a class="home-card" href="#docs" data-go="docs"><b>Нормативные документы</b><p>Законы, справочники НДТ, своды правил и нормативы качества воды, на которых строится расчёт.</p></a>
+      </div>
+    </section>
+  </div>
+</div>
 <div class="wrap view" id="view-constructor">
   <header>
     <div>
@@ -101,16 +165,108 @@
   <section class="panel proj-bar-panel" aria-label="Выбор проекта"><div id="proj-bar"></div></section>
   <div id="proj-body" class="proj-body"></div>
 </div>
+<div class="wrap view" id="view-genplan" hidden>
+  <header>
+    <div>
+      <h1>Генплан</h1>
+      <p class="sub">Станция в плане, вид сверху. Размеры сооружений рассчитаны по расходу стоков, сооружения стоят по ходу очистки. Нажмите на любое, чтобы узнать, как оно работает.</p>
+    </div>
+  </header>
+  <section class="panel gp-top" aria-label="Выбор схемы">
+    <label class="gp-src" for="gp-source"><span>Схема</span><select id="gp-source"></select></label>
+    <div class="gp-stats" id="gp-stats"></div>
+  </section>
+  <div class="gp-grid">
+    <section class="panel gp-canvas-panel" aria-label="План станции">
+      <div class="gp-canvas" id="gp-canvas"></div>
+      <ul class="gp-legend">
+        <li><i class="lg-water"></i>резервуары с водой</li>
+        <li><i class="lg-bld"></i>здания</li>
+        <li><i class="lg-pipe"></i>трубопровод сточных вод</li>
+        <li><i class="lg-sludge"></i>трубопровод осадка</li>
+        <li><i class="lg-road"></i>внутренний проезд</li>
+      </ul>
+    </section>
+    <aside class="panel gp-info" id="gp-info" aria-live="polite"></aside>
+  </div>
+</div>
+<div class="wrap view" id="view-docs" hidden>
+  <header>
+    <div>
+      <h1>Нормативные документы</h1>
+      <p class="sub">Документы, на которые опираются проектирование и оценка очистных сооружений в России. Перед использованием проверяйте действующую редакцию в КонсультантПлюс, «Гаранте» или «Кодексе».</p>
+    </div>
+  </header>
+  <div class="docs" id="docs-list">
+    <section class="panel doc-group">
+      <h2>Законы</h2>
+      <article class="doc"><span class="doc-id">416-ФЗ</span><h3>Федеральный закон от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»</h3><p>Основы работы централизованных систем водоотведения: обязанности организаций водопроводно-канализационного хозяйства, программы повышения экологической эффективности, требования к составу сточных вод.</p></article>
+      <article class="doc"><span class="doc-id">7-ФЗ</span><h3>Федеральный закон от 10.01.2002 № 7-ФЗ «Об охране окружающей среды»</h3><p>Вводит наилучшие доступные технологии и технологическое нормирование, комплексные экологические разрешения и плату за негативное воздействие.</p><p class="doc-use">В Seshat: принцип подбора схем из технологий НДТ.</p></article>
+      <article class="doc"><span class="doc-id">74-ФЗ</span><h3>Водный кодекс Российской Федерации от 03.06.2006 № 74-ФЗ</h3><p>Использование и охрана водных объектов, условия сброса сточных вод, нормативы допустимого воздействия.</p></article>
+    </section>
+    <section class="panel doc-group">
+      <h2>Наилучшие доступные технологии</h2>
+      <article class="doc"><span class="doc-id">ИТС 10-2019</span><h3>Информационно-технический справочник «Очистка сточных вод с использованием централизованных систем водоотведения поселений, городских округов»</h3><p>Описывает технологии очистки городских сточных вод, относит их к НДТ и приводит достижимые показатели.</p><p class="doc-use">В Seshat: каталог технологий конструктора; эффективности ступеней нужно сверять с этим справочником.</p><p class="doc-link"><a href="https://www.consultant.ru/law/podborki/csv_poselenij_i_gorodskih_okrugov/" target="_blank" rel="noopener">Подборка КонсультантПлюс по ЦСВ поселений ↗</a></p></article>
+      <article class="doc"><span class="doc-id">ПП № 1430</span><h3>Постановление Правительства РФ от 15.09.2020 № 1430</h3><p>Утверждает технологические показатели наилучших доступных технологий в области очистки сточных вод с использованием централизованных систем водоотведения поселений и городских округов.</p><p class="doc-use">Пока не встроено: эти значения стоит добавить в конструктор как готовый набор нормативов «НДТ».</p></article>
+      <article class="doc"><span class="doc-id">ИТС 8-2022</span><h3>Информационно-технический справочник «Очистка сточных вод при производстве продукции (товаров), выполнении работ и оказании услуг на крупных предприятиях»</h3><p>Технологии очистки промышленных сточных вод: локальные очистные, реагентные и физико-химические методы.</p><p class="doc-use">В Seshat: примеры «Молочный завод» и «Ливневые / АЗС», флотация, сорбция.</p><p class="doc-link"><a href="https://meganorm.ru/mega_doc/norm/perechen/3/its_8-2022_informatsionno-tekhnicheskiy_spravochnik_po.html" target="_blank" rel="noopener">Текст справочника на «Меганорм» ↗</a></p></article>
+    </section>
+    <section class="panel doc-group">
+      <h2>Проектирование</h2>
+      <article class="doc"><span class="doc-id">СП 32.13330.2018</span><h3>Свод правил «Канализация. Наружные сети и сооружения» (актуализированная редакция СНиП 2.04.03-85)</h3><p>Основной документ для расчёта очистных сооружений: расчётные расходы, решётки, песколовки, отстойники, аэротенки, обработка осадка, обеззараживание.</p><p class="doc-use">В Seshat: ориентир для типовых параметров сооружений в описаниях на генплане.</p></article>
+      <article class="doc"><span class="doc-id">СанПиН 2.2.1/2.1.1.1200-03</span><h3>«Санитарно-защитные зоны и санитарная классификация предприятий, сооружений и иных объектов»</h3><p>Размер санитарно-защитной зоны вокруг очистных сооружений в зависимости от производительности и способа обработки осадка.</p><p class="doc-use">В Seshat: понадобится для размещения станции относительно жилой застройки.</p></article>
+    </section>
+    <section class="panel doc-group">
+      <h2>Нормативы качества воды</h2>
+      <article class="doc"><span class="doc-id">Приказ № 552</span><h3>Приказ Минсельхоза России от 13.12.2016 № 552 «Об утверждении нормативов качества воды водных объектов рыбохозяйственного значения…»</h3><p>Предельно допустимые концентрации веществ в водоёмах рыбохозяйственного значения — самые строгие нормативы для сброса.</p><p class="doc-use">В Seshat: набор нормативов «ПДК рыбохоз. водоёмов».</p></article>
+      <article class="doc"><span class="doc-id">СанПиН 1.2.3685-21</span><h3>«Гигиенические нормативы и требования к обеспечению безопасности и (или) безвредности для человека факторов среды обитания»</h3><p>ПДК веществ в воде водных объектов хозяйственно-питьевого и культурно-бытового водопользования.</p></article>
+      <article class="doc"><span class="doc-id">СанПиН 2.1.3684-21</span><h3>«Санитарно-эпидемиологические требования к содержанию территорий городских и сельских поселений, к водным объектам, питьевой воде…»</h3><p>Требования к охране водных объектов и к условиям отведения сточных вод.</p></article>
+      <article class="doc"><span class="doc-id">ПП № 644</span><h3>Постановление Правительства РФ от 29.07.2013 № 644 «Об утверждении Правил холодного водоснабжения и водоотведения…»</h3><p>Требования к составу сточных вод абонентов, сбрасываемых в централизованную канализацию, — пригодится для промышленных стоков перед городскими очистными.</p></article>
+    </section>
+  </div>
+</div>
+<div class="wrap view" id="view-about" hidden>
+  <header>
+    <div>
+      <h1>О проекте</h1>
+      <p class="sub">Seshat — стартап-проект, который разрабатывается как выпускная работа бакалавриата.</p>
+    </div>
+  </header>
+  <div class="about">
+    <section class="panel prose">
+      <h2>Зачем</h2>
+      <p>На ранней стадии проектирования очистных сооружений нужно быстро ответить на вопросы: какие технологии выбрать, выполнит ли схема нормативы сброса, сколько она будет стоить и сколько места займёт. Профессиональные симуляторы (BioWin, GPS-X, SUMO) требуют лицензии и подготовки. Seshat даёт оценку за минуты прямо в браузере.</p>
+      <h2>Как устроен расчёт</h2>
+      <ul>
+        <li><b>Качество воды.</b> Коэффициентная модель: каждая ступень снижает концентрации на типовую долю. Биологические ступени учитывают нитрификацию, денитрификацию с ограничением по органике (около 4 мг БПК₅ на 1 мг азота), ассимиляцию азота и фосфора илом и прирост ила.</li>
+        <li><b>Экономика.</b> Капзатраты заданы для 10 000 м³/сут и пересчитываются на расход с эффектом масштаба (показатель 0,7). Эксплуатация — электроэнергия, реагенты, расходные материалы, вывоз осадка и ремонт. Персонал и налоги пока не учтены.</li>
+        <li><b>Генплан.</b> Площади сооружений — по типовому времени пребывания и гидравлическим нагрузкам, раскладка — по ходу очистки.</li>
+      </ul>
+      <h2>Ограничения</h2>
+      <p>Seshat помогает сравнивать варианты и не заменяет проектный расчёт по своду правил и моделям активного ила (ASM, ADM). Эффективности технологий и цены — ориентиры; для конкретного объекта их нужно уточнять по справочникам НДТ и коммерческим предложениям.</p>
+    </section>
+    <aside class="panel about-side">
+      <dl class="about-dl">
+        <dt>Версия</dt><dd data-app-version>—</dd>
+        <dt>Где хранятся данные</dt><dd>В этом браузере. Регистрации нет, на сервер ничего не отправляется. Библиотеку можно выгрузить в файл.</dd>
+        <dt>Технологии</dt><dd>Статичный сайт на HTML, CSS и JavaScript, без сборки. Размещён на GitHub Pages.</dd>
+        <dt>Исходный код</dt><dd><a href="https://github.com/katsiubalex/Seshat" target="_blank" rel="noopener">github.com/katsiubalex/Seshat ↗</a></dd>
+      </dl>
+    </aside>
+  </div>
+</div>
 </main>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.7.6"></script>
-<script src="js/model.js?v=0.7.6"></script>
-<script src="js/icons.js?v=0.7.6"></script>
-<script src="js/economics.js?v=0.7.6"></script>
-<script src="js/store.js?v=0.7.6"></script>
-<script src="js/compare.js?v=0.7.6"></script>
-<script src="js/app.js?v=0.7.6"></script>
-<script src="js/projects.js?v=0.7.6"></script>
+<script src="js/data.js?v=0.8.0"></script>
+<script src="js/model.js?v=0.8.0"></script>
+<script src="js/icons.js?v=0.8.0"></script>
+<script src="js/economics.js?v=0.8.0"></script>
+<script src="js/store.js?v=0.8.0"></script>
+<script src="js/compare.js?v=0.8.0"></script>
+<script src="js/app.js?v=0.8.0"></script>
+<script src="js/plan.js?v=0.8.0"></script>
+<script src="js/projects.js?v=0.8.0"></script>
+<script src="js/genplan.js?v=0.8.0"></script>
+<script src="js/main.js?v=0.8.0"></script>
 </body>
 </html>

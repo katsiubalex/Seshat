@@ -2,17 +2,19 @@
 // Использует общие функции и состояние конструктора из app.js. Проекты сохраняются сразу при любом изменении.
 
 /* ---------- навигация ---------- */
-const VIEWS = ['constructor', 'projects'];
+const VIEWS = ['home', 'constructor', 'projects', 'genplan', 'docs', 'about'];
+const VIEW_RENDER = { projects: () => renderProjects() }; // разделы, которые перерисовываются при открытии
 function showView(view) {
-  if (!VIEWS.includes(view)) view = 'constructor';
+  if (!VIEWS.includes(view)) view = 'home';
   for (const v of VIEWS) document.getElementById('view-' + v).hidden = v !== view;
   document.querySelectorAll('.nav-link').forEach(a => {
     if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  if (view === 'projects') renderProjects();
+  document.body.dataset.view = view;
+  if (VIEW_RENDER[view]) VIEW_RENDER[view]();
   window.scrollTo(0, 0);
 }
-function viewFromHash() { return (location.hash || '#constructor').slice(1); }
+function viewFromHash() { return (location.hash || '#home').slice(1); }
 window.addEventListener('hashchange', () => showView(viewFromHash()));
 function go(view) { if (viewFromHash() === view) showView(view); else location.hash = view; }
 
@@ -359,6 +361,5 @@ document.getElementById('ctx').addEventListener('click', ev => {
 state.projectOpen = projectOpenId() || store.list('project')[0]?.id || null;
 renderNavCount();
 renderCtx();
-showView(viewFromHash());
 // Библиотека загружена из файла — обновить список проектов.
 document.getElementById('file-import').addEventListener('change', () => setTimeout(() => { renderNavCount(); if (viewFromHash() === 'projects') renderProjects(); }, 50));

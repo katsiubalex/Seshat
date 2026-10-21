@@ -8,7 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const { version } = require('../package.json');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const refs = [...html.matchAll(/(?:href|src)="((?:css|js)\/[^"]+)"/g)].map(m => m[1]);
+const refs = [...html.matchAll(/(?:href|src)="((?:css|js|assets)\/[^"]+)"/g)].map(m => m[1]);
 
 test('все локальные файлы подключены с актуальной версией', () => {
   assert.ok(refs.length >= 5);

@@ -702,3 +702,13 @@ details.stage:not([open])>summary::after{transform:rotate(-90deg)}
   .shelf-item{width:88px}
 }
 body[data-view=constructor] .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
+
+/* название модуля в меню и имена на странице «О проекте» */
+.nav-t{display:flex;flex-direction:column;line-height:1.2}
+.nav-t small{font-size:11px;font-weight:400;color:var(--muted)}
+@media (max-width:860px){.nav-t small{display:none}}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.names{grid-template-columns:minmax(0,1fr)}}
+.name-card{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface2)}
+.name-card h3{margin:0;font-family:var(--f-display);font-weight:500;font-size:18px;color:var(--accent)}
+.name-sub{margin:0!important;font-size:12px!important;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}

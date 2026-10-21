@@ -2,7 +2,7 @@
 // Использует общие функции и состояние конструктора из app.js. Проекты сохраняются сразу при любом изменении.
 
 /* ---------- навигация ---------- */
-const VIEWS = ['seshat', 'constructor', 'projects', 'docs', 'about'];
+const VIEWS = ['seshat', 'constructor', 'projects', 'kb', 'docs', 'about'];
 const VIEW_RENDER = { projects: () => renderProjects() }; // разделы, которые перерисовываются при открытии
 function showView(view) {
   if (view === 'home') view = 'seshat'; // старые ссылки на главную
@@ -10,6 +10,8 @@ function showView(view) {
   let param = null;
   const m = /^doc-([a-z0-9]+)$/.exec(view); // #doc-<id> — страница документа
   if (m) { param = m[1]; view = 'docs'; }
+  const k = /^kb-([a-zA-Z0-9-]+)$/.exec(view); // #kb-… — раздел или статья базы знаний
+  if (k) { param = k[1]; view = 'kb'; }
   if (!VIEWS.includes(view)) view = 'seshat';
   for (const v of VIEWS) document.getElementById('view-' + v).hidden = v !== view;
   document.querySelectorAll('.nav-link').forEach(a => {

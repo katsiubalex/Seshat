@@ -2,7 +2,7 @@
 // показатели сверху, каталог технологий снизу. План редактируется: сооружения двигают, соединяют трубами,
 // врезают в трубы из каталога, делают параллельные линии. Использует состояние и функции app.js и projects.js.
 
-const gpUI = { sel: null, edge: null, cam: null, layer: 'plan', qp: 'bod', mode: 'plan', drawer: null, sheet: false, pane: 'pfd' };
+const gpUI = { sel: null, edge: null, aux: null, cam: null, layer: 'plan', qp: 'bod', mode: 'plan', drawer: null, sheet: false, pane: 'pfd' };
 const SVGNS = 'http://www.w3.org/2000/svg';
 const n1 = v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 });
 const n0 = v => Math.round(v).toLocaleString('ru-RU');
@@ -257,7 +257,7 @@ function renderPlan(sim, eco) {
   const pipes = el('g', { class: 'gp-pipes' }, svg);
   gpView.pipes = pipes;
   drawPipes(pipes, L, sim, fs, pad, L.blocks);
-  L.aux.forEach(a => { const g = el('g', { class: 'gp-aux' }, svg); el('title', {}, g).textContent = a.label; drawBld(g, a.x, a.y, a.w, a.h, a.id === 'abk' ? 'АБК' : 'Обезвоживание', fs); });
+  L.aux.forEach(a => { const g = el('g', { class: 'gp-aux' + (gpUI.aux === a.id ? ' sel' : ''), 'data-aux': a.id }, svg); el('title', {}, g).textContent = a.label + '. Нажмите, чтобы узнать, что это'; drawBld(g, a.x, a.y, a.w, a.h, a.id === 'abk' ? 'АБК' : 'Обезвоживание', fs); });
   // подкраска в режимах «Затраты» и «Энергия»
   let ov = () => null;
   if (gpUI.layer === 'cost' || gpUI.layer === 'energy') {
@@ -369,7 +369,7 @@ function renderStudio() {
   const L = gpUI.mode === 'plan' ? renderPlan(sim, eco) : SeshatPlan.layout(state.q, SeshatGraph.norm(state.steps));
   renderHud(sim, eco, L); renderEdges(sim); renderOutCheck(sim);
   const card = document.getElementById('gp-info');
-  if (gpUI.mode === 'plan' && L && (gpUI.sel != null || gpUI.edge)) { card.hidden = false; renderUnitCard(sim, eco, L); }
+  if (gpUI.mode === 'plan' && L && (gpUI.sel != null || gpUI.edge || gpUI.aux)) { card.hidden = false; renderUnitCard(sim, eco, L); }
   else { card.hidden = true; card.innerHTML = ''; }
 }
 
@@ -378,6 +378,13 @@ function gpName(i, steps) { return `${i + 1}. ${U[steps[i].u].n.split(' (')[0]}`
 function renderUnitCard(sim, ec, L) {
   const box = document.getElementById('gp-info'), i = gpUI.sel, steps = L.steps, q = state.q;
   const close = '<button type="button" class="icon-btn card-close" data-gpnav="close" aria-label="Закрыть карточку">✕</button>';
+  if (gpUI.aux && SeshatKB) {
+    const a = SeshatKB.AUX.find(x => x.id === gpUI.aux), b = L.aux.find(x => x.id === gpUI.aux);
+    box.innerHTML = `${close}<h2>${esc(a.t)}</h2><p>${esc(a.lead)}</p>${a.s.map(([h, t]) => `<h3>${esc(h)}</h3><p>${esc(t)}</p>`).join('')}
+      <dl class="gp-dl"><dt>Площадь</dt><dd>≈ ${n0(b.area)} м² (${n0(b.w)} × ${n0(b.h)} м)</dd></dl>
+      <p><a href="#kb-a-${a.id}">Подробнее в базе знаний →</a></p>`;
+    return;
+  }
   if (gpUI.edge) {
     const [a, b] = gpUI.edge, e = L.edges.find(x => x.a === a && x.b === b);
     const c = sim.prof[a + 1];
@@ -412,6 +419,7 @@ function renderUnitCard(sim, ec, L) {
     ${tune}
     <h3>Как работает</h3><p>${esc(P.how)}</p>
     <h3>Типовые параметры</h3><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <p><a href="#kb-u-${b.id}">Подробнее в базе знаний: процессы, показатели →</a></p>
     <h3>Размеры и затраты</h3><p>${gpSize(b)}</p>
     <dl class="gp-dl"><dt>Капзатраты</dt><dd>${mln(e.capex)}</dd><dt>Эксплуатация</dt><dd>${money(e.opex)} в сутки</dd><dt>Электроэнергия</dt><dd>${n0(e.kwh)} кВт·ч/сут</dd>${sim.perStep[i].sludge >= 1 ? `<dt>Осадок</dt><dd>${n1(sim.perStep[i].sludge / 1000)} т сухого вещества в сутки</dd>` : ''}</dl>`;
 }
@@ -426,7 +434,7 @@ function gpSize(b) {
 function gpCommit(steps, sel, msg, edge) {
   if (!steps) return;
   state.steps = steps;
-  gpUI.sel = sel; gpUI.edge = edge || null;
+  gpUI.sel = sel; gpUI.edge = edge || null; gpUI.aux = null;
   update();
   if (msg) toast(msg);
 }
@@ -548,7 +556,7 @@ gpCanvas.addEventListener('pointerdown', ev => {
     capture(gpCanvas, ev); return;
   }
   if (pipe) return; // нажатие на трубу обрабатывает click
-  gpDrag = { kind: 'pan', sx: ev.clientX, sy: ev.clientY, cam: camNow(), k: unitsPerPx(), moved: false, id: ev.pointerId };
+  gpDrag = { kind: 'pan', sx: ev.clientX, sy: ev.clientY, cam: camNow(), k: unitsPerPx(), moved: false, id: ev.pointerId, aux: ev.target.closest('.gp-aux')?.dataset.aux };
   capture(gpCanvas, ev);
 });
 gpCanvas.addEventListener('pointermove', ev => {
@@ -596,7 +604,8 @@ function gpEnd(ev, cancel) {
   if (ev.pointerId !== gpDrag.id) return;
   const d = gpDrag; gpDrag = null; gpCanvas.classList.remove('panning');
   if (d.kind === 'pan') {
-    if (!d.moved && !cancel && (gpUI.sel != null || gpUI.edge)) { gpUI.sel = null; gpUI.edge = null; renderStudio(); }
+    if (!d.moved && !cancel && d.aux) { gpUI.aux = d.aux; gpUI.sel = null; gpUI.edge = null; renderStudio(); return; }
+    if (!d.moved && !cancel && (gpUI.sel != null || gpUI.edge || gpUI.aux)) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; renderStudio(); }
     return;
   }
   if (d.kind === 'pipe') {
@@ -613,7 +622,7 @@ gpCanvas.addEventListener('pointercancel', ev => gpEnd(ev, true));
 gpCanvas.addEventListener('click', ev => {
   const h = ev.target.closest('.gp-pipe-hit'); if (!h) return;
   const [a, b] = h.dataset.e.split('-').map(Number);
-  gpUI.edge = [a, b]; gpUI.sel = null; renderStudio();
+  gpUI.edge = [a, b]; gpUI.sel = null; gpUI.aux = null; renderStudio();
 });
 gpCanvas.addEventListener('wheel', ev => {
   if (!gpView) return;
@@ -665,7 +674,7 @@ shelf.addEventListener('keydown', ev => {
 });
 
 /* ---------- кнопки экрана ---------- */
-function gpSelect(i) { gpUI.sel = i; gpUI.edge = null; renderStudio(); }
+function gpSelect(i) { gpUI.sel = i; gpUI.edge = null; gpUI.aux = null; renderStudio(); }
 gpCanvas.addEventListener('keydown', ev => {
   const g = ev.target.closest('.gp-unit'); if (!g || (ev.key !== 'Enter' && ev.key !== ' ')) return;
   ev.preventDefault(); gpSelect(+g.dataset.i);
@@ -694,7 +703,7 @@ document.getElementById('plan-tools').addEventListener('click', ev => {
   if (ev.target.closest('[data-gpact="auto"]')) gpOp('auto');
 });
 document.getElementById('gp-info').addEventListener('click', ev => {
-  if (ev.target.closest('[data-gpnav="close"]')) { gpUI.sel = null; gpUI.edge = null; renderStudio(); return; }
+  if (ev.target.closest('[data-gpnav="close"]')) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; renderStudio(); return; }
   const cut = ev.target.closest('[data-cut]'); if (cut) { gpOp('cut', [gpUI.sel, +cut.dataset.cut]); return; }
   const act = ev.target.closest('[data-gpact]')?.dataset.gpact;
   if (act === 'cut') gpOp('cut', gpUI.edge);

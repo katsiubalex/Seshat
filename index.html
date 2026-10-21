@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Тласольтеотль — конструктор очистных сооружений · Сешат</title>
 <meta name="description" content="Сешат — образовательная экосистема по водоснабжению и канализации. Тласольтеотль — её модуль: конструктор схем очистки сточных вод из наилучших доступных технологий с расчётом качества воды и затрат.">
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.18.0">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg?v=0.19.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=0.18.0">
+<link rel="stylesheet" href="css/style.css?v=0.19.0">
 </head>
 <body>
 <div class="app">
@@ -21,6 +21,9 @@
     <a class="nav-link" href="#projects" data-view="projects">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 16v-3M12 16v-5M16 16v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <span>Проекты</span><span class="nav-count" id="nav-projects-count"></span></a>
+    <a class="nav-link" href="#kb" data-view="kb">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5c-.8 0-1.5-.7-1.5-1.5zM20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6.5 8h2.5M6.5 11h2.5M15 8h2.5M15 11h2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>База знаний</span></a>
     <a class="nav-link" href="#docs" data-view="docs">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 3v4h4M9 12h7M9 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Нормативные документы</span></a>
@@ -150,6 +153,7 @@
   <section class="panel proj-bar-panel" aria-label="Выбор проекта"><div id="proj-bar"></div></section>
   <div id="proj-body" class="proj-body"></div>
 </div>
+<div class="wrap view" id="view-kb" hidden><div id="kb-root" class="kb-root"></div></div>
 <div class="wrap view" id="view-docs" hidden><div id="docs-root" class="docs-root"></div></div>
 <div class="wrap view about-page" id="view-about" hidden>
   <header class="about-head">
@@ -252,21 +256,23 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.18.0"></script>
-<script src="js/graph.js?v=0.18.0"></script>
-<script src="js/model.js?v=0.18.0"></script>
-<script src="js/icons.js?v=0.18.0"></script>
-<script src="js/economics.js?v=0.18.0"></script>
-<script src="js/store.js?v=0.18.0"></script>
-<script src="js/compare.js?v=0.18.0"></script>
-<script src="js/app.js?v=0.18.0"></script>
-<script src="js/plan.js?v=0.18.0"></script>
-<script src="js/oracle.js?v=0.18.0"></script>
-<script src="js/projects.js?v=0.18.0"></script>
-<script src="js/docs.js?v=0.18.0"></script>
-<script src="js/docsview.js?v=0.18.0"></script>
-<script src="js/genplan.js?v=0.18.0"></script>
-<script src="js/seshat.js?v=0.18.0"></script>
-<script src="js/main.js?v=0.18.0"></script>
+<script src="js/data.js?v=0.19.0"></script>
+<script src="js/graph.js?v=0.19.0"></script>
+<script src="js/model.js?v=0.19.0"></script>
+<script src="js/icons.js?v=0.19.0"></script>
+<script src="js/economics.js?v=0.19.0"></script>
+<script src="js/store.js?v=0.19.0"></script>
+<script src="js/compare.js?v=0.19.0"></script>
+<script src="js/app.js?v=0.19.0"></script>
+<script src="js/plan.js?v=0.19.0"></script>
+<script src="js/oracle.js?v=0.19.0"></script>
+<script src="js/projects.js?v=0.19.0"></script>
+<script src="js/docs.js?v=0.19.0"></script>
+<script src="js/docsview.js?v=0.19.0"></script>
+<script src="js/genplan.js?v=0.19.0"></script>
+<script src="js/seshat.js?v=0.19.0"></script>
+<script src="js/kb.js?v=0.19.0"></script>
+<script src="js/kbview.js?v=0.19.0"></script>
+<script src="js/main.js?v=0.19.0"></script>
 </body>
 </html>

@@ -2,10 +2,11 @@
 // Использует общие функции и состояние конструктора из app.js. Проекты сохраняются сразу при любом изменении.
 
 /* ---------- навигация ---------- */
-const VIEWS = ['seshat', 'constructor', 'projects', 'genplan', 'docs', 'about'];
+const VIEWS = ['seshat', 'constructor', 'projects', 'docs', 'about'];
 const VIEW_RENDER = { projects: () => renderProjects() }; // разделы, которые перерисовываются при открытии
 function showView(view) {
   if (view === 'home') view = 'seshat'; // старые ссылки на главную
+  if (view === 'genplan') view = 'constructor'; // генплан теперь часть конструктора
   let param = null;
   const m = /^doc-([a-z0-9]+)$/.exec(view); // #doc-<id> — страница документа
   if (m) { param = m[1]; view = 'docs'; }

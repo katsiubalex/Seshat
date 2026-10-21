@@ -1,5 +1,6 @@
 // Схема очистки как граф: ступени соединены трубами, поток может делиться на параллельные линии и снова сливаться.
-// Ступень: { u, eff, to: [индексы следующих ступеней], sp?: [доли потока по трубам], x?, y? — место на генплане, м }.
+// Ступень: { u, eff, to: [индексы следующих ступеней], sp?: [доли потока по трубам], x?, y? — место на генплане, м,
+//   idle? — сооружение поставлено на план, но трубы к нему ещё не подведены: оно не работает }.
 // Ступени хранятся в порядке хода воды: трубы ведут только вперёд по списку, поэтому замкнутых контуров нет.
 // Старые схемы без поля to считаются последовательными. Чистые функции, тестируются в Node.
 (function (root) {
@@ -8,7 +9,7 @@
   /** Привести схему к виду с явными трубами: копия, лишние и обратные связи отброшены. */
   function norm(steps) {
     const n = steps.length, legacy = !steps.some(s => s && Array.isArray(s.to));
-    return steps.map((s, i) => {
+    const out = steps.map((s, i) => {
       const o = { u: s.u, eff: { ...(s.eff || {}) } };
       let to = legacy ? (i < n - 1 ? [i + 1] : []) : (Array.isArray(s.to) ? s.to : []);
       let sp = !legacy && Array.isArray(s.sp) && s.sp.length === to.length ? s.sp : null;
@@ -18,8 +19,14 @@
       o.to = to;
       if (sp && to.length > 1 && sp.every(w => isNum(w) && w > 0) && sp.some(w => w !== sp[0])) o.sp = sp.map(w => +w.toFixed(4));
       if (isNum(s.x) && isNum(s.y)) { o.x = Math.round(s.x * 10) / 10; o.y = Math.round(s.y * 10) / 10; }
+      if (s.idle === true && !legacy) o.idle = true;
       return o;
     });
+    // как только к сооружению подвели или от него отвели трубу, оно работает
+    const hasIn = out.map(() => false);
+    out.forEach(s => s.to.forEach(j => { hasIn[j] = true; }));
+    out.forEach((s, i) => { if (s.idle && (s.to.length || hasIn[i])) delete s.idle; });
+    return out;
   }
 
   const share = (s, k) => s.sp ? s.sp[k] / s.sp.reduce((a, b) => a + b, 0) : 1 / s.to.length;
@@ -36,14 +43,14 @@
    *   f — через ступень; src — доля исходных стоков, поступающая прямо на ступень
    */
   function flows(steps) {
-    const p = preds(steps), sources = steps.map((_, i) => i).filter(i => !p[i].length);
-    const src = steps.map((_, i) => p[i].length ? 0 : 1 / sources.length);
+    const p = preds(steps), sources = steps.map((_, i) => i).filter(i => !p[i].length && !steps[i].idle);
+    const src = steps.map((s, i) => p[i].length || s.idle ? 0 : 1 / sources.length);
     const f = steps.map(() => 0), edges = [];
     steps.forEach((s, i) => {
       f[i] += src[i];
       s.to.forEach((j, k) => { const v = f[i] * share(s, k); f[j] += v; edges.push({ a: i, b: j, f: v }); });
     });
-    return { f, src, edges, sinks: steps.map((s, i) => i).filter(i => !steps[i].to.length), preds: p };
+    return { f, src, edges, sinks: steps.map((s, i) => i).filter(i => !steps[i].to.length && !steps[i].idle), preds: p, idle: steps.map(s => !!s.idle) };
   }
 
   /** Все ступени выше по течению для каждой ступени */
@@ -58,7 +65,7 @@
     steps.forEach((_, i) => { d[i] = p[i].length ? Math.max(...p[i].map(j => d[j] + 1)) : 0; });
     return d;
   }
-  const isChain = steps => steps.every((s, i) => i === steps.length - 1 ? !s.to.length : s.to.length === 1 && s.to[0] === i + 1);
+  const isChain = steps => !steps.some(s => s.idle) && steps.every((s, i) => i === steps.length - 1 ? !s.to.length : s.to.length === 1 && s.to[0] === i + 1);
 
   /* ---------- правка через список труб ---------- */
   function toEdges(steps) {
@@ -93,6 +100,17 @@
   function append(steps, step) {
     const n = steps.length, e = toEdges(steps);
     steps.forEach((s, i) => { if (!s.to.length) e.push([i, n, 1]); });
+    return fromEdges([...bare(steps), step], e);
+  }
+  /** Поставить сооружение на план без труб: оно не работает, пока его не подключат */
+  function place(steps, step) {
+    return fromEdges([...bare(steps), { ...step, idle: true }], toEdges(steps));
+  }
+  /** Врезать сооружение в трубу a → b: вода идёт a → новое → b */
+  function split(steps, a, b, step) {
+    const n = steps.length, e = toEdges(steps), k = e.findIndex(x => x[0] === a && x[1] === b);
+    if (k < 0) return null;
+    const w = e[k][2]; e.splice(k, 1, [a, n, w], [n, b, 1]);
     return fromEdges([...bare(steps), step], e);
   }
   /** Вставить ступень перед ступенью idx: вода, шедшая в idx, сначала проходит новую */
@@ -133,7 +151,7 @@
   }
   /** Параллельная линия: копия ступени с теми же входами и выходами, поток делится поровну */
   function parallel(steps, i) {
-    const n = steps.length, e = toEdges(steps), copy = { u: steps[i].u, eff: { ...steps[i].eff } };
+    const n = steps.length, e = toEdges(steps), copy = { u: steps[i].u, eff: { ...steps[i].eff }, ...(steps[i].idle ? { idle: true } : {}) };
     e.filter(x => x[1] === i).forEach(([a, , w]) => e.push([a, n, w]));
     e.filter(x => x[0] === i).forEach(([, b, w]) => e.push([n, b, w]));
     const r = build([...bare(steps), copy], e);
@@ -146,6 +164,6 @@
     return norm(s);
   }
 
-  root.SeshatGraph = { norm, flows, preds, ancestors, depth, isChain, append, insertBefore, remove, swap, connect, disconnect, parallel, setSplit, share, lastPos: () => lastPos };
+  root.SeshatGraph = { norm, flows, place, split, preds, ancestors, depth, isChain, append, insertBefore, remove, swap, connect, disconnect, parallel, setSplit, share, lastPos: () => lastPos };
   if (typeof module !== 'undefined') module.exports = root.SeshatGraph;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

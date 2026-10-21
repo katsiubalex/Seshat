@@ -170,23 +170,25 @@
    * @param {(string|Object)[]} input — id технологий (последовательная схема) или ступени схемы
    * @returns {{blocks:Object[], aux:Object[], pipes:number[][][], edges:Object[], site:{w,h}, area:{structures,site}}}
    */
-  function layout(q, input) {
+  function layout(q, input, opts) {
+    const aspect = opts && opts.aspect > 0 ? opts.aspect : 1.6; // ширина/высота экрана: под узкий экран — больше рядов
     const steps = G.norm(input.map(s => typeof s === 'string' ? { u: s, eff: {} } : s));
     const fl = G.flows(steps), dep = G.depth(steps);
-    const sizes = steps.map((s, i) => ({ ...unitSize(s.u, q * fl.f[i]), index: i, f: fl.f[i] }));
+    const sizes = steps.map((s, i) => ({ ...unitSize(s.u, s.idle ? q : q * fl.f[i]), index: i, f: fl.f[i], idle: !!s.idle }));
     const margin = 22; // от ограды до сооружений (с учётом проезда)
 
     // автоматическая раскладка: колонки по глубине, колонки — рядами «змейкой»
     const layers = [];
-    sizes.forEach((b, i) => { (layers[dep[i]] = layers[dep[i]] || []).push(b); });
+    sizes.forEach((b, i) => { if (!b.idle) (layers[dep[i]] = layers[dep[i]] || []).push(b); });
     const cols = layers.filter(Boolean).map(list => ({ list, w: Math.max(...list.map(b => b.w)), h: list.reduce((s, b) => s + b.h, 0) + GAP * 1.2 * (list.length - 1) }));
     const total = cols.reduce((s, c) => s + c.w, 0) + GAP * Math.max(0, cols.length - 1);
     const maxH = Math.max(20, ...cols.map(c => c.h));
-    const rowW = Math.max(120, Math.min(total, Math.sqrt(total * maxH) * 2.2));
+    const rowW = Math.max(120, Math.min(total, Math.sqrt(total * maxH) * 2.2 * Math.sqrt(Math.min(2.5, Math.max(0.4, aspect)) / 1.6)));
     const rows = [[]]; let x = 0;
     cols.forEach(c => { if (x > 0 && x + c.w > rowW) { rows.push([]); x = 0; } rows[rows.length - 1].push(c); x += c.w + GAP; });
     const auto = []; let y = margin;
     rows.forEach((row, ri) => {
+      if (!row.length) return;
       const h = Math.max(...row.map(c => c.h)), w = row.reduce((s, c) => s + c.w, 0) + GAP * (row.length - 1);
       let cx = 0;
       row.forEach(c => {
@@ -197,6 +199,9 @@
       });
       y += h + GAP * 2.2;
     });
+    // неподключённые сооружения — отдельным рядом под схемой
+    let ix = margin;
+    sizes.forEach((b, i) => { if (b.idle) { auto[i] = { x: ix, y, row: rows.length }; ix += b.w + GAP; } });
 
     // сохранённые места; ступени без места — отдельным рядом ниже
     const placed = steps.map((s, i) => s.x != null ? { x: s.x, y: s.y, row: 0, fixed: true } : null);

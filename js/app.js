@@ -251,42 +251,38 @@ function renderInputs(){
 document.getElementById('inputs').addEventListener('input',ev=>{const t=ev.target,v=parseNum(t.value);markInvalid(t,v);if(Number.isNaN(v))return;if(t.id==='in-q')state.q=v||0;else state.c[t.id.slice(3)]=v||0;update()});
 /* ---------- каталог ---------- */
 function effChips(eff){return Object.entries(eff).filter(([,v])=>v>0).map(([k,v])=>`<span class="chip">${SHORT[k]} −${v}%</span>`).join('')}
-// Каталог: поиск по названию и описанию, стадии сворачиваются. Открытость стадий запоминается.
-const libUI = { q: '', closed: new Set() };
-try { JSON.parse(localStorage.getItem('seshat-lib-closed') || '[]').forEach(x => libUI.closed.add(x)); } catch (e) {}
+// Каталог — полка внизу экрана: вкладки по стадиям очистки и поиск. Карточку нажимают или тянут на план (genplan.js).
+const libUI = { q: '', tab: 'mech' };
+try { const t = localStorage.getItem('seshat-shelf-tab'); if (t && STAGES.some(s => s.id === t)) libUI.tab = t; } catch (e) {}
 function renderLibrary(){
- const box=document.getElementById('library'), q=libUI.q.trim().toLowerCase().replace(/ё/g,'е');
+ const q=libUI.q.trim().toLowerCase().replace(/ё/g,'е');
  // ищем по названию, краткому описанию и описанию принципа работы (plan.js)
  const text=u=>(u.n+' '+u.d+' '+((window.SeshatPlan&&SeshatPlan.PLAN[u.id]||{}).how||'')).toLowerCase().replace(/ё/g,'е');
  const stem=q.length>5?q.slice(0,-2):q; // грубая основа слова: «фосфор» найдёт и «фосфаты»
  const match=u=>!q||text(u).includes(stem);
- let found=0;
- const html=STAGES.map(s=>{
-  const list=UNITS.filter(u=>u.st===s.id&&match(u)); found+=list.length;
-  if(!list.length)return '';
-  const open=q||!libUI.closed.has(s.id);
-  return `<details class="stage" data-st="${s.id}" ${open?'open':''}><summary class="stage-name"><span class="dot" style="background:${s.c}"></span>${s.n}<span class="stage-count">${list.length}</span></summary><div class="stage-items">`+
-   list.map(u=>`<div class="lib-item" style="--c:${s.c}">${SeshatIcons.icon(u.id,44)}<div><b>${esc(u.n)}</b><p>${esc(u.d)}</p></div><button type="button" data-add="${u.id}" aria-label="Добавить: ${esc(u.n)}">+</button></div>`).join('')+'</div></details>';
+ document.getElementById('shelf-tabs').innerHTML=STAGES.map(s=>{
+  const n=UNITS.filter(u=>u.st===s.id&&match(u)).length,on=!q&&libUI.tab===s.id;
+  return `<button type="button" role="tab" aria-selected="${on}" data-tab="${s.id}" style="--c:${s.c}" ${q&&!n?'disabled':''}><span class="dot" style="background:${s.c}"></span>${s.n.replace(' очистка','')}${q?`<small>${n}</small>`:''}</button>`;
  }).join('');
- box.innerHTML=html||`<div class="empty">Ничего не найдено по запросу «${esc(libUI.q)}».</div>`;
- document.getElementById('lib-count').textContent=q?`${found} из ${UNITS.length}`:`${UNITS.length} технологий`;
+ const list=q?UNITS.filter(match):UNITS.filter(u=>u.st===libUI.tab);
+ document.getElementById('library').innerHTML=list.length?list.map(u=>`<button type="button" class="shelf-item" data-add="${u.id}" style="--c:${STG[u.st].c}" title="${esc(u.n)}. ${esc(u.d)}" aria-label="Добавить: ${esc(u.n)}">${SeshatIcons.icon(u.id,44)}<span>${esc(u.n.split(' (')[0])}</span></button>`).join('')
+  :`<div class="empty">Ничего не найдено по запросу «${esc(libUI.q)}».</div>`;
 }
-document.getElementById('library').addEventListener('click',ev=>{const b=ev.target.closest('[data-add]');if(!b)return;state.steps=SeshatGraph.append(SeshatGraph.norm(state.steps),mk(b.dataset.add));update()});
-document.getElementById('library').addEventListener('toggle',ev=>{
- const d=ev.target; if(!d.dataset||!d.dataset.st||libUI.q)return;
- if(d.open)libUI.closed.delete(d.dataset.st);else libUI.closed.add(d.dataset.st);
- try{localStorage.setItem('seshat-lib-closed',JSON.stringify([...libUI.closed]))}catch(e){}
-},true);
+document.getElementById('shelf-tabs').addEventListener('click',ev=>{
+ const b=ev.target.closest('[data-tab]');if(!b)return;
+ libUI.tab=b.dataset.tab;libUI.q='';document.getElementById('lib-search').value='';
+ try{localStorage.setItem('seshat-shelf-tab',libUI.tab)}catch(e){}
+ renderLibrary();
+});
 document.getElementById('lib-search').addEventListener('input',ev=>{libUI.q=ev.target.value;renderLibrary()});
 /* ---------- схема ---------- */
 function renderScheme(sim){
  const box=document.getElementById('scheme');
- document.getElementById('sch-count').textContent=state.steps.length?`${state.steps.length} ступ.`:'';
  if(!state.steps.length){box.innerHTML=`<div class="empty">Натяните шнур: добавьте первую ступень из каталога. Обычно станция начинается с решёток и песколовок.</div>`;return}
  const open=new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.i));
  const chain=SeshatGraph.isChain(state.steps),fl=chain?null:SeshatGraph.flows(state.steps);
  const pct=v=>Math.round(v*100)+'%',nm=k=>`${k+1}. ${U[state.steps[k].u].n.split(' (')[0]}`;
- let h=(chain?'':`<div class="graph-note"><span>Схема с параллельными линиями: ступени соединены так, как проложены трубы на генплане. Кнопки ↑↓ меняют местами технологии, не трогая трубы.</span><a class="btn" href="#genplan" data-go="genplan">Открыть генплан</a></div>`)+`<div class="terminal"><span>Вход: ${fmt(state.q)} м³/сут</span><span>БПК₅ ${fmt(state.c.bod)} · N-NH₄ ${fmt(state.c.nh4)} · P ${fmt(state.c.p)}</span></div>`;
+ let h=(chain?'':`<div class="graph-note"><span>Схема с параллельными линиями: ступени соединены так, как проложены трубы на плане. Кнопки ↑↓ меняют местами технологии, не трогая трубы.</span><button type="button" data-mode="plan">Открыть план</button></div>`)+`<div class="terminal"><span>Вход: ${fmt(state.q)} м³/сут</span><span>БПК₅ ${fmt(state.c.bod)} · N-NH₄ ${fmt(state.c.nh4)} · P ${fmt(state.c.p)}</span></div>`;
  state.steps.forEach((st,i)=>{
   const u=U[st.u],s=STG[u.st],o=sim.prof[i+1];
   const links=chain?'':`<div class="node-links"><span>из: ${[...(fl.src[i]?['стоки']:[]),...fl.preds[i].map(k=>k+1)].join(', ')}</span><span>в: ${st.to.length?st.to.map((t,k)=>`${t+1}${st.to.length>1?` (${pct(SeshatGraph.share(st,k))})`:''}`).join(', '):'выпуск'}</span>${fl.f[i]<0.999?`<span>расход ${pct(fl.f[i])}</span>`:''}</div>`;
@@ -362,7 +358,8 @@ document.getElementById('advice').addEventListener('click',ev=>{const b=ev.targe
  state.steps=SeshatGraph.insertBefore(SeshatGraph.norm(state.steps),idx,mk(u.id));update()});
 
 
-let eco=null;
+let eco=null,lastSim=null;
+const AFTER_UPDATE=[]; // экран конструктора (genplan.js) перерисовывается после каждого пересчёта
 function update(keepFocus){
  state.steps=SeshatGraph.norm(state.steps);
  const sim=SeshatModel.simulate(state);
@@ -371,7 +368,9 @@ function update(keepFocus){
  renderScheme(sim);
  if(id){const el=document.getElementById(id);if(el)el.focus()}
  renderDiagram(sim);renderResults(sim);renderEconomy(eco);renderBars();renderNdtHelp();saveState();
+ lastSim=sim;
  if(typeof renderCtx==='function')renderCtx();
+ AFTER_UPDATE.forEach(f=>f(sim,eco));
 }
 
 /* ---------- экономика ---------- */

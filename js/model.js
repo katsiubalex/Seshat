@@ -39,6 +39,11 @@
       const c = mix(parts), fi = fl.f[si], before = [...anc[si]].map(j => steps[j].u);
       const later = steps.filter((_, j) => anc[j].has(si));
       const u = U[st.u], e = st.eff, w = [];
+      if (st.idle) { // не подключено трубами: вода через сооружение не идёт
+        cin.push({ ...raw }); prof.push({ ...raw }); warns.push(['Сооружение не подключено: проведите к нему трубу, чтобы оно заработало.']);
+        perStep.push({ en: u.en, f: 0, q: 0, sludge: 0, dP: 0, dNOx: 0, idle: true });
+        return;
+      }
       cin.push({ ...c }); const ci = cin[si];
       let sl = 0; // осадок ступени, г сухого вещества на 1 м³
 

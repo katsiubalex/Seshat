@@ -55,3 +55,18 @@ test('доли потока задаются вручную', () => {
   const f = G.flows(s).f;
   assert.ok(Math.abs(f[1] - 0.7) < 1e-9 && Math.abs(f[2] - 0.3) < 1e-9);
 });
+
+test('сооружение без труб не работает, врезка в трубу и подключение включают его', () => {
+  let s = G.norm(['screens', 'at'].map(mk));
+  s = G.place(s, mk('uv'));
+  assert.equal(s[2].idle, true);
+  const r = simulate({ ...inp, steps: s }), base = simulate({ ...inp, steps: G.norm(['screens', 'at'].map(mk)) });
+  assert.deepEqual(r.out, base.out, 'выпуск не меняется');
+  assert.equal(r.perStep[2].q, 0);
+  assert.ok(!G.isChain(s));
+  const c = G.connect(s, 1, 2);
+  assert.ok(!c[2].idle && G.isChain(c));
+  const sp = G.split(G.norm(['screens', 'at'].map(mk)), 0, 1, mk('sand'));
+  assert.deepEqual(sp.map(x => x.u), ['screens', 'sand', 'at']);
+  assert.ok(G.isChain(sp));
+});

@@ -7,6 +7,11 @@ const STATE_KEY = 'seshat-state';
 const store = SeshatStore.createStore(SeshatStore.localAdapter('seshat-library'));
 const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 const clone = o => JSON.parse(JSON.stringify(o));
+// Числа в полях: принимаем и точку, и запятую; показываем с запятой.
+function parseNum(s) { const t = String(s).replace(/\s/g, '').replace(',', '.'); if (t === '') return null; const v = Number(t); return isFinite(v) && v >= 0 ? v : NaN; }
+const showNum = v => v == null || v === '' ? '' : String(v).replace('.', ',');
+const NUM_ATTRS = 'type="text" inputmode="decimal" autocomplete="off" spellcheck="false"';
+function markInvalid(el, v) { if (Number.isNaN(v)) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid'); }
 function mk(id) { return { u: id, eff: { ...U[id].eff } }; }
 
 /* ---------- три вида сохраняемых данных ---------- */
@@ -200,10 +205,10 @@ function bindBar(kind) {
 /* ---------- ввод ---------- */
 function renderInputs(){
  const box=document.getElementById('inputs');
- box.innerHTML=`<label class="f qrow" for="in-q"><span>Расход<small>м³/сут</small></span><input id="in-q" type="number" min="0" step="any" value="${state.q}"></label>`+
-  PARAMS.map(p=>`<label class="f" for="in-${p.k}"><span>${p.n}<small>${p.u}</small></span><input id="in-${p.k}" type="number" min="0" step="any" value="${state.c[p.k]}"></label>`).join('');
+ box.innerHTML=`<label class="f qrow" for="in-q"><span>Расход<small>м³/сут</small></span><input id="in-q" ${NUM_ATTRS} value="${showNum(state.q)}"></label>`+
+  PARAMS.map(p=>`<label class="f" for="in-${p.k}"><span>${p.n}<small>${p.u}</small></span><input id="in-${p.k}" ${NUM_ATTRS} value="${showNum(state.c[p.k])}"></label>`).join('');
 }
-document.getElementById('inputs').addEventListener('input',ev=>{const t=ev.target;if(t.id==='in-q')state.q=+t.value||0;else state.c[t.id.slice(3)]=+t.value||0;update()});
+document.getElementById('inputs').addEventListener('input',ev=>{const t=ev.target,v=parseNum(t.value);markInvalid(t,v);if(Number.isNaN(v))return;if(t.id==='in-q')state.q=v||0;else state.c[t.id.slice(3)]=v||0;update()});
 /* ---------- каталог ---------- */
 function effChips(eff){return Object.entries(eff).filter(([,v])=>v>0).map(([k,v])=>`<span class="chip">${SHORT[k]} −${v}%</span>`).join('')}
 function renderLibrary(){
@@ -227,7 +232,7 @@ function renderScheme(sim){
     <div class="node-ctrl"><button type="button" data-mv="${i}" data-d="-1" aria-label="Выше" ${i===0?'disabled':''}>↑</button><button type="button" data-mv="${i}" data-d="1" aria-label="Ниже" ${i===state.steps.length-1?'disabled':''}>↓</button><button type="button" data-rm="${i}" aria-label="Удалить">✕</button></div></div>
    <div class="effects">${effChips(st.eff)||'<span class="chip">без изменения химии</span>'}</div>
    ${sim.warns[i].length?`<div class="warns">${sim.warns[i].map(x=>`<div class="w">${esc(x)}</div>`).join('')}</div>`:''}
-   ${Object.keys(st.eff).length?`<details class="tune" data-i="${i}" ${open.has(String(i))?'open':''}><summary>Настроить эффективность, %</summary><div class="tune-grid">${Object.keys(st.eff).map(k=>`<label for="t-${i}-${k}">${SHORT[k]}<input id="t-${i}-${k}" type="number" min="0" max="100" step="1" data-ti="${i}" data-tk="${k}" value="${st.eff[k]}"></label>`).join('')}</div></details>`:''}
+   ${Object.keys(st.eff).length?`<details class="tune" data-i="${i}" ${open.has(String(i))?'open':''}><summary>Настроить эффективность, %</summary><div class="tune-grid">${Object.keys(st.eff).map(k=>`<label for="t-${i}-${k}">${SHORT[k]}<input id="t-${i}-${k}" ${NUM_ATTRS} data-ti="${i}" data-tk="${k}" value="${showNum(st.eff[k])}"></label>`).join('')}</div></details>`:''}
   </div></div>
   ${i<state.steps.length-1?`<div class="arrow">БПК₅ ${fmt(o.bod)} · N-NH₄ ${fmt(o.nh4)} · P ${fmt(o.p)}</div>`:''}`;
  });
@@ -241,7 +246,7 @@ document.getElementById('scheme').addEventListener('click',ev=>{
  if(r){state.steps.splice(+r.dataset.rm,1);update()}
 });
 document.getElementById('scheme').addEventListener('change',ev=>{
- const t=ev.target;if(!t.dataset.ti)return;state.steps[+t.dataset.ti].eff[t.dataset.tk]=Math.min(100,Math.max(0,+t.value||0));update(true);
+ const t=ev.target;if(!t.dataset.ti)return;const v=parseNum(t.value);if(Number.isNaN(v)){markInvalid(t,v);return}state.steps[+t.dataset.ti].eff[t.dataset.tk]=Math.min(100,v||0);update(true);
 });
 
 /* ---------- результаты ---------- */
@@ -255,18 +260,19 @@ function spark(vals,norm,st){
 }
 function renderResults(sim){
  const f=sim.prof[sim.prof.length-1],tbl=document.getElementById('results');
- const focus=document.activeElement&&document.activeElement.id;
+ // Таблица перестраивается при каждом вводе: сохраняем набранный текст (например «0,») и положение курсора.
+ const ae=document.activeElement,typing=ae&&ae.id&&ae.id.startsWith('n-')?{id:ae.id,raw:ae.value,pos:ae.selectionStart}:null;
  let pass=0,tot=0;const fails=[];
  let h=`<thead><tr><th class="p">Показатель</th><th>Профиль</th><th>Вход</th>${state.steps.map((s,i)=>`<th class="step">${i+1}. ${esc(U[s.u].n.split(' (')[0])}</th>`).join('')}<th>Выход</th><th>Эффект</th><th>Норматив</th><th>Статус</th></tr></thead><tbody>`;
  PARAMS.forEach(p=>{
   const n=state.norm[p.k],vals=sim.prof.map(c=>c[p.k]);let st='na';
   if(n!=null&&n!==''&&!isNaN(n)){tot++;if(f[p.k]<=n){st='ok';pass++}else{st='bad';fails.push(p.k)}}
   const inV=state.c[p.k],red=inV>0?(1-f[p.k]/inV)*100:null;
-  h+=`<tr><td class="p"><b>${p.n}</b><small>${p.u}</small></td><td>${spark(vals,n,st)}</td><td class="num">${fmt(inV)}</td>${sim.prof.slice(1).map(c=>`<td class="num">${fmt(c[p.k])}</td>`).join('')}<td class="num out">${fmt(f[p.k])}</td><td class="num">${red==null?'—':(red<0?'+':'−')+Math.abs(red).toFixed(0)+'%'}</td><td class="norm"><input id="n-${p.k}" type="number" min="0" step="any" value="${n??''}" placeholder="нет" aria-label="Норматив: ${p.n}"></td><td><span class="pill ${st}">${st==='ok'?'в норме':st==='bad'?'×'+fmt(f[p.k]/n):'не задан'}</span></td></tr>`;
+  h+=`<tr><td class="p"><b>${p.n}</b><small>${p.u}</small></td><td>${spark(vals,n,st)}</td><td class="num">${fmt(inV)}</td>${sim.prof.slice(1).map(c=>`<td class="num">${fmt(c[p.k])}</td>`).join('')}<td class="num out">${fmt(f[p.k])}</td><td class="num">${red==null?'—':(red<0?'+':'−')+Math.abs(red).toFixed(0)+'%'}</td><td class="norm"><input id="n-${p.k}" ${NUM_ATTRS} value="${showNum(n)}" placeholder="нет" aria-label="Норматив: ${p.n}"></td><td><span class="pill ${st}">${st==='ok'?'в норме':st==='bad'?'×'+fmt(f[p.k]/n):'не задан'}</span></td></tr>`;
  });
  tbl.innerHTML=h+'</tbody>';
- tbl.oninput=ev=>{const t=ev.target;if(!t.id.startsWith('n-'))return;state.norm[t.id.slice(2)]=t.value===''?null:+t.value;update()};
- if(focus&&focus.startsWith('n-')){const el=document.getElementById(focus);if(el){el.focus();const v=el.value;el.value='';el.value=v}}
+ tbl.oninput=ev=>{const t=ev.target;if(!t.id.startsWith('n-'))return;const v=parseNum(t.value);markInvalid(t,v);if(Number.isNaN(v))return;state.norm[t.id.slice(2)]=v;update()};
+ if(typing){const el=document.getElementById(typing.id);if(el){el.value=typing.raw;el.focus();el.setSelectionRange(typing.pos,typing.pos)}}
  const kwh=sim.energy*state.q;
  document.getElementById('summary').innerHTML=`
   <div class="kpi"><span>Соответствие нормативам</span><b style="color:${tot&&pass===tot?'var(--ok)':'var(--bad)'}">${pass} из ${tot}</b> <small>показателей</small></div>

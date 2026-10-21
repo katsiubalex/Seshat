@@ -88,7 +88,7 @@ function toast(msg, action) {
 /* ---------- панель сохранения (одна на каждый вид данных) ---------- */
 // Состояния панели: открыт пример → «Создать»; открыта своя запись → «Создать», «Сохранить», «Удалить»;
 // создаётся новая запись (ref = 'new') → поле названия, «Сохранить», «Отмена».
-const ui = { draft: {}, confirmDel: {} };
+const ui = { draft: {}, confirmDel: {}, rename: {} };
 
 function uniqueName(kind, base) {
   const names = new Set(store.list(kind).map(it => it.name));
@@ -116,6 +116,11 @@ function renderBar(kind) {
       <button type="submit" class="primary">Сохранить</button><button type="button" data-act="cancel">Отмена</button>
     </form>
     <p class="saved-hint">${esc(K.draftHint)}</p>`;
+  } else if (ui.rename[kind] != null && isMine) {
+    h += `<form class="name-form" data-kind="${kind}" data-mode="rename">
+      <input id="rename-${kind}" type="text" maxlength="120" required placeholder="Новое название" aria-label="Новое название" value="${esc(ui.rename[kind])}">
+      <button type="submit" class="primary">Переименовать</button><button type="button" data-act="rename-cancel">Отмена</button>
+    </form>`;
   } else if (ui.confirmDel[kind] && isMine) {
     h += `<div class="saved-actions"><span class="ask">Удалить «${esc(cur.name)}»?</span>
       <button type="button" data-act="del-yes" class="danger">Удалить</button><button type="button" data-act="del-no">Отмена</button></div>`;
@@ -123,6 +128,7 @@ function renderBar(kind) {
     h += `<div class="saved-actions">
       <button type="button" data-act="create">${K.createLabel}</button>
       ${isMine ? `<button type="button" data-act="save" class="${dirty ? 'primary' : ''}" ${dirty ? '' : 'disabled title="Изменений нет"'}>Сохранить</button>
+      <button type="button" data-act="rename">Переименовать</button>
       <button type="button" data-act="del">Удалить</button>` : ''}
     </div>`;
   }
@@ -136,7 +142,7 @@ function openItem(kind, ref) {
   const draft = ui.draft[kind];
   const prev = { data: K.get(), ref: state.ref[kind], draft };
   const lose = draft || isDirty(kind);
-  delete ui.draft[kind]; delete ui.confirmDel[kind];
+  delete ui.draft[kind]; delete ui.confirmDel[kind]; delete ui.rename[kind];
   K.apply(clone(it.data));
   state.ref[kind] = ref;
   update();
@@ -148,7 +154,7 @@ function openItem(kind, ref) {
 function startDraft(kind) {
   const K = KINDS[kind];
   ui.draft[kind] = { name: uniqueName(kind, K.newName), prev: { data: K.get(), ref: state.ref[kind] } };
-  delete ui.confirmDel[kind];
+  delete ui.confirmDel[kind]; delete ui.rename[kind];
   state.ref[kind] = 'new';
   renderBar(kind);
   const inp = document.getElementById('name-' + kind); inp.focus(); inp.select();
@@ -157,12 +163,21 @@ function startDraft(kind) {
 function bindBar(kind) {
   const el = document.getElementById('bar-' + kind);
   el.addEventListener('change', ev => { if (ev.target.id === 'sel-' + kind && ev.target.value !== 'new') openItem(kind, ev.target.value); });
-  el.addEventListener('input', ev => { if (ev.target.id === 'name-' + kind && ui.draft[kind]) ui.draft[kind].name = ev.target.value; });
+  el.addEventListener('input', ev => {
+    if (ev.target.id === 'name-' + kind && ui.draft[kind]) ui.draft[kind].name = ev.target.value;
+    if (ev.target.id === 'rename-' + kind && ui.rename[kind] != null) ui.rename[kind] = ev.target.value;
+  });
   el.addEventListener('click', ev => {
     const act = ev.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     const K = KINDS[kind], ref = state.ref[kind], cur = refItem(kind, ref);
     if (act === 'create') { startDraft(kind); return; }
+    if (act === 'rename' && cur) {
+      delete ui.confirmDel[kind]; ui.rename[kind] = cur.name; renderBar(kind);
+      const inp = document.getElementById('rename-' + kind); inp.focus(); inp.select();
+      return;
+    }
+    if (act === 'rename-cancel') { delete ui.rename[kind]; renderBar(kind); return; }
     if (act === 'save' && cur) {
       const it = store.save(kind, { id: ref.slice(2), name: cur.name, data: K.get() });
       if (it) toast(`Сохранено: «${it.name}»`);
@@ -171,7 +186,7 @@ function bindBar(kind) {
       state.ref[kind] = d.prev.ref;
       update();
       return;
-    } else if (act === 'del') { ui.confirmDel[kind] = true; }
+    } else if (act === 'del') { delete ui.rename[kind]; ui.confirmDel[kind] = true; }
     else if (act === 'del-no') { delete ui.confirmDel[kind]; }
     else if (act === 'del-yes' && cur) {
       delete ui.confirmDel[kind];
@@ -190,6 +205,15 @@ function bindBar(kind) {
   });
   el.addEventListener('submit', ev => {
     ev.preventDefault();
+    if (ev.target.dataset.mode === 'rename') {
+      const nm = document.getElementById('rename-' + kind).value.trim();
+      if (!nm) { toast('Введите название.'); return; }
+      const it = store.rename(kind, state.ref[kind].slice(2), nm);
+      delete ui.rename[kind];
+      if (it) toast(`Переименовано: «${it.name}»`);
+      renderBar(kind);
+      return;
+    }
     const name = document.getElementById('name-' + kind).value.trim();
     if (!name) { toast('Введите название.'); return; }
     const it = store.save(kind, { name, data: KINDS[kind].get() });
@@ -199,7 +223,11 @@ function bindBar(kind) {
     toast(`Сохранено: «${it.name}»`);
     renderBar(kind); saveState();
   });
-  el.addEventListener('keydown', ev => { if (ev.key === 'Escape' && ui.draft[kind]) el.querySelector('[data-act=cancel]').click(); });
+  el.addEventListener('keydown', ev => {
+    if (ev.key !== 'Escape') return;
+    if (ui.draft[kind]) el.querySelector('[data-act=cancel]').click();
+    else if (ui.rename[kind] != null) { delete ui.rename[kind]; renderBar(kind); }
+  });
 }
 
 /* ---------- ввод ---------- */

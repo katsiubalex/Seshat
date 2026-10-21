@@ -67,6 +67,14 @@
         persist();
         return it;
       },
+      /** Переименовать запись, не трогая данные. Возвращает запись или null. */
+      rename(kind, id, name) {
+        const it = lib[kind].find(x => x.id === id), nm = String(name || '').trim().slice(0, 120);
+        if (!it || !nm) return null;
+        it.name = nm; it.updated = new Date().toISOString();
+        persist();
+        return it;
+      },
       remove(kind, id) { const n = lib[kind].length; lib[kind] = lib[kind].filter(it => it.id !== id); persist(); return lib[kind].length < n; },
       count() { return KINDS.reduce((s, k) => s + lib[k].length, 0); },
       exportAll() { return { format: FORMAT, version: VERSION, exported: new Date().toISOString(), ...JSON.parse(JSON.stringify(lib)) }; },

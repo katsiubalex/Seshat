@@ -76,3 +76,13 @@ test('повреждённое хранилище не ломает запуск
   const s2 = S.createStore(S.memoryAdapter({ influent: [{ id: '1', name: 'ok', data: influent }, { id: '2', name: 'bad', data: null }] }));
   assert.equal(s2.list('influent').length, 1);
 });
+
+test('переименование меняет только название', () => {
+  const { s } = fresh();
+  const it = s.save('scheme', { name: 'Старое', data: scheme });
+  const before = JSON.stringify(it.data);
+  assert.equal(s.rename('scheme', it.id, '  Новое  ').name, 'Новое');
+  assert.equal(JSON.stringify(s.get('scheme', it.id).data), before);
+  assert.equal(s.rename('scheme', it.id, '   '), null);
+  assert.equal(s.rename('scheme', 'нет', 'X'), null);
+});

@@ -108,6 +108,16 @@ document.getElementById('file-import').addEventListener('change', async ev => {
   } catch (e) { toast(e instanceof SyntaxError ? 'Файл повреждён: это не JSON.' : e.message); }
 });
 
+/* ---------- тема оформления: авто (как в системе), светлая, тёмная ---------- */
+function setTheme(t) {
+  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { if (t === 'light' || t === 'dark') localStorage.setItem('seshat-theme', t); else localStorage.removeItem('seshat-theme'); } catch (e) {}
+  const cur = document.documentElement.dataset.theme || 'auto';
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === cur)));
+}
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-theme-set]'); if (b) setTheme(b.dataset.themeSet); });
+setTheme(document.documentElement.dataset.theme || 'auto');
+
 /* ---------- запуск страницы ---------- */
 function startPage() {
   const v = document.querySelector('script[src*="js/core.js"]')?.src.match(/[?&]v=([\d.]+)/);

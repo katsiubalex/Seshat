@@ -884,3 +884,8 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .lore-num{text-align:left;font-size:32px}
   .lore-foot{grid-template-columns:minmax(0,1fr);padding:24px 4px}
 }
+
+/* переключатель темы в меню */
+.theme-seg{display:flex;width:100%}
+.theme-seg button{flex:1;font-size:12px;padding:5px 4px}
+@media (max-width:860px){.theme-seg{width:auto}}

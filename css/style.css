@@ -894,3 +894,6 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mod-lore:hover{text-decoration:underline}
 .mod-page .panel p a{color:var(--accent)}
 .lore.kind-nature{--k:var(--tert)}.lore.kind-supply{--k:var(--accent)}.lore.kind-waste{--k:var(--mech)}
+.mod-ready{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+.mod-acts{display:flex;flex-wrap:wrap;gap:8px}
+.mod-acts .btn{font-size:14px;padding:7px 14px}

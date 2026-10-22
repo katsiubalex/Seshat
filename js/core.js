@@ -50,7 +50,7 @@ const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloa
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
   hub: ['home', 'seshat', 'kb', 'docs', 'about'],
-  tlazolteotl: ['constructor', 'projects', 'lore']
+  tlazolteotl: ['overview', 'constructor', 'projects', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
 for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'lore']; DEFAULT_VIEW[id] = 'overview'; }

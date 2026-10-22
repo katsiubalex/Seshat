@@ -1,4 +1,4 @@
-// Страница модуля в разработке: обзор модуля и история божества (lore.js). Модуль — страница <body data-page="<id>">.
+// Раздел «О модуле» на странице модуля и запуск страниц модулей в разработке. История божества — в lore.js.
 
 (function () {
   const { MODULES, KIND, glyph } = SeshatModules;
@@ -11,14 +11,16 @@
 
   function renderOverview() {
     const i = PATH.indexOf(m.id), prev = MOD[PATH[i - 1]], next = MOD[PATH[i + 1]];
-    const kb = (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
+    const kb = (m.ready ? ['kb-units', 'kb-proc', 'kb-ind'] : []).map(h => `<li><a href="#${h}">${({ 'kb-units': 'Сооружения очистки', 'kb-proc': 'Физика и химия процессов', 'kb-ind': 'Показатели качества воды' })[h]}</a></li>`).join('') + (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
     document.getElementById('overview-root').innerHTML = `
       <article class="mod-page kind-${m.kind}">
         <header class="mod-head">${glyph(m.id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])} · ${esc(m.culture)}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p><a class="mod-lore" href="#lore">${cap(m.about)} →</a></div></header>
-        <p class="mod-status">Модуль в разработке. Здесь появится свой интерактивный тренажёр — так же, как конструктор очистных сооружений в модуле <a href="${href(MOD.tlazolteotl)}">Тласольтеотль</a>.</p>
+        ${m.ready
+          ? `<div class="mod-status mod-ready"><span>Модуль готов: соберите схему очистки на плане станции, сравните варианты и посмотрите, как меняются вода и затраты.</span><span class="mod-acts"><a class="btn primary" href="#constructor" data-go="constructor">Открыть конструктор</a><a class="btn" href="#projects" data-go="projects">Проекты</a></span></div>`
+          : `<p class="mod-status">Модуль в разработке. Здесь появится свой интерактивный тренажёр — так же, как конструктор очистных сооружений в модуле <a href="${href(MOD.tlazolteotl)}">Тласольтеотль</a>.</p>`}
         <div class="kb-layout">
           <div class="kb-main">
-            <section class="panel"><h2>Что будет в модуле</h2><ul>${m.will.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
+            <section class="panel"><h2>${m.ready ? 'Что умеет модуль' : 'Что будет в модуле'}</h2><ul>${m.will.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
             <section class="panel"><h2>Почему ${esc(m.n)}</h2><p>${esc(m.legend)}</p><p><a href="#lore">Читать историю целиком →</a></p></section>
             <nav class="kb-seq">${prev ? `<a href="${href(prev)}">← ${esc(prev.n)}</a>` : '<span></span>'}${next ? `<a href="${href(next)}">${esc(next.n)} →</a>` : ''}</nav>
           </div>
@@ -30,5 +32,5 @@
       </article>`;
   }
   VIEW_RENDER.overview = renderOverview;
-  startPage();
+  if (DEV_MODULES.includes(PAGE)) startPage(); // у Тласольтеотль страницу запускает main.js
 })();

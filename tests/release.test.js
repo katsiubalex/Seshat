@@ -22,3 +22,8 @@ test('все локальные файлы подключены с актуал�
 test('подключённые файлы существуют', () => {
   for (const r of refs) assert.ok(fs.existsSync(path.join(root, r.split('?')[0])), r);
 });
+
+test('version.json совпадает с версией: по нему страницы из кэша узнают, что пора обновиться', () => {
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'version.json'), 'utf8')).v, version);
+  for (const p of PAGES) assert.match(fs.readFileSync(path.join(root, p), 'utf8'), /version\.json/, p);
+});

@@ -241,7 +241,7 @@ function renderLibrary(){
   return `<button type="button" role="tab" aria-selected="${on}" data-tab="${s.id}" style="--c:${s.c}" ${q&&!n?'disabled':''}><span class="dot" style="background:${s.c}"></span>${s.n.replace(' очистка','')}${q?`<small>${n}</small>`:''}</button>`;
  }).join('');
  const list=q?UNITS.filter(match):UNITS.filter(u=>u.st===libUI.tab);
- document.getElementById('library').innerHTML=list.length?list.map(u=>`<button type="button" class="shelf-item" data-add="${u.id}" style="--c:${STG[u.st].c}" title="${esc(u.n)}. ${esc(u.d)}" aria-label="Добавить: ${esc(u.n)}">${SeshatIcons.icon(u.id,44)}<span>${esc(u.n.split(' (')[0])}</span></button>`).join('')
+ document.getElementById('library').innerHTML=list.length?list.map(u=>`<button type="button" class="shelf-item" data-add="${u.id}" style="--c:${STG[u.st].c}" title="${esc(u.n)}. ${esc(u.d)}" aria-label="${esc(u.n)}: подробнее и поставить на план">${SeshatIcons.icon(u.id,44)}<span>${esc(u.n.split(' (')[0])}</span></button>`).join('')
   :`<div class="empty">Ничего не найдено по запросу «${esc(libUI.q)}».</div>`;
 }
 document.getElementById('shelf-tabs').addEventListener('click',ev=>{

@@ -2,7 +2,7 @@
 // показатели сверху, каталог технологий снизу. План редактируется: сооружения двигают, соединяют трубами,
 // врезают в трубы из каталога, делают параллельные линии. Использует состояние и функции app.js и projects.js.
 
-const gpUI = { sel: null, edge: null, aux: null, cam: null, layer: 'plan', qp: 'bod', mode: 'plan', drawer: null, sheet: false, pane: 'pfd' };
+const gpUI = { sel: null, edge: null, aux: null, pick: null, cam: null, layer: 'plan', qp: 'bod', mode: 'plan', drawer: null, sheet: false, pane: 'pfd' };
 const SVGNS = 'http://www.w3.org/2000/svg';
 const n1 = v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 });
 const n0 = v => Math.round(v).toLocaleString('ru-RU');
@@ -237,7 +237,7 @@ function renderPlan(sim, eco) {
   const steps = SeshatGraph.norm(state.steps), canvas = document.getElementById('gp-canvas');
   renderPlanTools(steps);
   if (!steps.length) {
-    canvas.innerHTML = '<div class="plan-empty"><b>Площадка пуста</b><span>Перетащите технологию из каталога внизу на план или нажмите на неё. Обычно станция начинается с решёток и песколовок.</span></div>';
+    canvas.innerHTML = '<div class="plan-empty"><b>Площадка пуста</b><span>Нажмите на технологию в каталоге внизу, чтобы узнать, что она делает, и поставить её на план. Можно и сразу перетащить. Обычно станция начинается с решёток и песколовок.</span></div>';
     gpView = null; return null;
   }
   sim.src = SeshatGraph.flows(steps).src;
@@ -368,16 +368,48 @@ function renderStudio() {
   const sim = lastSim; if (!sim) return;
   const L = gpUI.mode === 'plan' ? renderPlan(sim, eco) : SeshatPlan.layout(state.q, SeshatGraph.norm(state.steps));
   renderHud(sim, eco, L); renderEdges(sim); renderOutCheck(sim);
-  const card = document.getElementById('gp-info');
-  if (gpUI.mode === 'plan' && L && (gpUI.sel != null || gpUI.edge || gpUI.aux)) { card.hidden = false; renderUnitCard(sim, eco, L); }
-  else { card.hidden = true; card.innerHTML = ''; }
+  renderCard(L);
 }
+function renderCard(L) {
+  const card = document.getElementById('gp-info');
+  if (gpUI.pick || (gpUI.mode === 'plan' && L && (gpUI.sel != null || gpUI.edge || gpUI.aux))) { card.hidden = false; renderUnitCard(lastSim, eco, L); }
+  else { card.hidden = true; card.innerHTML = ''; }
+  document.querySelectorAll('#library [data-add]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.add === gpUI.pick)));
+}
+// Выбор сооружения, трубы или технологии из каталога не перерисовывает план:
+// иначе перезапускаются анимации и экран дёргается. Меняются только подсветка и карточка.
+function syncSelection() {
+  if (!gpView || gpUI.mode !== 'plan') { renderStudio(); return; }
+  const svg = gpView.svg;
+  svg.querySelectorAll('.gp-unit').forEach(g => g.classList.toggle('sel', +g.dataset.i === gpUI.sel));
+  svg.querySelectorAll('.gp-aux').forEach(g => g.classList.toggle('sel', g.dataset.aux === gpUI.aux));
+  const on = gpUI.edge ? gpUI.edge.join('-') : null;
+  svg.querySelectorAll('.gp-pipe-hit').forEach(h => { if (h.nextSibling) h.nextSibling.classList.toggle('sel', h.dataset.e === on); });
+  renderCard(gpView.L);
+}
+function setPick(id) { gpUI.pick = id; gpUI.sel = null; gpUI.aux = null; syncSelection(); }
 
 /* ---------- карточка сооружения или трубы ---------- */
 function gpName(i, steps) { return `${i + 1}. ${U[steps[i].u].n.split(' (')[0]}`; }
 function renderUnitCard(sim, ec, L) {
   const box = document.getElementById('gp-info'), i = gpUI.sel, steps = L.steps, q = state.q;
   const close = '<button type="button" class="icon-btn card-close" data-gpnav="close" aria-label="Закрыть карточку">✕</button>';
+  if (gpUI.pick) {
+    const id = gpUI.pick, u = U[id], P = SeshatPlan.PLAN[id], st = STG[u.st], ed = gpUI.mode === 'plan' && gpUI.edge;
+    const eff = Object.entries(u.eff || {}).filter(([, v]) => v > 0).map(([k, v]) => `<li>${esc(SHORT[k] || k)} — на ${Math.round(v)}%</li>`).join('');
+    const where = ed ? `<button type="button" class="primary" data-gpact="put">Врезать в трубу ${ed[0] + 1} → ${ed[1] + 1}</button><button type="button" data-gpact="put-end">В конец схемы</button>`
+      : '<button type="button" class="primary" data-gpact="put">Поставить на план</button>';
+    box.innerHTML = `${close}
+      <div class="gp-head" style="--c:${st.c}">${SeshatIcons.icon(id, 56, u.n)}<div><span class="gp-stage">Каталог · ${esc(st.n)}</span><h2>${esc(u.n)}</h2></div></div>
+      ${u.d ? `<p>${esc(u.d)}</p>` : ''}
+      <div class="gp-acts gp-put">${where}</div>
+      <p class="hint">${ed ? 'Сооружение встанет в выбранную трубу между двумя сооружениями.' : 'Встанет в конец схемы. Можно и перетащить из каталога прямо в нужное место плана или на трубу.'}</p>
+      ${P ? `<h3>Как работает</h3><p>${esc(P.how)}</p>` : ''}
+      ${eff ? `<h3>Типично снижает</h3><ul>${eff}</ul>` : ''}
+      ${P && P.params ? `<h3>Типовые параметры</h3><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      <p><a href="#kb-u-${id}">Подробнее в базе знаний →</a></p>`;
+    return;
+  }
   if (gpUI.aux && SeshatKB) {
     const a = SeshatKB.AUX.find(x => x.id === gpUI.aux), b = L.aux.find(x => x.id === gpUI.aux);
     box.innerHTML = `${close}<h2>${esc(a.t)}</h2><p>${esc(a.lead)}</p>${a.s.map(([h, t]) => `<h3>${esc(h)}</h3><p>${esc(t)}</p>`).join('')}
@@ -390,7 +422,7 @@ function renderUnitCard(sim, ec, L) {
     const c = sim.prof[a + 1];
     box.innerHTML = `${close}<h2>Труба</h2><p><b>${esc(gpName(a, steps))}</b> → <b>${esc(gpName(b, steps))}</b></p>
       <dl class="gp-dl"><dt>Расход</dt><dd>${n0(q * e.f)} м³/сут (${Math.round(e.f * 100)}% стоков)</dd><dt>Вода в трубе</dt><dd>БПК₅ ${fmt(c.bod)} · N-NH₄ ${fmt(c.nh4)} · P ${fmt(c.p)} мг/л</dd></dl>
-      <p class="hint">Нажмите на технологию в каталоге, чтобы врезать её в эту трубу. Если убрать трубу, сооружение без входа будет получать исходные стоки, а сооружение без выхода — сбрасывать воду в водоём.</p>
+      <p class="hint">Выберите технологию в каталоге и нажмите «Врезать в трубу» или перетащите её прямо на трубу. Если убрать трубу, сооружение без входа будет получать исходные стоки, а сооружение без выхода — сбрасывать воду в водоём.</p>
       <div class="gp-acts"><button type="button" class="danger" data-gpact="cut">Удалить трубу</button></div>`;
     return;
   }
@@ -434,7 +466,7 @@ function gpSize(b) {
 function gpCommit(steps, sel, msg, edge) {
   if (!steps) return;
   state.steps = steps;
-  gpUI.sel = sel; gpUI.edge = edge || null; gpUI.aux = null;
+  gpUI.sel = sel; gpUI.edge = edge || null; gpUI.aux = null; gpUI.pick = null;
   update();
   if (msg) toast(msg);
 }
@@ -604,8 +636,8 @@ function gpEnd(ev, cancel) {
   if (ev.pointerId !== gpDrag.id) return;
   const d = gpDrag; gpDrag = null; gpCanvas.classList.remove('panning');
   if (d.kind === 'pan') {
-    if (!d.moved && !cancel && d.aux) { gpUI.aux = d.aux; gpUI.sel = null; gpUI.edge = null; renderStudio(); return; }
-    if (!d.moved && !cancel && (gpUI.sel != null || gpUI.edge || gpUI.aux)) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; renderStudio(); }
+    if (!d.moved && !cancel && d.aux) { gpUI.aux = d.aux; gpUI.sel = null; gpUI.edge = null; gpUI.pick = null; syncSelection(); return; }
+    if (!d.moved && !cancel && (gpUI.sel != null || gpUI.edge || gpUI.aux || gpUI.pick)) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; gpUI.pick = null; syncSelection(); }
     return;
   }
   if (d.kind === 'pipe') {
@@ -622,7 +654,7 @@ gpCanvas.addEventListener('pointercancel', ev => gpEnd(ev, true));
 gpCanvas.addEventListener('click', ev => {
   const h = ev.target.closest('.gp-pipe-hit'); if (!h) return;
   const [a, b] = h.dataset.e.split('-').map(Number);
-  gpUI.edge = [a, b]; gpUI.sel = null; gpUI.aux = null; renderStudio();
+  gpUI.edge = [a, b]; gpUI.sel = null; gpUI.aux = null; gpUI.pick = null; syncSelection();
 });
 gpCanvas.addEventListener('wheel', ev => {
   if (!gpView) return;
@@ -630,7 +662,7 @@ gpCanvas.addEventListener('wheel', ev => {
   zoomAt(svgPoint(gpView.svg, ev), Math.exp(Math.max(-60, Math.min(60, ev.deltaY)) * 0.004));
 }, { passive: false });
 
-/* ---------- каталог: нажать или потянуть на план ---------- */
+/* ---------- каталог: нажать — узнать о технологии, потянуть — поставить на план ---------- */
 let shelfDrag = null;
 const shelf = document.getElementById('library');
 shelf.addEventListener('pointerdown', ev => {
@@ -661,7 +693,7 @@ shelf.addEventListener('pointermove', ev => {
 function shelfEnd(ev, cancel) {
   const d = shelfDrag; if (!d || ev.pointerId !== d.pid) return;
   shelfDrag = null; gpCanvas.classList.remove('drop-on');
-  if (!d.active) { if (!cancel) addUnit(d.id, gpUI.edge ? { edge: gpUI.edge } : null); return; }
+  if (!d.active) { if (!cancel) setPick(d.id); return; }
   d.ghost.remove();
   if (cancel || !d.over) return;
   addUnit(d.id, d.edge ? { edge: d.edge } : { pt: svgPoint(gpView.svg, ev) });
@@ -670,11 +702,11 @@ shelf.addEventListener('pointerup', ev => shelfEnd(ev, false));
 shelf.addEventListener('pointercancel', ev => shelfEnd(ev, true));
 shelf.addEventListener('keydown', ev => {
   const it = ev.target.closest('[data-add]'); if (!it || (ev.key !== 'Enter' && ev.key !== ' ')) return;
-  ev.preventDefault(); addUnit(it.dataset.add, gpUI.edge ? { edge: gpUI.edge } : null);
+  ev.preventDefault(); setPick(it.dataset.add);
 });
 
 /* ---------- кнопки экрана ---------- */
-function gpSelect(i) { gpUI.sel = i; gpUI.edge = null; gpUI.aux = null; renderStudio(); }
+function gpSelect(i) { gpUI.sel = i; gpUI.edge = null; gpUI.aux = null; gpUI.pick = null; syncSelection(); }
 gpCanvas.addEventListener('keydown', ev => {
   const g = ev.target.closest('.gp-unit'); if (!g || (ev.key !== 'Enter' && ev.key !== ' ')) return;
   ev.preventDefault(); gpSelect(+g.dataset.i);
@@ -685,7 +717,7 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape') {
     if (gpUI.drawer) { setDrawer(gpUI.drawer); return; }
     if (!document.getElementById('pop-scheme').hidden) { togglePop(false); return; }
-    if (gpUI.sel != null || gpUI.edge) { gpUI.sel = null; gpUI.edge = null; renderStudio(); }
+    if (gpUI.sel != null || gpUI.edge || gpUI.aux || gpUI.pick) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; gpUI.pick = null; syncSelection(); }
     return;
   }
   if (!gpUI.edge || (ev.key !== 'Delete' && ev.key !== 'Backspace')) return;
@@ -703,9 +735,10 @@ document.getElementById('plan-tools').addEventListener('click', ev => {
   if (ev.target.closest('[data-gpact="auto"]')) gpOp('auto');
 });
 document.getElementById('gp-info').addEventListener('click', ev => {
-  if (ev.target.closest('[data-gpnav="close"]')) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; renderStudio(); return; }
+  if (ev.target.closest('[data-gpnav="close"]')) { gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; gpUI.pick = null; syncSelection(); return; }
   const cut = ev.target.closest('[data-cut]'); if (cut) { gpOp('cut', [gpUI.sel, +cut.dataset.cut]); return; }
   const act = ev.target.closest('[data-gpact]')?.dataset.gpact;
+  if (act === 'put' || act === 'put-end') { const ed = act === 'put' && gpUI.mode === 'plan' && gpUI.edge; addUnit(gpUI.pick, ed ? { edge: ed } : null); return; }
   if (act === 'cut') gpOp('cut', gpUI.edge);
   else if (act === 'link') gpOp('link', [gpUI.sel, +document.getElementById('gp-target').value]);
   else if (act) gpOp(act);

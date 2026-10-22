@@ -158,17 +158,27 @@ document.addEventListener('pointerdown', ev => {
 
 /* ---------- эмблема: перелетает между центром экрана диалога и правым верхним углом ---------- */
 const DOCK = 56;
+function dockRect() {
+  const v = document.getElementById('view-' + document.body.dataset.view), d = v && v.querySelector('[data-orb-dock]');
+  const r = d && d.getBoundingClientRect();
+  return r && r.width ? r : null;
+}
 function placeOrb(animate) {
   const big = document.body.dataset.view === 'seshat' && !!document.getElementById('orb-slot');
   const vw = document.documentElement.clientWidth;
-  let x, y, size;
+  let x, y, size, dock = null;
   if (big) {
     const r = document.getElementById('orb-slot').getBoundingClientRect();
     x = r.left; y = r.top; size = r.width;
+  } else if ((dock = dockRect())) {
+    x = dock.left; y = dock.top; size = dock.width; // место в панели раздела, например в конструкторе
   } else {
     const small = vw <= 860; // на телефоне меню сверху — эмблема поменьше, в строке с логотипом
     size = small ? 38 : DOCK; x = vw - size - (small ? 12 : 16); y = small ? 9 : 16;
   }
+  // окно разговора открывается под эмблемой, если она стоит в панели раздела
+  mini.style.top = dock ? (y + size + 10) + 'px' : '';
+  mini.style.maxHeight = dock ? `calc(100vh - ${Math.round(y + size + 26)}px)` : '';
   if (!animate) orb.classList.add('no-anim');
   orb.classList.toggle('big', big);
   orb.tabIndex = big ? -1 : 0;
@@ -181,5 +191,6 @@ document.addEventListener('viewchange', () => { placeOrb(orbReady); orbReady = t
 window.addEventListener('resize', () => placeOrb(false));
 // место под эмблему может сдвинуться (шрифты, длина диалога) — следим за ним
 if (window.ResizeObserver && document.getElementById('view-seshat')) new ResizeObserver(() => { if (document.body.dataset.view === 'seshat' && orbReady) placeOrb(false); }).observe(document.getElementById('view-seshat'));
+if (window.ResizeObserver) document.querySelectorAll('[data-orb-dock]').forEach(d => new ResizeObserver(() => { if (orbReady) placeOrb(false); }).observe(d.parentElement));
 window.addEventListener('scroll', () => { if (document.body.dataset.view === 'seshat') placeOrb(false); }, { passive: true });
 orb.addEventListener('click', () => { if (document.body.dataset.view === 'seshat') return; if (mini.hidden) openMini(); else closeMini(); });

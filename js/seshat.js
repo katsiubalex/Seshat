@@ -4,7 +4,7 @@ const talk = { started: false, typing: null, busy: false };
 const orb = document.getElementById('orb');
 
 function oracleCtx() {
-  return { q: state.q, c: state.c, steps: state.steps, norm: state.norm, prices: state.prices, projects: store.list('project').length, hour: new Date().getHours() };
+  return { page: PAGE, view: document.body.dataset.view, q: state.q, c: state.c, steps: state.steps, norm: state.norm, prices: state.prices, projects: store.list('project').length, hour: new Date().getHours() };
 }
 
 /* ---------- звёздное небо ---------- */
@@ -95,6 +95,7 @@ function startTalk() {
 }
 function runAction(a) {
   if (a.type === 'link') { go(a.view); return; }
+  if (a.type === 'url') { if (a.page === PAGE) go(a.hash); else location.href = pageUrl(a.page, a.hash); return; }
   if (a.type === 'apply' && PAGE !== 'tlazolteotl') { // с главной: собрать схему на странице Тласольтеотль
     setPending({ steps: a.steps }); go('constructor'); return;
   }

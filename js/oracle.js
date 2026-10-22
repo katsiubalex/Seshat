@@ -1,13 +1,20 @@
-// Ответы Сешат. Сейчас — правила и знания самого сервиса (технологии, модель, экономика).
-// Позже сюда подключается языковая модель: SeshatOracle.setProvider(async (question, ctx, local) => reply).
-// Ответ: { text: string, options?: [{ id, label }], action?: { type, ... } }
+// Ответы Сешат — проводника по экосистеме. Сейчас — правила и знания самого сервиса: модули, база знаний,
+// технологии, модель и экономика Тласольтеотль. Позже сюда подключается языковая модель:
+// SeshatOracle.setProvider(async (question, ctx, local) => reply).
+// Контекст: ctx.page — где идёт разговор ('hub', 'tlazolteotl' или модуль в разработке), ctx.view — открытый раздел.
+// Ответ: { text, options?: [{ id, label }], action?: { type: 'link', view } | { type: 'url', page, hash } | { type: 'apply', steps } }
 (function (root) {
   const req = n => (typeof require !== 'undefined' ? require(n) : null);
   const D = root.SeshatData || req('./data.js');
   const M = root.SeshatModel || req('./model.js');
   const E = root.SeshatEconomics || req('./economics.js');
   const P = root.SeshatPlan || req('./plan.js');
+  const MS = root.SeshatModules || req('./modules.js');
+  const KB = root.SeshatKB || req('./kb.js');
   const U = Object.fromEntries(D.UNITS.map(u => [u.id, u]));
+  const MODS = MS.MODULES, MOD = Object.fromEntries(MODS.map(m => [m.id, m]));
+  const PATH = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina', 'tlazolteotl']; // путь воды
+  const pageOf = ctx => (ctx && ctx.page) || 'tlazolteotl';
 
   const f = v => M.fmt(v);
   const money = v => v >= 1e9 ? (v / 1e9).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд ₽'
@@ -19,15 +26,33 @@
   const lc = t => (t.length > 1 && t[1] === t[1].toLowerCase() && t[1] !== t[1].toUpperCase()) ? t[0].toLowerCase() + t.slice(1) : t;
   const plural = (n, one, few, many) => { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; };
 
-  // Главное меню разговора — как варианты ответа на экране лидера
-  const MENU = [
+  // Меню зависит от того, где идёт разговор: на главной Сешат, в Тласольтеотль или в модуле в разработке
+  const MENU = [ // Тласольтеотль
     { id: 'review', label: 'Посмотри на мою схему' },
     { id: 'recommend', label: 'Подбери схему для моих стоков' },
     { id: 'how', label: 'Как работает сооружение?' },
     { id: 'ndt', label: 'Что такое наилучшие доступные технологии?' },
-    { id: 'who', label: 'Что ты умеешь?' },
-    { id: 'bye', label: 'Перейти в конструктор' }
+    { id: 'books:tlazolteotl', label: 'Что почитать по очистке сточных вод?' },
+    { id: 'modules', label: 'Какие ещё есть модули?' }
   ];
+  const HUB_MENU = [
+    { id: 'eco', label: 'Что такое Сешат?' },
+    { id: 'start', label: 'С чего начать?' },
+    { id: 'modules', label: 'Какие есть модули?' },
+    { id: 'kbhelp', label: 'Что есть в базе знаний?' },
+    { id: 'names', label: 'Почему модули названы именами богов?' },
+    { id: 'who', label: 'Что ты умеешь?' }
+  ];
+  const whoIs = m => m.about === 'о богине' ? 'Кто такая' : m.about === 'о легенде' ? 'Кто такой' : 'Кто такой';
+  const devMenu = id => { const m = MOD[id]; return [
+    { id: 'mod:' + id, label: 'Что будет в этом модуле?' },
+    { id: 'lore:' + id, label: `${whoIs(m)} ${m.n}?` },
+    { id: 'books:' + id, label: 'Что почитать по теме?' },
+    { id: 'cycle:' + id, label: 'Где модуль в водном цикле?' },
+    { id: 'modules', label: 'Какие ещё есть модули?' },
+    { id: 'who', label: 'Что ты умеешь?' }
+  ]; };
+  const menuFor = ctx => { const p = pageOf(ctx); return p === 'hub' ? HUB_MENU : p === 'tlazolteotl' ? MENU : devMenu(p); };
   const back = { id: 'menu', label: 'Вернуться к другим вопросам' };
 
   // Ключевые слова для свободных вопросов → технология
@@ -51,7 +76,7 @@
     ['uv', ['уф', 'ультрафиол', 'обеззараж']], ['filter', ['фильтр', 'доочист']], ['at', ['аэротенк', 'активный ил', 'активного ила']]
   ];
   const TOPICS = [
-    ['who', ['кто ты', 'что ты умеешь', 'что умеешь', 'о себе', 'сешат', 'помощь', 'тласол']],
+    ['who', ['кто ты', 'что ты умеешь', 'что умеешь', 'о себе', 'помощь']],
     ['ndt', ['ндт', 'наилучш', 'справочник', 'итс']],
     ['review', ['мою схему', 'моя схема', 'проверь', 'посмотри', 'нормативы не', 'не выполня', 'превыш']],
     ['recommend', ['подбери', 'посоветуй', 'какую схему', 'что выбрать', 'предложи']],
@@ -62,6 +87,28 @@
     ['genplan', ['генплан', 'площад', 'участок', 'план станции']],
     ['bye', ['пока', 'до свидания', 'спасибо', 'прощай']]
   ];
+
+  // Модули: имя божества и тема
+  const MOD_NAMES = [['tlaloc', ['тлалок']], ['hapi', ['хапи']], ['yu', ['ю велик', 'юй', 'великий ю']], ['enki', ['энки', ' эа ']],
+    ['anahita', ['анахит']], ['juturna', ['ютурн']], ['cloacina', ['клоацин']], ['tlazolteotl', ['тласол', 'тлацол']]];
+  const MOD_TOPICS = [['tlaloc', ['гидролог', 'осадки', 'дожд', 'ливн', 'паводк', 'обеспеченност']], ['hapi', ['водные ресурс', 'водохозяйств', 'водопользовател', 'бассейн реки', 'разбавлен']],
+    ['yu', ['гидротехн', 'плотин', 'дамб', 'водосброс', 'водохранилищ', 'наводнен']], ['enki', ['водозабор', 'скважин', 'подземн', 'гидрогеолог', 'зон санитарной охран']],
+    ['anahita', ['водоподготов', 'питьев', 'природн вод', 'природной вод', 'обезжелез', 'умягчен', 'марган']], ['juturna', ['водопровод', 'сети водоснаб', 'сеть водоснаб', 'водонапорн', 'кольцев']],
+    ['cloacina', ['канализац', 'водоотводящ', 'самотеч', 'коллектор', 'кнс', 'ливнев']]];
+  // База знаний: фундаментальные дисциплины, «Человек и вода», показатели, разделы
+  const FUND_KEYS = [['hydraulics', ['гидравлик', 'бернулли', 'дарси', 'рейнольдс', 'шези', 'потери напор']], ['math', ['математик', 'статистик', 'дифференциальн']],
+    ['chemistry', ['химия вод', 'химии вод', 'карбонатн', 'растворимост']], ['microbiology', ['микробиолог', 'биохими']],
+    ['geotech', ['грунт', 'инженерная геолог']], ['pumps', ['насос', 'автоматизац']]];
+  const HUM_KEYS = [['anthropology', ['антрополог']], ['philosophy', ['философ', 'фалес', 'гераклит', 'башляр', 'иллич']],
+    ['history', ['истори водо', 'истории водо', 'истории санитар', 'холер', 'джон сноу', 'акведук', 'фронтин']],
+    ['commons', ['общее благо', 'остром', 'хардин', 'трагедия общин', 'право на воду']], ['ethics', ['этик']]];
+  const IND_KEYS = [['bod', ['бпк']], ['cod', ['хпк']], ['ss', ['взвешен']], ['do', ['растворенный кислород', 'растворённый кислород']], ['ph', [' ph', 'кислотност']],
+    ['alk', ['щелочност']], ['coli', ['колиформ', 'кишечная палочк', 'микробиологическ']], ['svi', ['иловый индекс', 'доза ила']], ['tds', ['солесодерж', 'сухой остаток']]];
+  const SEC_KEYS = [['books', ['учебник', 'что почитать', 'литератур', 'книг']], ['journals', ['журнал', 'статьи учен', 'публикац']],
+    ['comm', ['сообществ', 'ассоциац', 'iwa', 'равв', 'конференц']], ['docs', ['документ', 'закон', 'санпин', 'постановлен', 'приказ', 'сп 32']],
+    ['kbhelp', ['база знаний', 'базе знаний', 'энциклопед']], ['names', ['назван', 'такие имена', 'почему имена', 'имена бог', 'именами бог']],
+    ['eco', ['что такое сешат', 'сешат', 'экосистем']],
+    ['start', ['с чего начать', 'начать', 'новичок', 'первый раз']], ['modules', ['модул']]];
 
   function evaluate(ctx) {
     const input = { q: ctx.q, c: ctx.c, steps: ctx.steps };
@@ -82,17 +129,19 @@
   /* ---------- ответы ---------- */
   function greet(ctx) {
     const h = (ctx.hour ?? 12), when = h < 5 ? 'Доброй ночи' : h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер';
-    const n = ctx.projects || 0;
+    const p = pageOf(ctx), n = ctx.projects || 0;
+    if (p === 'hub') return { text: `${when}! Я Сешат, проводник по экосистеме водоснабжения и водоотведения. Здесь восемь модулей — от гидрологии до очистки сточных вод, база знаний и нормативные документы. Спросите, с чего начать, или выберите вопрос.`, options: HUB_MENU };
+    if (p !== 'tlazolteotl') { const m = MOD[p]; return { text: `${when}! Вы в модуле ${m.n} — ${m.d.toLowerCase()}. Модуль ещё в разработке, но я могу рассказать, что в нём будет, кто такой его покровитель и что почитать по теме.`, options: devMenu(p) }; }
     return {
-      text: `${when}! Я помогу подобрать и проверить схему очистки сточных вод. ${n ? `У вас ${n} ${plural(n, 'проект', 'проекта', 'проектов')}.` : 'Проектов пока нет.'} Выберите вопрос или задайте свой.`,
+      text: `${when}! Вы в модуле Тласольтеотль. Я помогу подобрать и проверить схему очистки сточных вод. ${n ? `У вас ${n} ${plural(n, 'проект', 'проекта', 'проектов')}.` : 'Проектов пока нет.'} Выберите вопрос или задайте свой.`,
       options: MENU
     };
   }
-  function who() {
-    return {
-      text: 'Я Сешат — помощник образовательной экосистемы по водоснабжению и водоотведению. В ней восемь модулей, от гидрологии (Тлалок) до очистки сточных вод (Тласольтеотль); сейчас готов Тласольтеотль — конструктор очистных сооружений, остальные в разработке. Я могу проверить схему из конструктора: какие нормативы выполняются, что добавить и сколько это стоит. Могу подобрать схему под состав стоков и нормативы, рассказать, как работает любое сооружение из каталога, и ответить на вопросы об удалении азота и фосфора, осадке и затратах. Сейчас ответы строятся на данных сервиса; позже будет подключена языковая модель.',
-      options: MENU.filter(o => o.id !== 'who')
-    };
+  function who(ctx) {
+    const p = pageOf(ctx);
+    const base = 'Я Сешат — помощник образовательной экосистемы по водоснабжению и водоотведению. Я знаю все восемь модулей и их божеств, могу рассказать, что есть в базе знаний и что почитать по каждой дисциплине, объяснить основы гидравлики, химии воды и показатели качества.';
+    const tz = ' В модуле Тласольтеотль я могу проверить схему из конструктора: какие нормативы выполняются, что добавить и сколько это стоит; подобрать схему под состав стоков и рассказать, как работает любое сооружение.';
+    return { text: base + tz + ' Сейчас ответы строятся на данных сервиса; позже будет подключена языковая модель.', options: menuFor(ctx).filter(o => o.id !== 'who') };
   }
   function ndt() {
     return {
@@ -112,7 +161,7 @@
     return {
       text: `${u.n}. ${p.how} Типовые параметры: ${p.params.join('; ').toLowerCase()}.`,
       options: [{ id: 'how', label: 'Расскажи о другом сооружении' }, back],
-      action: { type: 'link', view: 'constructor', label: 'Посмотреть на плане' }
+      action: open('tlazolteotl', 'kb-u-' + id, 'Подробнее в базе знаний')
     };
   }
   function review(ctx) {
@@ -131,7 +180,77 @@
     text += `Строительство обойдётся примерно в ${money(r.eco.total.capex * 1e6)}, эксплуатация — ${money(r.eco.total.opex)} в сутки, это ${r.eco.perM3.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽ за кубометр.`;
     const warns = r.sim.warns.flat();
     if (warns.length) text += ` Обратите внимание: ${warns[0].charAt(0).toLowerCase() + warns[0].slice(1)}`;
-    return { text, options: [{ id: 'recommend', label: 'Подбери другую схему' }, { id: 'cost', label: 'Как снизить затраты?' }, back] };
+    return { text, options: [{ id: 'recommend', label: 'Подбери другую схему' }, { id: 'cost', label: 'Как снизить затраты?' }, back], action: pageOf(ctx) !== 'tlazolteotl' ? open('tlazolteotl', 'constructor', 'Открыть схему в конструкторе') : undefined };
+  }
+
+  /* ---------- экосистема и модули ---------- */
+  const open = (page, hash, label) => ({ type: 'url', page, hash, label });
+  const modOpt = m => ({ id: 'mod:' + m.id, label: `${m.n} — ${m.d.toLowerCase()}` });
+  function eco() {
+    return { text: `Сешат — образовательная экосистема по водоснабжению и водоотведению. Она состоит из восьми модулей, и вместе они проходят весь путь воды: ${PATH.map(id => MOD[id].n).join(' → ')}. Каждый модуль — отдельная дисциплина со своим тренажёром, базой знаний и учебниками; сейчас готов Тласольтеотль — конструктор очистных сооружений, остальные в разработке. Общие для всех модулей разделы — фундаментальные дисциплины, «Человек и вода», журналы, сообщества и нормативные документы.`,
+      options: [{ id: 'start', label: 'С чего начать?' }, { id: 'modules', label: 'Какие есть модули?' }, back], action: { type: 'link', view: 'home', label: 'Открыть водный цикл модулей' } };
+  }
+  function start(ctx) {
+    return { text: 'Начните с модуля Тласольтеотль — он уже работает. Откройте раздел «О модуле», затем конструктор: выберите пример стоков слева, нормативы водоёма справа и соберите схему очистки из каталога внизу. Если какие-то понятия незнакомы, в базе знаний есть статьи о каждом сооружении, процессе и показателе, а в общих разделах — основы гидравлики и химии воды.',
+      options: [{ id: 'mod:tlazolteotl', label: 'Расскажи о Тласольтеотль' }, { id: 'f:hydraulics', label: 'Что такое гидравлика?' }, back], action: open('tlazolteotl', 'overview', 'Открыть Тласольтеотль') };
+  }
+  function modules(ctx) {
+    const here = pageOf(ctx);
+    return { text: `В экосистеме восемь модулей, они идут по пути воды. ${PATH.map(id => `${MOD[id].n} — ${MOD[id].d.toLowerCase()}${MOD[id].ready ? ' (готов)' : ''}`).join('; ')}. О каком рассказать?`,
+      options: PATH.filter(id => id !== here).map(id => modOpt(MOD[id])).concat([back]) };
+  }
+  function moduleInfo(id, ctx) {
+    const m = MOD[id], here = pageOf(ctx) === id;
+    const text = `${m.n} — ${m.d.toLowerCase()}. ${m.ready ? 'Модуль готов. Он умеет' : 'Модуль в разработке. В нём будет'}: ${list(m.will.map(lc))}. Дисциплины: ${list(m.disc.map(lc))}. Название — в честь божества: ${lc(m.legend)}`;
+    const action = here ? (m.ready ? { type: 'link', view: 'constructor', label: 'Открыть конструктор' } : { type: 'link', view: 'lore', label: `Читать историю: ${m.n}` })
+      : open(id, 'overview', `Открыть модуль ${m.n}`);
+    return { text, options: [{ id: 'lore:' + id, label: `${whoIs(m)} ${m.n}?` }, { id: 'books:' + id, label: 'Что почитать по теме?' }, back], action };
+  }
+  function lore(id) {
+    const m = MOD[id];
+    return { text: `${m.legend} Полная история — несколько глав о мифах, обрядах и о том, почему это божество подходит модулю, — на странице «История» модуля.`,
+      options: [{ id: 'mod:' + id, label: 'А что в самом модуле?' }, { id: 'names', label: 'Почему модули названы именами богов?' }, back], action: open(id, 'lore', `Читать историю: ${m.n}`) };
+  }
+  function books(id) {
+    const m = MOD[id], groups = KB.MODULE_BOOKS[id] || [], all = groups.flatMap(g => g.list);
+    const top = all.slice(0, 3).map(([a, t]) => `«${t}» (${a.split(',')[0]})`);
+    return { text: `По теме модуля ${m.n} — ${all.length} ${plural(all.length, 'учебник', 'учебника', 'учебников')}: ${list(groups.map(g => lc(g.d)))}. Для начала: ${list(top)}. Полный список — в базе знаний модуля, а учебники по гидравлике, химии воды и математике — в разделе «Фундаментальные дисциплины».`,
+      options: [{ id: 'mod:' + id, label: `Что в модуле ${m.n}?` }, back], action: open(id, 'kb-books', 'Открыть учебники модуля') };
+  }
+  function cycle(id) {
+    const i = PATH.indexOf(id), prev = MOD[PATH[i - 1]], next = MOD[PATH[i + 1]], m = MOD[id];
+    let text = `${m.n} отвечает за ${lc(m.d)}. `;
+    if (prev) text += `Перед ним в пути воды — ${prev.n} (${lc(prev.d)}). `;
+    if (next) text += `После него — ${next.n} (${lc(next.d)}). `;
+    if (id === 'tlazolteotl') text += 'Очищенная вода возвращается в реку — к Хапи, и круг замыкается.';
+    if (id === 'yu') text += 'Гидротехника стоит рядом с рекой: плотины, каналы и водохранилища регулируют сток для всех следующих модулей.';
+    return { text, options: [prev && modOpt(prev), next && modOpt(next), back].filter(Boolean), action: { type: 'link', view: 'home', label: 'Открыть водный цикл' } };
+  }
+  function names() {
+    return { text: `Каждый модуль носит имя божества, чья сфера совпадает с дисциплиной. ${PATH.map(id => `${MOD[id].n} — ${lc(MOD[id].legend.split('.')[0])}`).join('; ')}. А сама экосистема названа в честь египетской богини Сешат — покровительницы письма, счёта и измерений, которая размечала здания перед закладкой.`,
+      options: [{ id: 'modules', label: 'Какие есть модули?' }, back], action: { type: 'link', view: 'about', label: 'Читать о проекте' } };
+  }
+  function kbHelp(ctx) {
+    const p = pageOf(ctx);
+    if (p === 'tlazolteotl') return { text: 'В базе знаний Тласольтеотль — статьи о 40 сооружениях очистки, 22 процессах с уравнениями, 18 показателях качества воды и учебники модуля. Общие разделы Сешат — фундаментальные дисциплины, «Человек и вода», журналы и сообщества.', options: [back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний модуля' } };
+    if (p !== 'hub') return { text: `Модуль ${MOD[p].n} ещё наполняется, но в его базе знаний уже есть учебники и ссылки на общие дисциплины, на которых он держится. Общие разделы Сешат — фундаментальные дисциплины, «Человек и вода», журналы и сообщества.`, options: [{ id: 'books:' + p, label: 'Что почитать по теме?' }, back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний модуля' } };
+    return { text: 'База знаний устроена как дерево. Общие разделы: фундаментальные дисциплины (гидравлика, математика, химия воды, микробиология, геология, насосы), «Человек и вода» (антропология, философия, история санитарии, вода как общее благо, этика), научные журналы и профессиональные сообщества. У каждого модуля — своя база знаний со своими учебниками; у Тласольтеотль ещё сооружения, процессы и показатели качества воды.',
+      options: [{ id: 'f:hydraulics', label: 'Расскажи про гидравлику' }, { id: 'h:philosophy', label: 'Что такое философия воды?' }, back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний' } };
+  }
+  function article(kind, id) {
+    const x = (kind === 'f' ? KB.FUNDAMENTALS : kind === 'h' ? KB.HUMANITIES : KB.INDICATORS).find(v => v.id === id);
+    const text = kind === 'i' ? `${x.t}. ${x.what} ${x.why} В городских стоках обычно ${x.typ}.` : `${x.t}. ${x.lead} ${x.s[0][1]}`;
+    const page = kind === 'i' ? 'tlazolteotl' : 'hub';
+    return { text, options: [{ id: 'kbhelp', label: 'Что ещё есть в базе знаний?' }, back], action: open(page, `kb-${kind}-${id}`, 'Читать статью целиком') };
+  }
+  function section(id, ctx) {
+    const p = pageOf(ctx);
+    if (id === 'books') return p !== 'hub' ? books(p) : { text: `Учебники собраны в базах знаний модулей — у каждого своя дисциплина: ${PATH.map(m => `${MOD[m].n} — ${(KB.MODULE_BOOKS[m] || []).reduce((s, g) => s + g.list.length, 0)}`).join(', ')}. Учебники по гидравлике, математике, химии воды и другим общим дисциплинам — в разделе «Фундаментальные дисциплины».`,
+      options: PATH.map(m => ({ id: 'books:' + m, label: `Учебники: ${MOD[m].n}` })).slice(0, 4).concat([back]), action: open('hub', 'kb-books', 'Открыть учебники по модулям') };
+    if (id === 'journals') return { text: `В базе знаний собраны ${KB.JOURNALS.reduce((s, g) => s + g.list.length, 0)} научных журналов: российские — «Водоснабжение и санитарная техника», «НДТ водоснабжения и водоотведения», «Вода и экология»; международные — Water Research, Water Science and Technology и другие.`, options: [back], action: open('hub', 'kb-journals', 'Открыть список журналов') };
+    if (id === 'comm') return { text: 'Профессиональные сообщества: в России — Российская ассоциация водоснабжения и водоотведения (РАВВ), крупные водоканалы; в мире — IWA, WEF, AWWA, EWA, немецкая DWA и другие. Там проходят конференции, выпускаются стандарты и обучающие материалы.', options: [back], action: open('hub', 'kb-comm', 'Открыть список сообществ') };
+    if (id === 'docs') return { text: 'Нормативные документы — общий раздел Сешат: законы о водоснабжении и об охране окружающей среды, Водный кодекс, справочники НДТ, свод правил СП 32, санитарные правила и нормативы качества воды. У части документов есть интерактивные таблицы, например показатели НДТ по постановлению № 1430.', options: [{ id: 'ndt', label: 'Что такое НДТ?' }, back], action: { type: 'link', view: 'docs', label: 'Открыть документы' } };
+    return ({ kbhelp: () => kbHelp(ctx), names, eco, start: () => start(ctx), modules: () => modules(ctx) })[id]();
   }
 
   /** Подбор схемы по составу стоков и нормативам (правила, а не оптимизация). */
@@ -174,11 +293,11 @@
     const links = { cost: { view: 'projects', label: 'Сравнить варианты в проектах' }, genplan: { view: 'constructor', label: 'Открыть план' }, sludge: { view: 'constructor', label: 'Посмотреть на плане' } };
     return { text: T[id], options: [back], action: links[id] ? { type: 'link', ...links[id] } : undefined };
   }
-  function bye() { return { text: 'Хорошо. Если понадобится помощь, возвращайтесь.', options: [back], action: { type: 'link', view: 'constructor', label: 'Открыть конструктор' } }; }
-  function unknown() {
+  function bye(ctx) { return { text: 'Хорошо. Если понадобится помощь, возвращайтесь.', options: [back], action: pageOf(ctx) === 'tlazolteotl' ? { type: 'link', view: 'constructor', label: 'Открыть конструктор' } : undefined }; }
+  function unknown(ctx) {
     return {
-      text: 'На этот вопрос у меня пока нет ответа. Я могу рассказать о сооружениях из каталога, нормативах и затратах или проверить вашу схему. Позже будет подключена языковая модель, и круг вопросов станет шире.',
-      options: MENU
+      text: 'На этот вопрос у меня пока нет ответа. Я могу рассказать о модулях экосистемы и их божествах, о базе знаний и учебниках, о сооружениях очистки, нормативах и затратах или проверить вашу схему. Позже будет подключена языковая модель, и круг вопросов станет шире.',
+      options: menuFor(ctx)
     };
   }
 
@@ -186,17 +305,37 @@
   function local(input, ctx) {
     const id = input.id;
     if (id) {
-      if (id === 'menu') return { text: 'Что вас интересует?', options: MENU };
+      if (id === 'menu') return { text: 'Что вас интересует?', options: menuFor(ctx) };
       if (id === 'greet') return greet(ctx);
-      if (id.startsWith('tech:')) return tech(id.slice(5));
-      return ({ who, ndt, how: howMenu, review: () => review(ctx), recommend: () => recommend(ctx), bye, cost: () => topic('cost', ctx) }[id] || unknown)();
+      const [k, v] = id.split(':');
+      if (k === 'tech' && U[v]) return tech(v);
+      if (k === 'mod' && MOD[v]) return moduleInfo(v, ctx);
+      if (k === 'lore' && MOD[v]) return lore(v);
+      if (k === 'books' && MOD[v]) return books(v);
+      if (k === 'cycle' && MOD[v]) return cycle(v);
+      if ((k === 'f' || k === 'h' || k === 'i') && v) return article(k, v);
+      return ({ who: () => who(ctx), ndt, how: howMenu, review: () => review(ctx), recommend: () => recommend(ctx), bye: () => bye(ctx), cost: () => topic('cost', ctx),
+        eco, start: () => start(ctx), modules: () => modules(ctx), kbhelp: () => kbHelp(ctx), names }[id] || (() => unknown(ctx)))();
     }
     const q = ' ' + String(input.text || '').toLowerCase().replace(/ё/g, 'е') + ' ';
     const keyHit = (keys) => keys.some(k => q.includes(k.replace(/ё/g, 'е')));
-    for (const [t, keys] of TOPICS) if (['who', 'ndt', 'review', 'recommend', 'bye'].includes(t) && keyHit(keys)) return local({ id: t }, ctx);
+    // 1. кто ты, НДТ, разбор и подбор схемы, прощание
+    for (const [t, keys] of TOPICS) if (['who', 'ndt', 'review', 'recommend', 'bye'].includes(t) && keyHit(keys) && !(t === 'who' && MOD_NAMES.some(([, k]) => keyHit(k)) && !keyHit(['кто ты', 'что ты умеешь', 'что умеешь']))) return local({ id: t }, ctx);
+    // 2. модуль по имени божества: «кто такая …», «история», «миф» — история; иначе — о модуле
+    for (const [mid, keys] of MOD_NAMES) if (keyHit(keys)) return keyHit(['кто', 'истори', 'миф', 'легенд', 'бог']) ? lore(mid) : moduleInfo(mid, ctx);
+    // 3. разделы базы знаний и экосистемы
+    for (const [sid, keys] of SEC_KEYS) if (keyHit(keys)) return section(sid, ctx);
+    // 4. фундаментальные дисциплины и «Человек и вода»
+    for (const [fid, keys] of FUND_KEYS) if (keyHit(keys)) return article('f', fid);
+    for (const [hid, keys] of HUM_KEYS) if (keyHit(keys)) return article('h', hid);
+    // 5. сооружения очистки
     for (const [tid, keys] of KEYS) if (keyHit(keys)) return tech(tid);
+    // 6. модуль по теме: гидрология, водозабор, канализация…
+    for (const [mid, keys] of MOD_TOPICS) if (keyHit(keys)) return moduleInfo(mid, ctx);
+    // 7. показатели качества воды и темы очистки
+    for (const [iid, keys] of IND_KEYS) if (keyHit(keys)) return article('i', iid);
     for (const [t, keys] of TOPICS) if (keyHit(keys)) return topic(t, ctx);
-    return unknown();
+    return unknown(ctx);
   }
 
   let provider = null;
@@ -208,6 +347,6 @@
     return loc;
   }
 
-  root.SeshatOracle = { ask, local, greet, setProvider, recommendSteps, MENU };
+  root.SeshatOracle = { ask, local, greet, setProvider, recommendSteps, MENU, HUB_MENU, menuFor };
   if (typeof module !== 'undefined') module.exports = root.SeshatOracle;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

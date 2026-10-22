@@ -42,7 +42,7 @@ const crumbs = (...items) => {
   return `<nav class="kb-crumbs" aria-label="Путь в базе знаний">${path.map(([t, h], i) => i === last || !h ? `<span aria-current="page">${esc(t)}</span>` : `<a href="${h}">${esc(t)}</a>`).join('<span class="kb-sep" aria-hidden="true">/</span>')}</nav>`;
 };
 const procLink = id => PROC_BY[id] ? `<a class="kb-tag" href="#kb-p-${id}">${esc(PROC_BY[id].t)}</a>` : '';
-const unitLink = id => `<a class="kb-unit-link" href="#kb-u-${id}" style="--c:${STG[U[id].st].c}">${SeshatIcons.icon(id, 36)}<span>${esc(U[id].n)}</span></a>`;
+const unitLink = id => `<a class="kb-unit-link" href="#kb-u-${id}" style="--c:${STG[U[id].st].c}">${SeshatIcons.icon(id, 36)}<span>${esc(U[id].n)}${window.SeshatITS ? SeshatITS.badge(id) : ''}</span></a>`;
 const modLink = id => { const m = KB_MODS.find(x => x.id === id); return m ? `<a class="kb-tag kind-${m.kind}" href="${ROOT + m.path}#kb">${SeshatModules.glyph(m.id, 16)} ${esc(m.n)}</a>` : ''; };
 const ext = (t, u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a>`;
 const bookList = list => `<ol class="kb-books">${list.map(([a, t, pub]) => `<li><span class="kb-auth">${esc(a)}</span> <b>${esc(t)}</b>. <span class="kb-pub">${esc(pub)}</span></li>`).join('')}</ol>`;
@@ -109,7 +109,7 @@ function kbSection(id) {
   const S = SEC[id];
   let body = '';
   if (id === 'units') {
-    body = STAGES.map(s => `<section class="kb-group"><h2><span class="dot" style="background:${s.c}"></span>${esc(s.n)}</h2><div class="kb-units">${UNITS.filter(u => u.st === s.id).map(u => unitLink(u.id)).join('')}</div></section>`).join('')
+    body = (window.SeshatITS ? `<p class="hint its-intro">Каталог сверен со справочником наилучших доступных технологий <a href="#doc-its10">ИТС 10-2019</a>. Значок у технологии показывает её статус: ${['ndt', 'group', 'psv', 'persp', 'old', 'none'].map(k => `<span class="its-badge its-${k}">${esc(SeshatITS.STATUS[k].t)}</span>`).join(' ')}</p>` : '') + STAGES.map(s => `<section class="kb-group"><h2><span class="dot" style="background:${s.c}"></span>${esc(s.n)}</h2><div class="kb-units">${UNITS.filter(u => u.st === s.id).map(u => unitLink(u.id)).join('')}</div></section>`).join('')
       + `<section class="kb-group"><h2><span class="dot" style="background:var(--muted)"></span>Вспомогательные здания</h2><ul class="kb-links">${KB.AUX.map(a => `<li><a href="#kb-a-${a.id}">${esc(a.t)}</a></li>`).join('')}</ul></section>`;
   } else if (id === 'proc') {
     const groups = [...new Set(KB.PROCESSES.map(p => p.g))];
@@ -151,6 +151,7 @@ function kbUnit(id) {
   const head = `${crumbs(['Сооружения очистки', '#kb-units'], [u.n])}
     <header class="kb-ahead" style="--c:${st.c}">${SeshatIcons.icon(id, 72, u.n)}<div><span class="gp-stage">${esc(st.n)}</span><h1>${esc(u.n)}</h1><p class="kb-lead">${esc(u.d)}</p></div></header>`;
   const main = `<section class="panel"><h2>Как работает</h2><p>${esc(P.how || '')}</p></section>
+    ${window.SeshatITS ? SeshatITS.section(id) : ''}
     ${P.params && P.params.length ? `<section class="panel"><h2>Типовые параметры</h2><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
     <section class="panel"><h2>Что удаляет</h2>${eff.length ? `<ul class="kb-eff">${eff.map(([k, v]) => `<li><span>${EFF_NAME[k] || esc(PARAMS.find(p => p.k === k)?.n || k)}</span><b>${v}%</b></li>`).join('')}</ul><p class="hint">Типовые эффективности, принятые в расчётах Тласольтеотль. В карточке сооружения на плане их можно изменить.</p>` : '<p>Химический состав воды почти не меняет: сооружение нужно для защиты оборудования, выравнивания режима или обеззараживания.</p>'}</section>
     ${procs.length ? `<section class="panel"><h2>Какие процессы идут</h2><p class="kb-tags">${procs.map(procLink).join('')}</p></section>` : ''}

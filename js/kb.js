@@ -241,7 +241,7 @@
     bardenpho: ['nitrification', 'denitrification', 'biop'], sbr: ['biooxidation', 'nitrification', 'denitrification', 'sedimentation'],
     ags: ['biooxidation', 'nitrification', 'denitrification', 'biop'], mbbr: ['biooxidation', 'nitrification', 'aeration'],
     ifas: ['biooxidation', 'nitrification', 'denitrification'], mbr: ['biooxidation', 'nitrification', 'membranes'],
-    tf: ['biooxidation', 'sedimentation'], baf: ['biooxidation', 'nitrification', 'filtration'], uasb: ['anaerobic'],
+    tf: ['biooxidation', 'sedimentation'], baf: ['biooxidation', 'nitrification', 'filtration'], nitf: ['nitrification', 'biooxidation'], uasb: ['anaerobic'],
     anammox: ['anammox', 'nitrification'], wetland: ['biooxidation', 'filtration', 'adsorption'],
     chemP: ['chemp', 'coagulation'], denf: ['denitrification', 'filtration'], filter: ['filtration'], disc: ['filtration'],
     uf: ['membranes'], gac: ['adsorption'], ozone: ['aop', 'disinfection'], aop: ['aop'], ix: ['ionexchange'],

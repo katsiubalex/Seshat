@@ -73,6 +73,12 @@
       <path d="M4 40h56" ${S}/><path d="M54 37l4 3-4 3" ${S}/><text x="16" y="21" font-size="7" text-anchor="middle" fill="currentColor" font-family="sans-serif">Me</text>`,
 
     // Денитрифицирующий фильтр: зернистая загрузка и дозирование источника углерода
+    // Биофильтр доочистки: ёмкость с загрузкой и аэрацией, буква N — нитрификация
+    nitf: `<path d="M14 8h32v34H14z" ${S}/><path d="M14 14h32v28H14z" ${W}/>
+      <path d="M14 20h32M14 36h32" ${T}/>
+      ${[[18, 24], [24, 27], [30, 23], [36, 28], [42, 24], [21, 31], [33, 32], [39, 31], [27, 30]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2" ${F}/>`).join('')}
+      ${bubbles([[20, 39, 1.1], [30, 39.5, 1.1], [40, 39, 1.1]])}
+      <text x="54" y="16" font-size="8" font-weight="700" text-anchor="middle" fill="currentColor" font-family="sans-serif">N</text><path d="M4 24h10M46 24h14" ${T}/>`,
     denf: `<path d="M14 8h30v34H14z" ${S}/><path d="M14 14h30v28H14z" ${W}/>
       <path d="M14 22h30M14 36h30" ${T}/>
       ${[[18, 26], [24, 29], [30, 25], [36, 30], [40, 26], [21, 33], [33, 33], [27, 31]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2" ${F}/>`).join('')}

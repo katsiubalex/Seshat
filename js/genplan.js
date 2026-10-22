@@ -419,12 +419,13 @@ function renderUnitCard(sim, ec, L) {
     box.innerHTML = `${close}
       <div class="gp-head" style="--c:${st.c}">${SeshatIcons.icon(id, 56, u.n)}<div><span class="gp-stage">Каталог · ${esc(st.n)}</span><h2>${esc(u.n)}</h2></div></div>
       ${u.d ? `<p>${esc(u.d)}</p>` : ''}
+      ${window.SeshatITS ? SeshatITS.line(id) : ''}
       <div class="gp-acts gp-put">${where}</div>
       <p class="hint">${ed ? 'Сооружение встанет в выбранную трубу между двумя сооружениями.' : 'Встанет в схему по порядку стадий очистки. Можно и перетащить из каталога прямо в нужное место плана или на трубу.'}</p>
       ${P ? `<h3>Как работает</h3><p>${esc(P.how)}</p>` : ''}
       ${eff ? `<h3>Типично снижает</h3><ul>${eff}</ul>` : ''}
       ${P && P.params ? `<h3>Типовые параметры</h3><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-      <p><a href="#kb-u-${id}">Подробнее в базе знаний →</a></p>`;
+      <p><a href="#kb-u-${id}">Подробнее в базе знаний: что говорит справочник НДТ, схемы, цифры →</a></p>`;
     return;
   }
   if (gpUI.aux && SeshatKB) {
@@ -455,6 +456,7 @@ function renderUnitCard(sim, ec, L) {
   const tune = Object.keys(s.eff).length ? `<details class="tune"><summary>Настроить эффективность, %</summary><div class="tune-grid">${Object.keys(s.eff).map(k => `<label for="ct-${k}">${SHORT[k]}<input id="ct-${k}" ${NUM_ATTRS} data-ctk="${k}" value="${showNum(s.eff[k])}"></label>`).join('')}</div></details>` : '';
   box.innerHTML = `${close}
     <div class="gp-head" style="--c:${st.c}">${SeshatIcons.icon(b.id, 56, u.n)}<div><span class="gp-stage">${i + 1} · ${st.n}</span><h2>${esc(u.n)}</h2></div></div>
+    ${window.SeshatITS ? SeshatITS.line(b.id) : ''}
     ${s.idle ? '<div class="warns"><div class="w">Сооружение стоит на плане, но не подключено. Потяните трубу от кружка ● к следующему сооружению или выберите, куда подать воду, ниже.</div></div>' : ''}
     ${!s.idle && sim.warns[i].length ? `<div class="warns">${sim.warns[i].map(w => `<div class="w">${esc(w)}</div>`).join('')}</div>` : ''}
     <h3>Трубы</h3>
@@ -843,6 +845,8 @@ function showInShelf(id) {
 }
 
 /* ---------- следующий шаг: одна строка от Сешат прямо на плане ---------- */
+// при равной пользе Сешат сначала советует технологии, которые справочник НДТ относит к наилучшим
+const itsRank = id => { const s = window.SeshatITS && SeshatITS.UNITS[id] ? SeshatITS.UNITS[id].st : 'none'; return { ndt: 0, group: 1, psv: 2, persp: 3, old: 4, none: 5 }[s] ?? 5; };
 const DEFICIT_ORDER = ['ss', 'bod', 'cod', 'nh4', 'no2', 'no3', 'p', 'oil', 'fat'];
 const effScore = (u, k) => k === 'nh4' ? (u.eff.nit || u.eff.nh4 || 0) : k === 'no3' || k === 'no2' ? Math.max(u.eff.den || 0, u.eff[k] || 0) : k === 'p' ? Math.max(u.eff.bioP || 0, u.eff.p || 0) : (u.eff[k] || 0);
 function nextStep(sim) {
@@ -859,7 +863,7 @@ function nextStep(sim) {
   const covers = u => fails.filter(f => effScore(u, f.k) >= 40).length;
   // вторую биологию поверх первой не советуем: после неё нужна доочистка
   const hasBio = steps.some(x => U[x.u].bio);
-  let recs = UNITS.filter(u => !have.has(u.id) && u.id !== 'ro' && !(hasBio && (u.bio || u.st === 'mech' || u.st === 'phys')) && effScore(u, p.k) >= 40).sort((a, b) => covers(b) - covers(a) || (a.cx || 0) - (b.cx || 0)).slice(0, 3).map(u => u.id);
+  let recs = UNITS.filter(u => !have.has(u.id) && u.id !== 'ro' && !(hasBio && (u.bio || u.st === 'mech' || u.st === 'phys')) && effScore(u, p.k) >= 40).sort((a, b) => covers(b) - covers(a) || itsRank(a.id) - itsRank(b.id) || (a.cx || 0) - (b.cx || 0)).slice(0, 3).map(u => u.id);
   if (!recs.length && !have.has('ro')) recs = ['ro'];
   const more = fails.length > 1 ? ` Ещё не в норме: ${fails.slice(1).map(x => SHORT[x.k]).join(', ')}.` : '';
   return { text: `${p.n}: на выпуске ${fmt(sim.out[p.k])} мг/л, это ×${fmt(sim.out[p.k] / state.norm[p.k])} от нормы.${more}`, recs };

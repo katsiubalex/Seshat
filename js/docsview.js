@@ -69,6 +69,36 @@ function renderDocPage(id) {
 
 /* ---------- интерактивные блоки ---------- */
 const DOC_WIDGETS = {
+  // Справочник ИТС 10-2019: карта разделов, НДТ 7–9 и сверка каталога Сешат
+  its(box) {
+    const I = SeshatITS, U2 = Object.fromEntries(UNITS.map(u => [u.id, u]));
+    let tab = 'map';
+    const order = ['ndt', 'group', 'psv', 'persp', 'old', 'none'];
+    const draw = () => {
+      let body = '';
+      if (tab === 'map') body = `<p class="hint">Номера страниц — сквозная нумерация документа. Ссылка открывает официальный PDF Бюро НДТ на этой странице.</p>
+        <ol class="its-toc">${I.TOC.map(([t, p]) => `<li><span>${esc(t)}</span>${I.pg(p)}</li>`).join('')}</ol>`;
+      else if (tab === 'ndt') {
+        const codes = Object.keys(I.NDT).filter(c => /^[4-9]/.test(c));
+        body = `<p class="hint">НДТ 4 — общие требования к технологиям очистки, НДТ 5–6 — поверхностный сток, НДТ 7–9 — выбор биологической очистки по мощности станции и категории водоёма. В последнем столбце — технологии каталога Сешат, которые справочник относит к этим НДТ.</p>
+          <div class="tbl-wrap"><table class="doc-tbl its-ndt-tbl"><thead><tr><th class="p">НДТ</th><th class="p">Технология</th><th class="p">В каталоге</th></tr></thead><tbody>
+          ${codes.map(c => { const us = Object.entries(I.UNITS).filter(([, v]) => (v.ndt || []).includes(c)).map(([k]) => k).filter(k => U2[k]);
+            return `<tr><td class="p"><b>${esc(c)}</b> ${I.pg(I.NDT[c][1])}</td><td class="p">${esc(I.NDT[c][0])}</td><td class="p">${us.map(k => `<a href="#kb-u-${k}">${esc(U2[k].n.split(' (')[0])}</a>`).join(', ') || '—'}</td></tr>`; }).join('')}
+          </tbody></table></div>`;
+      } else {
+        const counts = order.map(k => [k, UNITS.filter(u => I.UNITS[u.id] && I.UNITS[u.id].st === k).length]);
+        body = `<p class="hint">Все ${UNITS.length} технологий каталога сверены со справочником. ${counts.map(([k, n]) => `<span class="its-badge its-${k}">${esc(I.STATUS[k].t)}</span> ${n}`).join(' · ')}</p>
+          ${order.map(k => { const list = UNITS.filter(u => I.UNITS[u.id] && I.UNITS[u.id].st === k); if (!list.length) return '';
+            return `<h3>${esc(I.STATUS[k].t)}</h3><p class="hint">${esc(I.STATUS[k].d)}</p><div class="tbl-wrap"><table class="doc-tbl"><tbody>${list.map(u => { const v = I.UNITS[u.id], r = v.refs[0];
+              return `<tr><td class="p"><a href="#kb-u-${u.id}">${esc(u.n)}</a></td><td class="p">${esc(v.its)}</td><td class="p">${I.ndtChips(v.ndt)}</td><td>${I.pg(r[1])}</td></tr>`; }).join('')}</tbody></table></div>`; }).join('')}`;
+      }
+      box.innerHTML = `<h2>Справочник в Сешат</h2>
+        <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="${tab === 'map'}" data-tab="map">Карта справочника</button><button type="button" role="tab" aria-selected="${tab === 'ndt'}" data-tab="ndt">НДТ 4–9</button><button type="button" role="tab" aria-selected="${tab === 'cat'}" data-tab="cat">Сверка каталога</button></div>
+        ${body}`;
+    };
+    box.addEventListener('click', ev => { const t = ev.target.closest('[data-tab]'); if (t) { tab = t.dataset.tab; draw(); } });
+    draw();
+  },
   // Технологические показатели НДТ: таблица, текущая категория по расходу, применение в конструкторе
   ndt(box) {
     const D = SeshatData, cols = [['ss', 'Взв. в-ва'], ['cod', 'ХПК'], ['bod', 'БПК₅'], ['nh4', 'N-NH₄'], ['no3', 'N-NO₃'], ['no2', 'N-NO₂'], ['p', 'P-PO₄']];

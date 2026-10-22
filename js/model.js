@@ -70,6 +70,8 @@
       if (u.id === 'gac' && ci.ss > 15) w.push(`Уголь быстро забьётся взвесью (${fmt(ci.ss)} мг/л); поставьте фильтры перед ним.`);
       if (u.id === 'filter' && ci.ss > 60) w.push(`Фильтры перегружены взвесью (${fmt(ci.ss)} мг/л); обычно их ставят после отстаивания.`);
       if (u.id === 'uv' && ci.ss > 15) w.push(`Взвесь ${fmt(ci.ss)} мг/л снижает эффективность УФ; желательно < 10 мг/л.`);
+      if (u.id === 'nitf' && ci.nh4 > 5) w.push(`Биофильтры доочистки рассчитаны на остаточный аммоний после основной биологии; при ${fmt(ci.nh4)} мг/л нитрификацию нужно вести в аэротенках (ИТС 10-2019, с. 98–99).`);
+      if (u.id === 'nitf' && !later.some(x => ['filter', 'disc', 'uf'].includes(x.u))) w.push('Биофильтры доочистки, как правило, не снижают взвесь: после них ставят фильтры (ИТС 10-2019, с. 99).');
       if (u.id === 'denf') w.push('Требуется дозирование внешнего углерода (метанол, ацетат), это расход реагента.');
 
       // Прямое снижение концентраций
@@ -94,6 +96,8 @@
         if (u.ssOut != null) c.ss = Math.min(c.ss, u.ssOut);
         sl += (u.yield ?? 0.6) * dB; // прирост ила, г/м³ (анаэробный и продлённая аэрация — меньше)
       }
+      // Нитрификация в биофильтрах доочистки (биология без активного ила)
+      if (!u.bio && e.nit) { const n = c.nh4 * e.nit / 100; c.nh4 -= n; c.no3 += n * 0.95; c.no2 += n * 0.05; }
       c.cod = Math.max(c.cod, c.bod);
       sl += Math.max(0, ci.ss - c.ss) * (u.bio ? 0 : 1) + (u.chem ? 5 * Math.max(0, ci.p - c.p) : 0);
       sludge += sl * fi;
@@ -110,7 +114,10 @@
       warns.push(w);
     });
 
-    const out = steps.length ? mix(fl.sinks.map(i => [fl.f[i], prof[i + 1]])) : { ...raw };
+    // убираем погрешность двоичной арифметики (2,100000000000002 → 2,1), чтобы сравнение с нормативом было честным
+    const tidy = o => { PK.forEach(k => { o[k] = +(+o[k]).toPrecision(12); }); return o; };
+    prof.forEach(tidy);
+    const out = tidy(steps.length ? mix(fl.sinks.map(i => [fl.f[i], prof[i + 1]])) : { ...raw });
     return { prof, cin, out, f: fl.f, warns, perStep, energy, sludge: sludge * input.q / 1000 };
   }
 

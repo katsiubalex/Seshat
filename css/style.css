@@ -1,8 +1,9 @@
 /* Layout: технологическая карта — слева исходные стоки, в центре каталог НДТ, справа собранная схема как вертикальная линия потока; под ними матрица результатов */
 :root{
-  --bg:#ECF0EF; --surface:#FFFFFF; --surface2:#F4F7F6; --ink:#15232A; --muted:#5A6A6F; --line:#CDD8D6;
-  --accent:#1D6B61; --accent-ink:#FFFFFF; --accent-soft:#D9EAE5;
-  --mech:#7A6448; --phys:#8A4F6E; --bio:#2F7A4F; --tert:#2E5E8C; --dis:#6C4E9A;
+  --bg:#EFEFEC; --surface:#FFFFFF; --surface2:#F6F6F3; --ink:#1B1E22; --muted:#5E6267; --line:#D6D6D1;
+  --accent:#23272C; --accent-ink:#FFFFFF; --accent-soft:#E5E5E0; --on-k:#FFFFFF;
+  --gold:#9A7426; --supply:#1D6B61; --waste:#7D5843;
+  --mech:#56707E; --phys:#8A4F6E; --bio:#2F7A4F; --tert:#2E5E8C; --dis:#6C4E9A;
   --ok:#2A7A4B; --ok-bg:#DFF0E5; --warn:#97620A; --warn-bg:#FAEED6; --bad:#B0382E; --bad-bg:#F7E0DC;
   --gp-ground:#E3EBDD; --gp-road:#CBD2CF; --gp-bld:#D8DDE0; --gp-water:#BFDCE6; --gp-sludge:#8A6A45;
   --f-display:'Unbounded','Golos Text',system-ui,sans-serif;
@@ -10,16 +11,18 @@
   --f-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#0E1517; --surface:#152023; --surface2:#1A272A; --ink:#E3ECEA; --muted:#93A5A6; --line:#2B3B3E;
-  --accent:#5FB8A8; --accent-ink:#0B1A18; --accent-soft:#1D3A35;
-  --mech:#C4A27A; --phys:#D99BBE; --bio:#6CC08C; --tert:#7FAEDD; --dis:#B49BE0;
+  --bg:#111214; --surface:#18191C; --surface2:#1E1F23; --ink:#E7E7E4; --muted:#9A9DA1; --line:#2D2F33;
+  --accent:#E7E5DF; --accent-ink:#141518; --accent-soft:#2A2B2F; --on-k:#121316;
+  --gold:#D9B66A; --supply:#5FB8A8; --waste:#D29C80;
+  --mech:#9FB3C0; --phys:#D99BBE; --bio:#6CC08C; --tert:#7FAEDD; --dis:#B49BE0;
   --ok:#6CC08C; --ok-bg:#183326; --warn:#E3B05A; --warn-bg:#3A2D14; --bad:#F08A7E; --bad-bg:#3D1E1B;
   --gp-ground:#1B2A22; --gp-road:#2E3A3C; --gp-bld:#2A3438; --gp-water:#1F4553; --gp-sludge:#C49B6A;
   color-scheme:dark }}
 :root[data-theme="dark"]{
-  --bg:#0E1517; --surface:#152023; --surface2:#1A272A; --ink:#E3ECEA; --muted:#93A5A6; --line:#2B3B3E;
-  --accent:#5FB8A8; --accent-ink:#0B1A18; --accent-soft:#1D3A35;
-  --mech:#C4A27A; --phys:#D99BBE; --bio:#6CC08C; --tert:#7FAEDD; --dis:#B49BE0;
+  --bg:#111214; --surface:#18191C; --surface2:#1E1F23; --ink:#E7E7E4; --muted:#9A9DA1; --line:#2D2F33;
+  --accent:#E7E5DF; --accent-ink:#141518; --accent-soft:#2A2B2F; --on-k:#121316;
+  --gold:#D9B66A; --supply:#5FB8A8; --waste:#D29C80;
+  --mech:#9FB3C0; --phys:#D99BBE; --bio:#6CC08C; --tert:#7FAEDD; --dis:#B49BE0;
   --ok:#6CC08C; --ok-bg:#183326; --warn:#E3B05A; --warn-bg:#3A2D14; --bad:#F08A7E; --bad-bg:#3D1E1B;
   --gp-ground:#1B2A22; --gp-road:#2E3A3C; --gp-bld:#2A3438; --gp-water:#1F4553; --gp-sludge:#C49B6A;
   color-scheme:dark }
@@ -174,9 +177,9 @@ input[aria-invalid=true]{border-color:var(--bad);background:var(--bad-bg)}
 .main{min-width:0}
 .sidenav{position:sticky;top:0;align-self:start;height:100vh;display:flex;flex-direction:column;gap:18px;padding-block:20px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;border-right:1px solid var(--line);background:var(--surface)}
 .brand{display:flex;align-items:center;gap:10px;padding:2px 6px;text-decoration:none;color:var(--ink)}
-.brand-mark{flex:none;color:var(--accent)}
+.brand-mark{flex:none;color:var(--gold)}
 .brand-text{display:flex;flex-direction:column;gap:1px}
-.brand b{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:-.01em;color:var(--accent)}
+.brand b{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:-.01em;color:var(--gold)}
 .brand small{font-size:11.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
 .nav-links{display:flex;flex-direction:column;gap:4px}
 .nav-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:500;font-size:14px}
@@ -775,7 +778,9 @@ body[data-view=constructor] .toast{bottom:auto;top:calc(64px + env(safe-area-ins
 .gp-aux:hover .gp-edge,.gp-aux.sel .gp-edge{stroke:var(--accent);stroke-width:2.4}
 
 /* ---------- экосистема: модули, главная, меню ---------- */
-.kind-nature{--k:var(--tert)} .kind-supply{--k:var(--accent)} .kind-waste{--k:var(--mech)}
+.kind-nature{--k:var(--tert)} .kind-supply{--k:var(--supply)} .kind-waste{--k:var(--waste)}
+/* на странице модуля кнопки, ссылки и активные пункты окрашены в цвет его вида воды; главная Сешат — «чернила и золото» */
+body.kind-nature,body.kind-supply,body.kind-waste{--accent:var(--k);--accent-ink:var(--on-k);--accent-soft:color-mix(in srgb,var(--k) 15%,var(--surface))}
 .glyph{flex:none}
 .nav-sub{display:block;padding:10px 10px 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .nav-mod-list{display:flex;flex-direction:column;gap:2px}
@@ -855,7 +860,7 @@ a.nav-module:hover{border-color:var(--k)}
 a.nav-module[aria-current=page]{background:color-mix(in srgb,var(--k) 22%,var(--surface));border-color:var(--k)}
 a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:860px){a.nav-module em{display:none}}
-.lore{--k:var(--mech);max-width:980px}
+.lore{--k:var(--waste);max-width:980px}
 .lore-root{display:flex;flex-direction:column;gap:0}
 .lore-hero{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:40px 36px 34px;border-radius:18px;background:color-mix(in srgb,var(--k) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--k) 40%,var(--line));overflow:hidden}
 .lore-orn{position:absolute;right:-10px;top:-10px;color:var(--k);opacity:.18;transform:scale(2.6);transform-origin:top right}
@@ -893,7 +898,7 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mod-lore{font-size:14px;color:var(--k);font-weight:600;text-decoration:none;margin-top:2px}
 .mod-lore:hover{text-decoration:underline}
 .mod-page .panel p a{color:var(--accent)}
-.lore.kind-nature{--k:var(--tert)}.lore.kind-supply{--k:var(--accent)}.lore.kind-waste{--k:var(--mech)}
+.lore.kind-nature{--k:var(--tert)}.lore.kind-supply{--k:var(--supply)}.lore.kind-waste{--k:var(--waste)}
 .mod-ready{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
 .mod-acts{display:flex;flex-wrap:wrap;gap:8px}
 .mod-acts .btn{font-size:14px;padding:7px 14px}

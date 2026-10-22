@@ -198,7 +198,7 @@ function methodsHTML(id) {
   const list = S.M[id], fif = `<a href="${S.FIF[1]}" target="_blank" rel="noopener">${esc(S.FIF[0])} ↗</a>`;
   if (!list) return S.TODO[id] ? `<section class="panel"><h2>Как измеряют</h2><p class="hint">Методика для этого показателя ещё подбирается по проверенным источникам. Действующие методики — в ${fif}.</p></section>` : '';
   return `<section class="panel"><h2>Как измеряют</h2><ul class="mt-list">
-    ${list.map(([n, m, w, src]) => `<li><b>${esc(n)}</b><span>${esc(m)}</span><small>Воды: ${esc(w)} · подтверждено: ${src.map(s => `<a href="${S.SRC[s][1]}" target="_blank" rel="noopener" title="${esc(S.SRC[s][0])}">${{ normacs: 'NormaCS', spmi: 'ЦКП СПГУ', muctr: 'ЦКП РХТУ' }[s]} ↗</a>`).join(', ')}</small></li>`).join('')}
+    ${list.map(([n, m, w, src]) => `<li><b>${esc(n)}</b><span>${esc(m)}</span><small>Воды: ${esc(w)} · подтверждено: ${src.map(s => `<a href="${S.SRC[s][1]}" target="_blank" rel="noopener" title="${esc(S.SRC[s][0])}">${{ normacs: 'NormaCS', spmi: 'ЦКП СПГУ', muctr: 'ЦКП РХТУ', fsa: 'область аккредитации' }[s]} ↗</a>`).join(', ')}</small></li>`).join('')}
   </ul><p class="hint">Перед применением проверьте действующую редакцию методики в ${fif}. Для контроля сброса используют методики из области аккредитации лаборатории.</p></section>`;
 }
 function kbInd(id) {

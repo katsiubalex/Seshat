@@ -43,7 +43,7 @@ test('редакции, структура и «Где искать» в док�
     if (d.toc) for (let i = 1; i < d.toc.length; i++) assert.ok(d.toc[i][2] >= d.toc[i - 1][2], d.id + ': страницы по возрастанию');
     for (const f of d.find || []) {
       assert.ok(MODS.includes(f[0]), `${d.id}: модуль ${f[0]}`);
-      assert.ok(Number.isInteger(f[3]) && f[3] > 0, `${d.id}: страница`);
+      assert.ok(f[3] === null || (Number.isInteger(f[3]) && f[3] >= 0), `${d.id}: страница`);
       if (d.mods !== 'all') assert.ok(d.mods.includes(f[0]), `${d.id}: тема для модуля ${f[0]}, к которому документ не привязан`);
     }
   }

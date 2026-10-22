@@ -45,13 +45,14 @@ const docModTag = id => { const m = DOC_MODS.find(x => x.id === id); return m ? 
 // «Где искать в документе»: тема → пункт → страница; на странице модуля сначала его темы
 function docFindHTML(d) {
   if (!d.find || !d.find.length) return '';
-  const row = m => f => `<tr><td>${esc(f[1])}</td><td class="num">п. ${esc(f[2])}</td><td class="num">с. ${f[3]}</td>${m ? `<td>${docModTag(f[0])}</td>` : ''}</tr>`;
-  const head = m => `<thead><tr><th>Тема</th><th>Пункт</th><th>Стр.</th>${m ? '<th>Модуль</th>' : ''}</tr></thead>`;
+  const pg = d.find.some(f => f[3] != null); // у документов без сверенных страниц — только пункты
+  const row = m => f => `<tr><td>${esc(f[1])}</td><td class="num">${/^(табл|прил|разд|пп?\.)/.test(f[2]) ? '' : 'п. '}${esc(f[2])}</td>${pg ? `<td class="num">${f[3] == null ? '—' : f[3] ? `с. ${f[3]}` : 'в тексте изменения'}</td>` : ''}${m ? `<td>${docModTag(f[0])}</td>` : ''}</tr>`;
+  const head = m => `<thead><tr><th>Тема</th><th>Пункт</th>${pg ? '<th>Стр.</th>' : ''}${m ? '<th>Модуль</th>' : ''}</tr></thead>`;
   const mine = d.find.filter(f => f[0] === PAGE), rest = d.find.filter(f => f[0] !== PAGE);
   const tbl = (l, m) => `<div class="tbl-wrap"><table class="doc-find">${head(m)}<tbody>${l.map(row(m)).join('')}</tbody></table></div>`;
   return `<section class="panel"><h2>Где искать в документе</h2>
     ${mine.length ? tbl(mine, false) + `<details class="doc-more"><summary>Темы других модулей (${rest.length})</summary>${tbl(rest, true)}</details>` : tbl(rest, true)}
-    <p class="hint">Страницы — по официальному изданию${d.pagesNote ? ' ' + esc(d.pagesNote) : ''}.</p></section>`;
+    <p class="hint">${pg ? 'Страницы — по официальному изданию' : 'Ориентир — номера пунктов, таблиц и приложений'}${d.pagesNote ? ' ' + esc(d.pagesNote) : ''}.</p></section>`;
 }
 function docTocHTML(d) {
   if (!d.toc || !d.toc.length) return '';
@@ -102,6 +103,13 @@ function mountDocWidget(id) { const d = DOCS_BY_ID[id], box = document.getElemen
 
 /* ---------- интерактивные блоки ---------- */
 const DOC_WIDGETS = {
+  // как измеряют показатели питьевой воды — по области аккредитации лаборатории водопроводной станции
+  drinkmethods(box) {
+    const S = window.SeshatMethods; if (!S || !S.DRINK) return;
+    box.innerHTML = `<h2>Как измеряют показатели питьевой воды</h2><div class="tbl-wrap"><table class="doc-find"><thead><tr><th>Показатель</th><th>Методика</th><th>Метод, диапазон</th></tr></thead><tbody>
+      ${S.DRINK.map(([p, m, how]) => `<tr><td>${esc(p)}</td><td class="num">${esc(m)}</td><td>${esc(how)}</td></tr>`).join('')}</tbody></table></div>
+      <p class="hint">Подтверждено областью аккредитации действующей химико-бактериологической лаборатории водопроводной станции (<a href="${S.SRC.fsa[1]}" target="_blank" rel="noopener">реестр аккредитованных лиц ↗</a>, RA.RU.21ОА07). Нормативы — в таблицах 3.1, 3.3, 3.5 этого документа.</p>`;
+  },
   // Справочник ИТС 10-2019: карта разделов, НДТ 7–9 и сверка каталога Сешат
   its(box) {
     const I = SeshatITS, U2 = Object.fromEntries(UNITS.map(u => [u.id, u]));

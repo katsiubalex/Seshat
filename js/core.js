@@ -49,7 +49,7 @@ const ROOT = document.body.dataset.root || '';
 const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina'];
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
-  hub: ['home', 'seshat', 'kb', 'docs', 'about'],
+  hub: ['home', 'seshat', 'kb', 'about'],
   tlazolteotl: ['overview', 'constructor', 'projects', 'kb', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
@@ -62,11 +62,14 @@ function parseView(h) {
   if (h === 'genplan') h = 'constructor';                       // генплан теперь часть конструктора
   if (VIEWS.includes(h)) return [PAGE, h, null];                 // свои разделы страницы
   let m;
-  if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return ['hub', 'docs', m[1]];
+  // нормативные документы живут в базах знаний модулей: документ открывается в текущем модуле, если относится к нему
+  if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return [docOwner(m[1]), 'kb', 'd-' + m[1]];
+  if (h === 'docs') return [docOwner(), 'kb', 'docs'];
   if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) {
     // сооружения, процессы и показатели — база знаний Тласольтеотль, учебники — своего модуля, остальное — общие разделы Сешат
     const x = m[1];
-    const owner = /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
+    const owner = /^d-/.test(x) ? docOwner(x.slice(2)) : x === 'docs' ? docOwner()
+      : /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
       : x === 'books' && PAGE !== 'hub' ? PAGE // учебники — у каждого модуля свои
       : 'hub';
     return [owner, 'kb', m[1]];
@@ -75,6 +78,14 @@ function parseView(h) {
   if ((m = /^lore-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], 'lore', null];
   for (const [p, list] of Object.entries(PAGE_VIEWS)) if (list.includes(h)) return [p, h, null];
   return [PAGE, DEFAULT_VIEW[PAGE], null];
+}
+// В каком модуле открыть нормативный документ: в текущем, если документ к нему относится, иначе — в Тласольтеотль или первом подходящем
+const ALL_MODULES = [...DEV_MODULES, 'tlazolteotl'];
+function docOwner(id) {
+  const d = id && window.SeshatDocs && SeshatDocs.DOCS.find(x => x.id === id);
+  const mods = !d || d.mods === 'all' ? ALL_MODULES : d.mods;
+  if (PAGE !== 'hub' && mods.includes(PAGE)) return PAGE;
+  return mods.includes('tlazolteotl') ? 'tlazolteotl' : mods[0];
 }
 const pageUrl = (page, hash) => {
   const [, view] = parseView(hash || '');

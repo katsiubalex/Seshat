@@ -1071,3 +1071,35 @@ a.its-pg::after{content:" ↗";font-size:.85em}
 .sc-leg i{display:inline-block;width:14px;height:10px;border-radius:3px;border:1px solid;margin-right:4px;vertical-align:-1px}
 .sc-leg i.lg-ras{border:0;border-top:2px dashed var(--mech);border-radius:0;height:0}
 .sc-leg i.lg-int{border:0;border-top:2px solid var(--tert);border-radius:0;height:0}
+
+/* ---------- нормативные документы в базах знаний модулей ----------
+   белый — общий для кластера «Водная инфраструктура»; цвет — вид воды модулей, к которым документ относится */
+.doc-card,.doc-head{position:relative}
+.doc-card.doc-all{background:#FFFFFF;color:#1B1E22;border-color:#D6D6D1;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.doc-card.doc-all .doc-card-type,.doc-card.doc-all .doc-card-about{color:#5E6267}
+.doc-card.doc-all .doc-card-go{color:#23272C}
+.doc-card.doc-all .doc-id{background:#EFEFEC;color:#1B1E22}
+.doc-card.doc-kind{border-color:color-mix(in srgb,var(--k,var(--line)) 45%,var(--line));background:color-mix(in srgb,var(--k,var(--surface)) 12%,var(--surface));padding-left:18px}
+.doc-card.doc-kind::before,.doc-head.doc-kind::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;border-radius:10px 0 0 10px;background:var(--k)}
+.doc-card.doc-multi{background:var(--surface2)}
+.doc-card.doc-multi::before,.doc-head.doc-multi::before{background:linear-gradient(180deg,var(--stripes))}
+.doc-card.doc-kind .doc-card-go{color:var(--k,var(--ink))}
+.doc-card.doc-multi .doc-card-go{color:var(--ink)}
+.doc-card.doc-kind .doc-id{background:color-mix(in srgb,var(--k,var(--muted)) 20%,var(--surface))}
+.doc-head.doc-kind,.doc-head.doc-all{padding:14px 16px 14px 22px;border-radius:12px;border:1px solid var(--line);max-width:none}
+.doc-head.doc-kind{background:color-mix(in srgb,var(--k,var(--surface)) 10%,var(--surface))}
+.doc-head.doc-multi{background:var(--surface2)}
+.doc-head.doc-all{background:#FFFFFF;color:#1B1E22;padding-left:16px}
+.doc-head.doc-all .doc-meta,.doc-head.doc-all .doc-lead{color:#3E4247}
+.doc-head.doc-all .doc-id{background:#EFEFEC;color:#1B1E22}
+.doc-mods{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.doc-mods .kb-tag{color:var(--k);border-color:color-mix(in srgb,var(--k) 45%,var(--line))}
+.doc-cluster{font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid #D6D6D1;background:#FFFFFF;color:#1B1E22}
+.doc-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;color:var(--muted);margin:0}
+.doc-sw{display:inline-block;width:18px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px}
+.doc-sw.doc-all{background:#FFFFFF;border-color:#C9C9C4}
+.doc-sw.kind-nature,.doc-sw.kind-supply,.doc-sw.kind-waste{background:color-mix(in srgb,var(--k) 35%,var(--surface));border-color:var(--k)}
+.doc-sw.doc-multi{background:linear-gradient(90deg,var(--stripes))}
+.kb-cluster > .sub{margin:-4px 0 10px;color:var(--muted)}
+.doc-card.doc-multi{border-color:var(--line)}
+#docs-list .kb-group{margin-top:18px}#docs-list .kb-group:first-child{margin-top:4px}

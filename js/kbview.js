@@ -14,6 +14,7 @@ const KB_SECTIONS = [
   { id: 'proc', t: 'Физика и химия процессов', d: 'Осаждение, флотация, нитрификация, денитрификация, мембраны, обеззараживание — с уравнениями и ключевыми числами.', n: () => KB.PROCESSES.length },
   { id: 'ind', t: 'Показатели качества воды', d: 'Что означают БПК, ХПК, азот, фосфор и другие показатели, как их измеряют и почему они важны.', n: () => KB.INDICATORS.length },
   { id: 'books', t: 'Учебники', d: 'Учебники и справочники по дисциплинам модуля — российские и зарубежные.', n: () => nBooks(PAGE), unit: 'учебников' },
+  { id: 'docs', t: 'Нормативные документы', d: 'Законы, правила, своды правил, санитарные нормы и справочники НДТ, которые относятся к модулю. Белые — общие для всего кластера «Водная инфраструктура».', n: () => docsOf(PAGE).length, unit: 'документов' },
   { id: 'fund', t: 'Фундаментальные дисциплины', d: 'Гидравлика, математика и статистика, химия воды, микробиология, геология, насосы — основа всех модулей.', n: () => KB.FUNDAMENTALS.length },
   { id: 'hum', t: 'Человек и вода', d: 'Гуманитарные аспекты водопользования: антропология и философия воды, история санитарии, вода как общее благо, этика инженера.', n: () => KB.HUMANITIES.length },
   { id: 'journals', t: 'Научные журналы', d: 'Российские и международные журналы, где публикуют исследования по воде.', n: () => KB.JOURNALS.reduce((s, b) => s + b.list.length, 0), unit: 'журналов' },
@@ -22,8 +23,8 @@ const KB_SECTIONS = [
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
 const UNIVERSAL = ['fund', 'hum', 'journals', 'comm'];
 // разделы модулей: учебники есть у всех, у Тласольтеотль — ещё сооружения, процессы и показатели
-const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books'] : ['books']]));
-const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + (s === 'books' ? nBooks(id) : SEC[s].n()), 0);
+const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : ['books', 'docs']]));
+const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + (s === 'books' ? nBooks(id) : s === 'docs' ? docsOf(id).length : SEC[s].n()), 0);
 const PROC_BY = Object.fromEntries(KB.PROCESSES.map(p => [p.id, p]));
 const IND_BY = Object.fromEntries(KB.INDICATORS.map(p => [p.id, p]));
 const AUX_BY = Object.fromEntries(KB.AUX.map(p => [p.id, p]));
@@ -66,8 +67,8 @@ function kbResults() {
   if (!q) {
     if (!KB_MOD) {
       box.innerHTML = `<section class="kb-group"><h2>Общие разделы</h2><div class="kb-grid">${UNIVERSAL.map(id => kbCard(SEC[id])).join('')}</div></section>
-        <section class="kb-group"><h2>Базы знаний модулей</h2><div class="kb-grid kb-mods">${KB_MODS.map(m =>
-          `<a class="kb-card kb-mod kind-${m.kind}" href="${ROOT + m.path}#kb">${SeshatModules.glyph(m.id, 26)}<b>${esc(m.n)}</b><span>${esc(m.d)}</span><small>${kbCount(m.id)} ${m.id === 'tlazolteotl' ? 'статей и учебников' : 'учебников'}</small></a>`).join('')}</div></section>`;
+        <section class="kb-group kb-cluster"><h2>Водная инфраструктура</h2><p class="sub">Базы знаний восьми модулей кластера по пути воды. В каждой — учебники и нормативные документы модуля; общие для всего кластера документы отмечены белым.</p><div class="kb-grid kb-mods">${KB_MODS.map(m =>
+          `<a class="kb-card kb-mod kind-${m.kind}" href="${ROOT + m.path}#kb">${SeshatModules.glyph(m.id, 26)}<b>${esc(m.n)}</b><span>${esc(m.d)}</span><small>${kbCount(m.id)} ${m.id === 'tlazolteotl' ? 'статей, учебников и документов' : 'учебников и документов'}</small></a>`).join('')}</div></section>`;
       return;
     }
     const mine = `<section class="kb-group"><h2>Разделы модуля</h2><div class="kb-grid">${own.map(id => kbCard(SEC[id])).join('')}</div></section>`;
@@ -89,6 +90,7 @@ function kbResults() {
     UNITS.forEach(u => { const P = SeshatPlan.PLAN[u.id] || {}; if (hit(u.n + ' ' + u.d + ' ' + (P.how || ''))) res.push(['Сооружение', u.n, '#kb-u-' + u.id]); });
     KB.AUX.forEach(a => { if (hit(a.t + ' ' + a.lead + a.s.map(x => x.join(' ')).join(' '))) res.push(['Сооружение', a.t, '#kb-a-' + a.id]); });
   }
+  if (KB_MOD) docsOf(PAGE).forEach(d => { if (hit(d.short + ' ' + d.title + ' ' + d.about)) res.push(['Документ', d.short + ' — ' + d.title, '#doc-' + d.id]); });
   if (all || own.includes('proc')) KB.PROCESSES.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Процесс', p.t, '#kb-p-' + p.id]); });
   if (all || own.includes('ind')) KB.INDICATORS.forEach(p => { if (hit([p.t, p.what, p.why, p.how].join(' '))) res.push(['Показатель', p.t, '#kb-i-' + p.id]); });
   (all ? KB_MODS.map(m => m.id) : [PAGE]).forEach(mid => booksOf(mid).forEach(b => b.list.forEach(([a, t]) => {
@@ -121,6 +123,10 @@ function kbSection(id) {
       + `<p class="hint">Учебники по гидравлике, математике, химии воды и другим общим дисциплинам — в разделе <a href="${ROOT}#kb-fund">«Фундаментальные дисциплины»</a> базы знаний Сешат. Многие учебники переиздавались: ищите последнее издание.</p>`;
   } else if (id === 'books') { // на главной: учебники собраны по модулям
     body = `<p class="sub">Учебники теперь лежат в базах знаний модулей — у каждого своя дисциплина.</p><div class="kb-grid kb-mods">${KB_MODS.map(m => `<a class="kb-card kb-mod kind-${m.kind}" href="${ROOT + m.path}#kb-books">${SeshatModules.glyph(m.id, 26)}<b>${esc(m.n)}</b><span>${booksOf(m.id).map(b => esc(b.d)).join(' · ')}</span><small>${nBooks(m.id)} учебников</small></a>`).join('')}</div>`;
+  } else if (id === 'docs' && KB_MOD) {
+    body = `${DOC_LEGEND}<input id="docs-search" type="search" class="lib-search kb-search" placeholder="Найти: «НДТ», «ЗСО», «гидротехнические», «1430»…" aria-label="Поиск по документам модуля" value="${esc(kbUI.dq || '')}">
+      <div id="docs-list">${docsListHTML(PAGE, kbUI.dq)}</div>
+      <p class="hint docs-note">Перед использованием документа в работе проверьте его действующую редакцию: нормативные акты регулярно изменяются. Сроки действия и редакции проверены 22.10.2026.</p>`;
   } else if (id === 'fund' || id === 'hum') {
     const list = id === 'fund' ? KB.FUNDAMENTALS : KB.HUMANITIES, p = id === 'fund' ? 'f' : 'h';
     body = `<div class="kb-grid kb-grid-sm">${list.map(x => `<a class="kb-card" href="#kb-${p}-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div>`;
@@ -195,6 +201,13 @@ function kbFund(id, hum) {
   kbRoot().innerHTML = article(head, main, side);
 }
 
+/* ---------- нормативные документы модуля ---------- */
+function kbDoc(id) {
+  const d = DOCS_BY_ID[id];
+  kbRoot().innerHTML = docPageHTML(id, crumbs([SEC.docs.t, '#kb-docs'], [d.short]));
+  mountDocWidget(id);
+}
+
 /* ---------- маршрут и события ---------- */
 function renderKB(param) {
   const m = /^([a-z]+)(?:-([a-zA-Z0-9]+))?$/.exec(param || '');
@@ -206,10 +219,14 @@ function renderKB(param) {
   if (a === 'a' && AUX_BY[b]) return kbAux(b);
   if (a === 'f' && FUND_BY[b]) return kbFund(b);
   if (a === 'h' && HUM_BY[b]) return kbFund(b, true);
+  if (a === 'd' && b && DOCS_BY_ID[b]) return kbDoc(b);
   if (!b && SEC[a]) return kbSection(a);
   kbHome();
 }
-document.getElementById('kb-root').addEventListener('input', ev => { if (ev.target.id === 'kb-search') { kbUI.q = ev.target.value; kbResults(); } });
+document.getElementById('kb-root').addEventListener('input', ev => {
+  if (ev.target.id === 'kb-search') { kbUI.q = ev.target.value; kbResults(); }
+  if (ev.target.id === 'docs-search') { kbUI.dq = ev.target.value; document.getElementById('docs-list').innerHTML = docsListHTML(PAGE, kbUI.dq); }
+});
 document.getElementById('kb-root').addEventListener('click', ev => {
   const b = ev.target.closest('[data-kbadd]'); if (!b) return;
   addUnit(b.dataset.kbadd); if (PAGE === 'tlazolteotl') go('constructor'); else location.href = pageUrl('tlazolteotl', 'constructor');

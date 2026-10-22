@@ -32,8 +32,7 @@ function renderHome() {
       <ul class="cycle-legend">${Object.entries(KIND).map(([k, n]) => `<li class="kind-${k}"><i></i>${n}</li>`).join('')}</ul>
     </section>
     <section class="home-more">
-      <a class="home-link" href="#kb" data-go="kb"><b>База знаний</b><span>Сооружения, процессы, показатели воды, учебники, журналы и сообщества.</span></a>
-      <a class="home-link" href="#docs" data-go="docs"><b>Нормативные документы</b><span>Законы, справочники НДТ, своды правил и нормативы качества воды.</span></a>
+      <a class="home-link" href="#kb" data-go="kb"><b>База знаний</b><span>Сооружения, процессы, показатели воды, учебники и нормативные документы модулей, журналы и сообщества.</span></a>
       <a class="home-link" href="#about" data-go="about"><b>О проекте</b><span>Для кого экосистема, почему такие имена и как связаться с автором.</span></a>
     </section>`;
   requestAnimationFrame(drawCycle);

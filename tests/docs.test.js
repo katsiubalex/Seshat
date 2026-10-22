@@ -20,3 +20,17 @@ test('приказ № 552 помечен как утративший силу, 
   assert.match(pr.about, /заменил приказ Минсельхоза России от 13\.12\.2016 № 552/);
   assert.ok(pr.links.some(([t]) => /утратил силу/.test(t)));
 });
+
+test('каждый документ привязан к модулям кластера, и у каждого модуля есть свои документы', () => {
+  const MODS = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina', 'tlazolteotl'];
+  const GROUPS = ['Законы', 'Правила и порядок', 'Наилучшие доступные технологии', 'Проектирование и строительство', 'Нормативы качества воды и сбросов', 'Санитарная охрана'];
+  for (const d of DOCS) {
+    assert.ok(d.mods === 'all' || (Array.isArray(d.mods) && d.mods.length && d.mods.every(m => MODS.includes(m))), d.id + ': модули');
+    assert.ok(GROUPS.includes(d.group), d.id + ': смысловая группа');
+  }
+  for (const m of MODS) {
+    const own = DOCS.filter(d => d.mods !== 'all' && d.mods.includes(m));
+    assert.ok(own.length >= 1, m + ': есть документы только для модуля или группы модулей');
+  }
+  assert.ok(DOCS.filter(d => d.mods === 'all').length >= 2, 'есть общие для кластера документы');
+});

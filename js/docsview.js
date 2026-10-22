@@ -1,71 +1,77 @@
-// Отображение раздела «Нормативные документы»: список и страница документа с интерактивными блоками.
+// Нормативные документы в базах знаний модулей: карточки, цвет по принадлежности к модулям, страница документа с интерактивными блоками.
 
-const docsUI = { q: '', group: '' };
 const DOCS_BY_ID = Object.fromEntries(SeshatDocs.DOCS.map(d => [d.id, d]));
 const nf = (v, d = 2) => v == null ? '—' : v.toLocaleString('ru-RU', { maximumFractionDigits: d });
 
-/* ---------- список ---------- */
-function renderDocList() {
-  const root = document.getElementById('docs-root');
-  const groups = [...new Set(SeshatDocs.DOCS.map(d => d.group))];
-  root.innerHTML = `<header class="docs-head"><div>
-      <h1>Нормативные документы</h1>
-      <p class="sub">Законы, справочники наилучших доступных технологий, своды правил и нормативы качества воды, на которых строится расчёт очистных сооружений. Откройте документ, чтобы прочитать суть, посмотреть таблицы и перейти к оригиналу.</p>
-    </div></header>
-    <div class="docs-tools">
-      <input id="docs-search" type="search" class="lib-search" placeholder="Найти: «НДТ», «ПДК», «санитарная зона», «1430»…" aria-label="Поиск по документам" value="${esc(docsUI.q)}">
-      <div class="docs-chips" role="group" aria-label="Группы документов">
-        <button type="button" class="chip-btn${docsUI.group ? '' : ' on'}" data-group="">Все</button>
-        ${groups.map(g => `<button type="button" class="chip-btn${docsUI.group === g ? ' on' : ''}" data-group="${esc(g)}">${esc(g)}</button>`).join('')}
-      </div>
-    </div>
-    <div class="docs-grid" id="docs-grid"></div>
-    <p class="hint docs-note">Перед использованием документа в работе проверьте его действующую редакцию: нормативные акты регулярно изменяются.</p>`;
-  renderDocCards();
+/* ---------- цвет документа ----------
+   Белый — документ общий для всего кластера «Водная инфраструктура» (относится ко всем модулям).
+   Цветной — документ только для части модулей: цвет их вида воды; если видов несколько — полосы нескольких цветов. */
+const DOC_MODS = SeshatModules.MODULES;
+const docMods = d => d.mods === 'all' ? DOC_MODS.map(m => m.id) : d.mods;
+const docKinds = d => d.mods === 'all' ? [] : [...new Set(DOC_MODS.filter(m => d.mods.includes(m.id)).map(m => m.kind))];
+const docsOf = id => SeshatDocs.DOCS.filter(d => docMods(d).includes(id));
+function docTone(d) {
+  const k = docKinds(d);
+  if (!k.length) return { cls: 'doc-all', style: '' };
+  return { cls: 'doc-kind' + (k.length === 1 ? ' kind-' + k[0] : ' doc-multi'), style: k.length > 1 ? `--stripes:${k.map((x, i) => `var(--${x === 'nature' ? 'tert' : x === 'supply' ? 'supply' : 'waste'}) ${i * 100 / k.length}% ${(i + 1) * 100 / k.length}%`).join(',')}` : '' };
 }
-function renderDocCards() {
-  const q = docsUI.q.trim().toLowerCase().replace(/ё/g, 'е');
-  const list = SeshatDocs.DOCS.filter(d => (!docsUI.group || d.group === docsUI.group) &&
-    (!q || [d.short, d.title, d.type, d.about, d.num || '', ...d.points].join(' ').toLowerCase().replace(/ё/g, 'е').includes(q)));
-  const grid = document.getElementById('docs-grid');
-  grid.innerHTML = list.length ? list.map(d => `<a class="doc-card" href="#doc-${d.id}">
+const docModChips = d => d.mods === 'all'
+  ? '<span class="doc-cluster">все модули кластера «Водная инфраструктура»</span>'
+  : docMods(d).map(id => { const m = DOC_MODS.find(x => x.id === id); return `<a class="kb-tag kind-${m.kind}" href="${m.id === PAGE ? '#kb' : ROOT + m.path + '#kb-docs'}">${SeshatModules.glyph(m.id, 14)} ${esc(m.n)}</a>`; }).join('');
+const DOC_GROUPS = ['Законы', 'Правила и порядок', 'Наилучшие доступные технологии', 'Проектирование и строительство', 'Нормативы качества воды и сбросов', 'Санитарная охрана'];
+function docCard(d) {
+  const t = docTone(d);
+  return `<a class="doc-card ${t.cls}" style="${t.style}" href="#doc-${d.id}">
       <span class="doc-id">${esc(d.short)}</span>
       <span class="doc-card-type">${esc(d.type)} · ${esc(d.date)}</span>
       <b>${esc(d.title)}</b>
       <span class="doc-card-about">${esc(d.about.split('. ')[0])}.</span>
-      <span class="doc-card-go">${d.interactive ? 'Открыть, есть интерактивная таблица' : 'Открыть'}</span>
-    </a>`).join('') : `<div class="empty">Ничего не найдено по запросу «${esc(docsUI.q)}».</div>`;
+      <span class="doc-card-go">${d.mods === 'all' ? 'Общий для кластера' : docKinds(d).length > 1 || docMods(d).length > 1 ? `${docMods(d).length} ${docMods(d).length < 5 ? 'модуля' : 'модулей'}` : 'Только этот модуль'}${d.interactive ? ' · есть интерактивная таблица' : ''}</span>
+    </a>`;
 }
+// список документов модуля, по смысловым группам
+function docsListHTML(modId, q) {
+  const qq = (q || '').trim().toLowerCase().replace(/ё/g, 'е');
+  const list = docsOf(modId).filter(d => !qq || [d.short, d.title, d.type, d.about, d.num || '', ...d.points].join(' ').toLowerCase().replace(/ё/g, 'е').includes(qq));
+  if (!list.length) return `<div class="empty">Ничего не найдено по запросу «${esc(q)}».</div>`;
+  return DOC_GROUPS.map(g => { const l = list.filter(d => d.group === g); return l.length ? `<section class="kb-group"><h2>${esc(g)}</h2><div class="docs-grid">${l.map(docCard).join('')}</div></section>` : ''; }).join('');
+}
+const DOC_LEGEND = `<p class="doc-legend"><span class="doc-sw doc-all"></span>общий для всего кластера «Водная инфраструктура»
+  <span class="doc-sw kind-nature"></span>природная вода <span class="doc-sw kind-supply"></span>водоснабжение <span class="doc-sw kind-waste"></span>водоотведение
+  <span class="doc-sw doc-multi" style="--stripes:var(--supply) 0 50%,var(--waste) 50% 100%"></span>несколько видов воды</p>`;
 
 /* ---------- страница документа ---------- */
-function renderDocPage(id) {
-  const d = DOCS_BY_ID[id], root = document.getElementById('docs-root');
-  if (!d) { renderDocList(); return; }
-  root.innerHTML = `<article class="doc-page">
-    <a class="doc-back" href="#docs">← Все документы</a>
-    <header class="doc-head">
+function docPageHTML(id, crumbsHtml) {
+  const d = DOCS_BY_ID[id]; if (!d) return '';
+  const t = docTone(d);
+  // кнопка «в конструктор» из других модулей ведёт в Тласольтеотль
+  const goHref = g => g === 'constructor' && PAGE !== 'tlazolteotl' ? `href="${pageUrl('tlazolteotl', 'constructor')}"` : `href="#${g}" data-go="${g}"`;
+  return `<article class="doc-page">
+    ${crumbsHtml}
+    <header class="doc-head ${t.cls}" style="${t.style}">
       <span class="doc-id">${esc(d.short)}</span>
       <p class="doc-meta">${esc(d.type)} от ${esc(d.date)}${d.num ? ` № ${esc(d.num)}` : ''} · ${esc(d.group)}</p>
       <h1>${esc(d.title)}</h1>
       <p class="doc-lead">${esc(d.about)}</p>
+      <p class="doc-mods">${docModChips(d)}</p>
     </header>
     <div class="doc-layout">
       <div class="doc-main">
-        <section class="panel"><h2>Что важно для очистных сооружений</h2><ul class="doc-points">${d.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>
+        <section class="panel"><h2>Что важно</h2><ul class="doc-points">${d.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>
         ${d.interactive ? `<section class="panel doc-interactive" id="doc-int"></section>` : ''}
-        <section class="panel doc-seshat"><h2>В Сешат</h2><p>${esc(d.seshat)}</p>${d.go ? `<p><a class="btn" href="#${d.go[0]}" data-go="${d.go[0]}">${esc(d.go[1])}</a></p>` : ''}</section>
+        <section class="panel doc-seshat"><h2>В Сешат</h2><p>${esc(d.seshat)}</p>${d.go ? `<p><a class="btn" ${goHref(d.go[0])}>${esc(d.go[1])}</a></p>` : ''}</section>
       </div>
       <aside class="doc-side">
         <section class="panel"><h2>Оригинал</h2>
-          <ul class="doc-links">${d.links.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a></li>`).join('')}</ul>
+          <ul class="doc-links">${d.links.map(([tt, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(tt)} ↗</a></li>`).join('')}</ul>
           <p class="hint">Полный текст и действующая редакция — по ссылкам. Здесь — краткое изложение для учебных целей.</p>
         </section>
-        ${d.related && d.related.length ? `<section class="panel"><h2>Связанные документы</h2><ul class="doc-rel">${d.related.map(r => DOCS_BY_ID[r]).filter(Boolean).map(r => `<li><a href="#doc-${r.id}"><span class="doc-id">${esc(r.short)}</span>${esc(r.title.length > 80 ? r.title.slice(0, 78) + '…' : r.title)}</a></li>`).join('')}</ul></section>` : ''}
+        ${d.related && d.related.length ? `<section class="panel"><h2>Связанные документы</h2><ul class="doc-rel">${d.related.map(r => DOCS_BY_ID[r]).filter(Boolean).map(r => `<li><a href="#doc-${r.id}"><span class="doc-id">${esc(r.short)}</span><span>${esc(r.title)}</span></a></li>`).join('')}</ul></section>` : ''}
       </aside>
     </div>
   </article>`;
-  if (d.interactive) DOC_WIDGETS[d.interactive](document.getElementById('doc-int'));
 }
+function mountDocWidget(id) { const d = DOCS_BY_ID[id], box = document.getElementById('doc-int'); if (d && d.interactive && box) DOC_WIDGETS[d.interactive](box); }
 
 /* ---------- интерактивные блоки ---------- */
 const DOC_WIDGETS = {
@@ -212,17 +218,5 @@ function applyNorm(key) {
   if (!key || !SeshatData.NORMS[key]) return;
   openItem('norm', 'b:' + key);
   toast(`Нормативы «${SeshatData.NORMS[key].n}» применены в конструкторе`);
-  go('constructor');
+  if (PAGE === 'tlazolteotl' || PAGE === 'hub') go('constructor'); else location.href = pageUrl('tlazolteotl', 'constructor');
 }
-
-/* ---------- события и маршрут ---------- */
-document.getElementById('docs-root').addEventListener('input', ev => {
-  if (ev.target.id === 'docs-search') { docsUI.q = ev.target.value; renderDocCards(); }
-});
-document.getElementById('docs-root').addEventListener('click', ev => {
-  const c = ev.target.closest('[data-group]'); if (!c) return;
-  docsUI.group = c.dataset.group;
-  document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('on', b === c));
-  renderDocCards();
-});
-VIEW_RENDER.docs = id => { if (id) renderDocPage(id); else renderDocList(); };

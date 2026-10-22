@@ -69,6 +69,7 @@ function parseView(h) {
     // сооружения, процессы и показатели — база знаний Тласольтеотль, учебники — своего модуля, остальное — общие разделы Сешат
     const x = m[1];
     const owner = /^d-/.test(x) ? docOwner(x.slice(2)) : x === 'docs' ? docOwner()
+      : /^k-/.test(x) ? courseOwner(x.slice(2)) : x === 'courses' ? (PAGE === 'hub' ? 'tlazolteotl' : PAGE)
       : /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
       : x === 'books' && PAGE !== 'hub' ? PAGE // учебники — у каждого модуля свои
       : 'hub';
@@ -86,6 +87,12 @@ function docOwner(id) {
   const mods = !d || d.mods === 'all' ? ALL_MODULES : d.mods;
   if (PAGE !== 'hub' && mods.includes(PAGE)) return PAGE;
   return mods.includes('tlazolteotl') ? 'tlazolteotl' : mods[0];
+}
+// Курс показывается в каждом своём модуле; из других мест открывается в первом («домашнем»)
+function courseOwner(id) {
+  const c = window.SeshatCourses && SeshatCourses.C.find(x => x.id === id);
+  if (!c) return PAGE === 'hub' ? 'tlazolteotl' : PAGE;
+  return c.mods.includes(PAGE) ? PAGE : c.mods[0];
 }
 const pageUrl = (page, hash) => {
   const [, view] = parseView(hash || '');

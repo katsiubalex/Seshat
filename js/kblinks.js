@@ -5,7 +5,7 @@
 
 const WL = (() => {
   const MODS = SeshatModules.MODULES, KIND_OF = Object.fromEntries(MODS.map(m => [m.id, m.kind]));
-  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', m: 'Модуль', a: 'Здание', g: 'Термин', c: 'Курс' };
+  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
   // тип статьи — значком (цвет занят принадлежностью)
   const ICON = {
     u: '<path d="M2 5h12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8.5c2-1 4 1 6 0s4-1 6 0"/>',
@@ -17,7 +17,7 @@ const WL = (() => {
     m: '<path d="M8 1.5c2.5 3.5 4.5 6 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2.5 2-5 4.5-8.5z"/>',
     a: '<path d="M2 14.5h12M3.5 14.5V6l4.5-3.5L12.5 6v8.5"/><path d="M6.5 14.5v-4h3v4"/>',
     g: '<path d="M2.5 13l3-9 3 9M3.6 10h3.8"/><path d="M10 9.5h3.5M10 12.5h3.5"/>',
-    c: '<path d="M1.5 6L8 3l6.5 3L8 9z"/><path d="M4.5 7.5v3.5c1 1 2.2 1.5 3.5 1.5s2.5-.5 3.5-1.5V7.5M14.5 6v4"/>'
+    k: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M6.5 6v4l3.5-2z"/>'
   };
   const icon = type => `<svg class="wl-ico" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[type] || ''}</svg>`;
   // принадлежность: kind-* (вид воды модуля), cluster (весь кластер), multi (несколько видов), common (общие разделы)
@@ -91,7 +91,7 @@ const WL = (() => {
   T.forEach(t => { t.re = new RegExp(B + '(' + t.src + ')' + E, 'iu'); });
 
   /* ---------- превращение терминов в ссылки ---------- */
-  const SKIP = '.nowl,a,button,code,h1,h2,h3,input,select,textarea,sup,.kb-crumbs,.doc-id,.its-badge,.its-ndt,.kb-tag,.kb-tags,.gp-dl dt,.its-refs,.doc-links,.doc-rel,.sc,.kb-f';
+  const SKIP = 'a,button,code,h1,h2,h3,input,select,textarea,sup,.kb-crumbs,.doc-id,.its-badge,.its-ndt,.kb-tag,.kb-tags,.gp-dl dt,.its-refs,.doc-links,.doc-rel,.sc,.kb-f';
   const norm = h => h.replace(/^.*?(#|$)/, '#');
   function wikify(rootEl, selfHref, used = new Set()) {
     if (!rootEl) return;
@@ -130,7 +130,16 @@ const WL = (() => {
   SeshatKB.INDICATORS.forEach(p => ART.push({ href: '#kb-i-' + p.id, type: 'i', belong: 'kind-waste', t: p.t, text: [p.what, p.why, p.how].join(' ') }));
   SeshatDocs.DOCS.forEach(d => ART.push({ href: '#doc-' + d.id, type: 'd', belong: docBelong(d), t: d.short + ' — ' + d.title, text: [d.about, ...d.points, d.seshat].join(' ') }));
   SeshatKB.FUNDAMENTALS.forEach(f => ART.push({ href: ROOT + '#kb-f-' + f.id, type: 'f', belong: 'common', t: f.t, text: [f.lead, ...f.s.map(x => x[1])].join(' ') }));
-  (window.SeshatCurriculum ? SeshatCurriculum.DISC : []).forEach(d => ART.push({ href: ROOT + '#kb-c-' + d.id, type: 'c', belong: d.mods === 'all' ? 'cluster' : (k => k.length === 1 ? 'kind-' + k[0] : 'multi')([...new Set(d.mods.map(m => KIND_OF[m]))]), t: d.t, text: [d.topics.join('. '), ...d.lit.map(l => l[1] + ' ' + l[2])].join(' ') }));
+  const CRS = (window.SeshatCourses || { C: [] }).C;
+  const kindBelong = mods => { const k = [...new Set(mods.map(m => KIND_OF[m]))]; return k.length === 1 ? 'kind-' + k[0] : 'multi'; };
+  CRS.forEach(c => ART.push({ href: ROOT + MODS.find(m => m.id === c.mods[0]).path + '#kb-k-' + c.id, type: 'k', belong: kindBelong(c.mods), t: c.t, text: [c.lead, ...c.out, ...c.L.map(l => l[0] + '. ' + l[1])].join(' ') }));
+  // в каких курсах статья — материал к уроку
+  function coursePanel(href) {
+    const h = norm(href), list = CRS.filter(c => c.L.some(l => l[2].some(x => norm(x.split('@')[0]) === h)));
+    if (!list.length) return '';
+    return `<section class="panel wl-back"><h2>В курсах</h2><ul class="wl-list">${list.map(c => { const ls = c.L.map((l, i) => l[2].some(x => norm(x.split('@')[0]) === h) ? i + 1 : 0).filter(Boolean);
+      return `<li>${chip('k', kindBelong(c.mods))}<a href="${ROOT + MODS.find(m => m.id === c.mods[0]).path}#kb-k-${c.id}">${esc(c.t)}</a> <small class="hint">урок ${ls.join(', ')}</small></li>`; }).join('')}</ul></section>`;
+  }
   GL.forEach(g => ART.push({ href: ROOT + '#kb-g-' + g.id, type: 'g', belong: glBelong(g), t: g.t, text: g.def }));
   SeshatKB.HUMANITIES.forEach(h => ART.push({ href: ROOT + '#kb-h-' + h.id, type: 'h', belong: 'common', t: h.t, text: [h.lead, ...h.s.map(x => x[1])].join(' ') }));
   const termsFor = href => T.filter(t => norm(t.href) === norm(href));
@@ -139,7 +148,7 @@ const WL = (() => {
   const linkItem = a => `<li>${chip(a.type, a.belong)}<a href="${a.href}">${esc(a.t)}</a></li>`;
   function backPanel(href) {
     const list = backlinks(href); if (!list.length) return '';
-    const order = ['u', 'p', 'i', 'd', 'g', 'c', 'f', 'h', 'a'];
+    const order = ['u', 'p', 'i', 'd', 'g', 'k', 'f', 'h', 'a'];
     list.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.t.localeCompare(b.t, 'ru'));
     return `<section class="panel wl-back"><h2>Где упоминается</h2><ul class="wl-list">${list.slice(0, 18).map(linkItem).join('')}</ul>${list.length > 18 ? `<p class="hint">и ещё ${list.length - 18}</p>` : ''}</section>`;
   }
@@ -187,9 +196,9 @@ const WL = (() => {
 
   const LEGEND = `<div class="wl-legend"><b>Как читать ссылки</b>
     <span><i class="wb-cluster"></i>весь кластер «Водная инфраструктура»</span><span><i class="wb-kind-nature"></i>природная вода</span><span><i class="wb-kind-supply"></i>водоснабжение</span><span><i class="wb-kind-waste"></i>водоотведение</span><span><i class="wb-multi"></i>несколько видов воды</span><span><i class="wb-common"></i>общие разделы Сешат</span>
-    <small>Цвет — к чему относится статья. Тип — значком: ${['u', 'p', 'i', 'd', 'g', 'c', 'f'].map(k => `<span class="wl-ti">${icon(k)}${TYPES[k].toLowerCase()}</span>`).join(' ')}.</small></div>`;
+    <small>Цвет — к чему относится статья. Тип — значком: ${['u', 'p', 'i', 'd', 'g', 'k', 'f'].map(k => `<span class="wl-ti">${icon(k)}${TYPES[k].toLowerCase()}</span>`).join(' ')}.</small></div>`;
 
-  return { wikify, backPanel, indexHTML, searchHTML, glossaryHTML, LEGEND, T, ART, GL, backlinks, icon };
+  return { wikify, backPanel, coursePanel, indexHTML, searchHTML, glossaryHTML, LEGEND, T, ART, GL, backlinks, icon };
 })();
 
 /* ---------- встраивание в базу знаний ---------- */
@@ -215,12 +224,12 @@ const WL = (() => {
       if (head && !param) head.insertAdjacentHTML('afterend', WL.LEGEND + `<p class="wl-goindex"><a href="${ROOT}#kb-index">Указатель и поиск по всей базе знаний →</a></p>`);
       return;
     }
-    const self = m[1] === 'd' ? '#doc-' + m[2] : m[1] === 'f' || m[1] === 'h' || m[1] === 'c' ? ROOT + '#kb-' + param : '#kb-' + param;
+    const self = m[1] === 'd' ? '#doc-' + m[2] : m[1] === 'f' || m[1] === 'h' ? ROOT + '#kb-' + param : '#kb-' + param;
     const used = new Set(); // каждый термин — одна ссылка на статью: сначала во вводной части, потом в основном тексте
     WL.wikify(root.querySelector('.kb-lead, .doc-lead'), self, used);
     WL.wikify(root.querySelector('.kb-main, .doc-main'), self, used);
     const side = root.querySelector('.kb-side, .doc-side');
-    if (side) side.insertAdjacentHTML('beforeend', WL.backPanel(self));
+    if (side) side.insertAdjacentHTML('beforeend', (m[1] === 'k' ? '' : WL.coursePanel(self)) + WL.backPanel(self));
   };
   kbRoot().addEventListener('input', ev => {
     if (ev.target.id === 'wl-q') { const v = ev.target.value.trim(); document.getElementById('wl-index').innerHTML = (v.length > 2 ? WL.searchHTML(v) : '') + WL.indexHTML(v.length > 2 ? '' : v).replace(/^/, v.length > 2 ? '<h2 class="wl-sub">Все статьи</h2>' : ''); }

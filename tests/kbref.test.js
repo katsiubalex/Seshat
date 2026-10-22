@@ -54,19 +54,25 @@ test('внутренние ссылки #doc-… в данных ведут на
   for (const src of files) for (const [, id] of src.matchAll(/#doc-([a-z0-9]+)/g)) assert.ok(DOC_IDS.has(id), '#doc-' + id);
 });
 
-test('учебный план: дисциплины привязаны к модулям, у каждой есть темы и литература со ссылками', () => {
-  const C = require('../js/curriculum.js');
-  const fund = new Set(KB.FUNDAMENTALS.map(f => f.id)), ids = new Set();
-  assert.equal(C.DISC.length, 20);
-  for (const d of C.DISC) {
-    assert.ok(!ids.has(d.id), d.id); ids.add(d.id);
-    assert.ok(d.mods === 'all' || d.mods.every(m => MODS.includes(m)), d.id + ': модули');
-    assert.ok(!d.fund || fund.has(d.fund), d.id + ': фундаментальная дисциплина');
-    assert.ok(d.topics.length >= 4 && d.lit.length >= 1 && d.ze > 0 && d.h === d.ze * 36, d.id);
-    for (const [c, a, t, pub, u, isbn] of d.lit) {
-      assert.ok(['осн', 'доп', 'умл'].includes(c) && a && t && /(19|20)\d\d$/.test(pub), `${d.id}: ${t}`);
-      if (u) assert.match(u, /^https?:\/\//, t);
-      if (isbn) assert.match(isbn, /^97[89]\d{10}$/, t);
+test('курсы: ссылки уроков ведут на существующие статьи, модули и курсы-предшественники существуют', () => {
+  const { C } = require('../js/courses.js');
+  const D = require('../js/data.js');
+  const ok = new Set([...D.UNITS.map(u => '#kb-u-' + u.id), ...KB.AUX.map(a => '#kb-a-' + a.id), ...KB.PROCESSES.map(p => '#kb-p-' + p.id),
+    ...KB.INDICATORS.map(p => '#kb-i-' + p.id), ...KB.FUNDAMENTALS.map(p => '#kb-f-' + p.id), ...KB.HUMANITIES.map(p => '#kb-h-' + p.id),
+    ...DOCS.map(d => '#doc-' + d.id), ...G.map(g => '#kb-g-' + g.id)]);
+  const ids = new Set(C.map(c => c.id));
+  assert.equal(ids.size, C.length, 'id уникальны');
+  for (const m of MODS) assert.ok(C.some(c => c.mods.includes(m)), 'у модуля есть курсы: ' + m);
+  for (const c of C) {
+    assert.match(c.id, /^[a-z]+-[a-z]+$/, c.id);
+    assert.ok(c.mods.length && c.mods.every(m => MODS.includes(m)), c.id);
+    assert.ok(['Основы', 'Практика', 'Проектирование', 'Эксплуатация', 'Углублённый'].includes(c.lvl), c.id);
+    assert.ok(c.out.length >= 2 && c.L.length >= 4, c.id);
+    for (const p of c.pre || []) assert.ok(ids.has(p) && p !== c.id, `${c.id} → ${p}`);
+    for (const [t, q, kb, todo, ia] of c.L) {
+      assert.ok(t && q.endsWith('?') && Array.isArray(todo) && Array.isArray(ia), `${c.id}: ${t}`);
+      assert.ok(kb.length + todo.length > 0, `${c.id}: ${t} — урок без материалов`);
+      for (const k of kb) assert.ok(ok.has(k.split('@')[0]), `${c.id}: ${k}`);
     }
   }
 });

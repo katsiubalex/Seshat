@@ -1167,7 +1167,22 @@ a.wl.wl-d{font-variant-numeric:tabular-nums}
 .mt-list b{font-family:var(--mono,ui-monospace,monospace);font-size:.9rem}
 .mt-list small{color:var(--muted)}
 .kb-main .panel .mt-list{padding-left:0;margin:0 0 .6rem}.mt-list a{color:var(--accent)}
-.kb-topics{margin:0;padding-left:1.4rem;line-height:1.6}
-.kb-topics li{padding:.15rem 0}
-.kb-main .panel h3.kb-sub{font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:1rem 0 .4rem}
-.kb-disc-link{margin:0 0 .6rem;font-weight:600}.kb-disc-link a{color:var(--accent)}
+/* курсы модулей */
+.course-card .course-lvl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--k,var(--accent))}
+.lessons{list-style:none;margin:0;padding:0;display:grid;gap:1rem}
+.lesson{display:grid;grid-template-columns:2.2rem 1fr;gap:.8rem;padding:1rem 0;border-top:1px solid var(--line)}
+.lesson:first-child{border-top:0;padding-top:0}
+.lesson-n{width:2.2rem;height:2.2rem;border-radius:50%;display:grid;place-items:center;font-weight:700;background:color-mix(in srgb,var(--k,var(--accent)) 14%,var(--surface));color:var(--k,var(--accent))}
+.lesson h3{margin:.1rem 0 .2rem;font-size:1.05rem}
+.lesson-q{margin:0 0 .6rem;color:var(--muted);font-style:italic}
+.lesson-video{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .8rem .35rem .45rem;border-radius:999px;border:1px dashed var(--line);background:var(--surface2);color:var(--muted);margin-bottom:.4rem}
+.lesson-video span{display:grid;place-items:center;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--surface);font-size:.7rem;opacity:.7}
+.lesson h4{margin:.6rem 0 .3rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.kb-main .panel ul.lesson-links,.kb-main .panel ul.lesson-todo,.kb-main .panel ul.lesson-ia{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:.35rem .5rem}
+.lesson-links li{display:inline-flex;align-items:baseline;gap:.3rem}
+.lesson-links a{color:var(--ink);text-decoration:none;border-bottom:2px solid var(--wb,var(--line));font-size:.92rem}
+.lesson-links a.wb-cluster{border-bottom-color:#fff;box-shadow:0 2px 0 #A9A9A3}
+.lesson-links small{color:var(--muted);font-size:.78rem}
+.lesson-todo li{font-size:.85rem;color:var(--muted);border:1px dashed var(--line);border-radius:4px;padding:1px 6px}
+.lesson-ia li{font-size:.85rem;border-radius:4px;padding:1px 6px;background:color-mix(in srgb,var(--gold) 16%,var(--surface))}
+.lesson-ia li::before{content:"◆ ";color:var(--gold)}

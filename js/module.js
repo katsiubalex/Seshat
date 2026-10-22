@@ -11,7 +11,8 @@
 
   function renderOverview() {
     const i = PATH.indexOf(m.id), prev = MOD[PATH[i - 1]], next = MOD[PATH[i + 1]];
-    const kb = (m.ready ? ['kb-units', 'kb-proc', 'kb-ind'] : []).map(h => `<li><a href="#${h}">${({ 'kb-units': 'Сооружения очистки', 'kb-proc': 'Физика и химия процессов', 'kb-ind': 'Показатели качества воды' })[h]}</a></li>`).join('') + (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
+    const kb = (m.ready ? [['kb-units', 'Сооружения очистки'], ['kb-proc', 'Физика и химия процессов'], ['kb-ind', 'Показатели качества воды']] : []).concat([['kb-books', 'Учебники модуля']]).map(([h, t]) => `<li><a href="#${h}">${t}</a></li>`).join('')
+      + (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
     document.getElementById('overview-root').innerHTML = `
       <article class="mod-page kind-${m.kind}">
         <header class="mod-head">${glyph(m.id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])} · ${esc(m.culture)}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p><a class="mod-lore" href="#lore">${cap(m.about)} →</a></div></header>
@@ -26,7 +27,7 @@
           </div>
           <aside class="kb-side">
             <section class="panel"><h2>Дисциплины</h2><p class="kb-tags">${m.disc.map(d => `<span class="kb-tag">${esc(d)}</span>`).join('')}</p></section>
-            <section class="panel"><h2>Уже сейчас в Сешат</h2><ul class="kb-links">${kb}<li><a href="#kb-books">Учебники по дисциплинам</a></li><li><a href="#docs">Нормативные документы</a></li></ul></section>
+            <section class="panel"><h2>База знаний</h2><ul class="kb-links">${kb}<li><a href="#docs">Нормативные документы</a></li></ul></section>
           </aside>
         </div>
       </article>`;

@@ -902,3 +902,23 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .kb-mod b{color:var(--ink)}
 .kb-mod:hover{border-color:var(--k)}
 .kb-sub{margin-top:14px!important}
+
+/* ---------- путь в базе знаний и цвет модуля ---------- */
+.kb-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;font-family:var(--f-mono);font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);align-self:flex-start;max-width:100%}
+.kb-crumbs a,.kb-crumbs span{padding:1px 4px;border-radius:4px}
+.kb-crumbs a:hover{background:var(--surface2);text-decoration:none}
+.kb-crumbs [aria-current]{color:var(--ink);font-weight:600}
+.kb-sep{color:var(--muted);padding:0 2px!important}
+.kb-themed .kb-crumbs a,.kb-themed .kb-card b,.kb-themed .kb-links a,.kb-themed .kb-seq a,.kb-themed .kb-root p a,.kb-themed .sub a,.kb-themed .lore-kicker{color:var(--k)}
+.kb-themed .kb-crumbs{border-color:color-mix(in srgb,var(--k) 40%,var(--line));background:color-mix(in srgb,var(--k) 7%,var(--surface))}
+.kb-themed h1{color:var(--k)}
+.kb-themed .kb-card{border-color:color-mix(in srgb,var(--k) 30%,var(--line))}
+.kb-themed .kb-card:hover,.kb-themed .kb-unit-link:hover,.kb-themed .kb-res a:hover{border-color:var(--k)}
+.kb-themed .panel{border-color:color-mix(in srgb,var(--k) 25%,var(--line))}
+.kb-themed .panel h2,.kb-themed .kb-group > h2{color:var(--k)}
+.kb-themed .kb-tag:hover{border-color:var(--k);color:var(--k)}
+.kb-themed .kb-search:focus-visible{outline-color:var(--k)}
+.kb-themed .lore-kicker{margin:0 0 4px}
+.kb-tag .glyph{vertical-align:-3px;color:var(--k)}
+.kb-themed .kb-res small{color:var(--k)}
+#kb-results{display:flex;flex-direction:column;gap:18px}

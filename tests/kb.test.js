@@ -27,6 +27,18 @@ test('ссылки на журналы и сообщества — https, уче
   for (const b of KB.BOOKS) for (const [a, t, pub] of b.list) assert.ok(a && t && pub, t);
 });
 
+test('у каждого модуля свои учебники; общие разделы — фундаментальные и гуманитарные', () => {
+  const { MODULES } = require('../js/modules.js');
+  for (const m of MODULES) {
+    const groups = KB.MODULE_BOOKS[m.id];
+    assert.ok(groups && groups.length, 'нет учебников у ' + m.id);
+    for (const g of groups) { assert.ok(g.d && g.list.length, m.id); for (const [a, t, pub] of g.list) assert.ok(a && t && pub, m.id + ': ' + t); }
+  }
+  const ids = new Set(MODULES.map(m => m.id));
+  for (const f of KB.FUNDAMENTALS) { assert.ok(f.t && f.lead && f.s.length && f.books.length, f.id); for (const m of f.mods) assert.ok(ids.has(m), f.id + ' → ' + m); }
+  for (const h of KB.HUMANITIES) assert.ok(h.t && h.lead && h.s.length >= 2, h.id);
+});
+
 test('у каждого модуля есть история божества с главами и источником', () => {
   const vm = require('node:vm'), fs = require('node:fs');
   const src = fs.readFileSync(require.resolve('../js/lore.js'), 'utf8');

@@ -64,8 +64,11 @@ function parseView(h) {
   let m;
   if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return ['hub', 'docs', m[1]];
   if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) {
-    // сооружения и процессы очистки сточных вод — база знаний Тласольтеотль, остальное — общие разделы Сешат
-    const owner = /^(u|p|a)-/.test(m[1]) || ['units', 'proc'].includes(m[1]) ? 'tlazolteotl' : 'hub';
+    // сооружения, процессы и показатели — база знаний Тласольтеотль, учебники — своего модуля, остальное — общие разделы Сешат
+    const x = m[1];
+    const owner = /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
+      : x === 'books' && PAGE !== 'hub' ? PAGE // учебники — у каждого модуля свои
+      : 'hub';
     return [owner, 'kb', m[1]];
   }
   if ((m = /^m-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], DEFAULT_VIEW[m[1]], null];

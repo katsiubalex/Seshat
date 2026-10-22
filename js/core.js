@@ -48,7 +48,7 @@ const ROOT = document.body.dataset.root || '';
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
   hub: ['home', 'seshat', 'kb', 'docs', 'about', 'module'],
-  tlazolteotl: ['constructor', 'projects']
+  tlazolteotl: ['constructor', 'projects', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
 const VIEWS = PAGE_VIEWS[PAGE];

@@ -1,6 +1,6 @@
 {
   "name": "seshat",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "private": true,
   "description": "Конструктор схем очистки сточных вод из наилучших доступных технологий",
   "scripts": {

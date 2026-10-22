@@ -75,7 +75,7 @@
       <label>Как указать вас в истории правок <small>необязательно</small><input name="contact" type="text" autocomplete="name"></label>
       <p class="edit-err" id="edit-err" role="alert" hidden></p>
       <div class="edit-send"><button type="button" class="btn primary" data-send="github">Отправить через GitHub</button><button type="button" class="btn" data-send="mail">Отправить письмом</button><button type="button" class="btn" data-send="copy">Скопировать текст</button></div>
-      <p class="hint">Правку проверит куратор модуля. На сайт она попадёт после автоматической проверки и проверки человеком; автор правки и проверяющий — разные люди. Для GitHub нужен бесплатный аккаунт, письмо можно отправить без него.</p>
+      <p class="hint">Правку проверит куратор модуля. На сайт она попадёт после автоматической проверки и проверки человеком; автор правки и проверяющий — разные люди. Для GitHub нужен бесплатный аккаунт, письмо можно отправить без него. Отправляя правку, вы соглашаетесь опубликовать её по лицензии <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</p>
       <details class="edit-dev"><summary>Для авторов: правка прямо в исходниках</summary><p id="edit-dev"></p></details>
     </form>
   </dialog>`;
@@ -174,7 +174,7 @@
           <li><b>Конфликт интересов раскрывается:</b> сотрудник производителя может предложить правку о своём оборудовании, но обязан это указать; сравнения технологий — только по объективным критериям.</li>
           <li><b>История открыта:</b> каждое изменение сохраняется с автором и датой.</li>
           <li><b>Актуальность проверяется регулярно:</b> автоматическая проверка ссылок и сроков сверки документов раз в неделю.</li>
-          <li><b>Права:</b> присылая правку, вы соглашаетесь на её публикацию на Сешат с указанием вашего имени (если вы его оставили). Открытая лицензия для материалов — в обсуждении.</li>
+          <li><b>Лицензии:</b> тексты и иллюстрации — <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ru" target="_blank" rel="noopener">CC BY-SA 4.0 ↗</a>, код — <a href="${R.urls.blob('LICENSE')}" target="_blank" rel="noopener">MIT ↗</a>. Присылая правку, вы соглашаетесь, что она публикуется на тех же условиях; если вы оставили имя, оно сохраняется в истории правок.</li>
         </ul></section>
       <section class="panel about-block" aria-labelledby="ct-links"><h2 id="ct-links">Где следить</h2>
         <ul class="about-list">

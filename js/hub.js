@@ -23,12 +23,11 @@ function renderHome() {
   document.getElementById('home-root').innerHTML = `
     <header class="home-head">
       <h1>Сешат</h1>
-      <p class="home-lead">Образовательная экосистема по водоснабжению и водоотведению. Каждый модуль — отдельная дисциплина и отдельное божество, а вместе они проходят весь путь воды: от дождевой тучи до очищенного стока, который возвращается в реку.</p>
+      <p class="home-lead">Образовательная экосистема по водоснабжению и водоотведению. Каждый модуль — отдельная дисциплина, а вместе они проходят весь путь воды: от дождевой тучи до очищенного стока, который возвращается в реку.</p>
       <div class="home-actions">${ready.map(m => `<a class="btn primary" href="${m.path}">Открыть ${esc(m.n)}</a>`).join('')}<a class="btn" href="#seshat" data-go="seshat">Спросить Сешат</a></div>
     </header>
     <section class="cycle-wrap" aria-label="Модули экосистемы в водном цикле">
-      <div class="cycle" id="cycle">${ORDER.map(card).join('')}<svg class="cycle-lines" id="cycle-lines" aria-hidden="true"></svg>
-        <p class="cycle-back">↺ очищенная вода возвращается в реку — к Хапи</p></div>
+      <div class="cycle" id="cycle">${ORDER.map(card).join('')}<svg class="cycle-lines" id="cycle-lines" aria-hidden="true"></svg></div>
       <ul class="cycle-legend">${Object.entries(KIND).map(([k, n]) => `<li class="kind-${k}"><i></i>${n}</li>`).join('')}</ul>
     </section>
     <section class="home-more">

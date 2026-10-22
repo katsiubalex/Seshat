@@ -1167,3 +1167,7 @@ a.wl.wl-d{font-variant-numeric:tabular-nums}
 .mt-list b{font-family:var(--mono,ui-monospace,monospace);font-size:.9rem}
 .mt-list small{color:var(--muted)}
 .kb-main .panel .mt-list{padding-left:0;margin:0 0 .6rem}.mt-list a{color:var(--accent)}
+.kb-topics{margin:0;padding-left:1.4rem;line-height:1.6}
+.kb-topics li{padding:.15rem 0}
+.kb-main .panel h3.kb-sub{font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:1rem 0 .4rem}
+.kb-disc-link{margin:0 0 .6rem;font-weight:600}.kb-disc-link a{color:var(--accent)}

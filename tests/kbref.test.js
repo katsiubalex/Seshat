@@ -53,3 +53,20 @@ test('внутренние ссылки #doc-… в данных ведут на
   const files = ['docs.js', 'kb.js', 'kbview.js', 'docsview.js', 'plan.js', 'its.js'].map(f => fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'));
   for (const src of files) for (const [, id] of src.matchAll(/#doc-([a-z0-9]+)/g)) assert.ok(DOC_IDS.has(id), '#doc-' + id);
 });
+
+test('учебный план: дисциплины привязаны к модулям, у каждой есть темы и литература со ссылками', () => {
+  const C = require('../js/curriculum.js');
+  const fund = new Set(KB.FUNDAMENTALS.map(f => f.id)), ids = new Set();
+  assert.equal(C.DISC.length, 20);
+  for (const d of C.DISC) {
+    assert.ok(!ids.has(d.id), d.id); ids.add(d.id);
+    assert.ok(d.mods === 'all' || d.mods.every(m => MODS.includes(m)), d.id + ': модули');
+    assert.ok(!d.fund || fund.has(d.fund), d.id + ': фундаментальная дисциплина');
+    assert.ok(d.topics.length >= 4 && d.lit.length >= 1 && d.ze > 0 && d.h === d.ze * 36, d.id);
+    for (const [c, a, t, pub, u, isbn] of d.lit) {
+      assert.ok(['осн', 'доп', 'умл'].includes(c) && a && t && /(19|20)\d\d$/.test(pub), `${d.id}: ${t}`);
+      if (u) assert.match(u, /^https?:\/\//, t);
+      if (isbn) assert.match(isbn, /^97[89]\d{10}$/, t);
+    }
+  }
+});

@@ -18,10 +18,11 @@ const KB_SECTIONS = [
   { id: 'fund', t: 'Фундаментальные дисциплины', d: 'Гидравлика, математика и статистика, химия воды, микробиология, геология, насосы — основа всех модулей.', n: () => KB.FUNDAMENTALS.length },
   { id: 'hum', t: 'Человек и вода', d: 'Гуманитарные аспекты водопользования: антропология и философия воды, история санитарии, вода как общее благо, этика инженера.', n: () => KB.HUMANITIES.length },
   { id: 'journals', t: 'Научные журналы', d: 'Российские и международные журналы, где публикуют исследования по воде.', n: () => KB.JOURNALS.reduce((s, b) => s + b.list.length, 0), unit: 'журналов' },
+  { id: 'index', t: 'Указатель статей', d: 'Все статьи и документы базы знаний от А до Я. Цвет показывает, к чему относится статья.', n: () => (typeof WL !== 'undefined' ? WL.ART.length : 0), unit: 'статей' },
   { id: 'comm', t: 'Профессиональные сообщества', d: 'Ассоциации и организации отрасли в России и мире: конференции, стандарты, обучение.', n: () => KB.COMMUNITIES.reduce((s, b) => s + b.list.length, 0), unit: 'организаций' }
 ];
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
-const UNIVERSAL = ['fund', 'hum', 'journals', 'comm'];
+const UNIVERSAL = ['fund', 'hum', 'journals', 'comm', 'index'];
 // разделы модулей: учебники есть у всех, у Тласольтеотль — ещё сооружения, процессы и показатели
 const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : ['books', 'docs']]));
 const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + (s === 'books' ? nBooks(id) : s === 'docs' ? docsOf(id).length : SEC[s].n()), 0);
@@ -46,7 +47,9 @@ const procLink = id => PROC_BY[id] ? `<a class="kb-tag" href="#kb-p-${id}">${esc
 const unitLink = id => `<a class="kb-unit-link" href="#kb-u-${id}" style="--c:${STG[U[id].st].c}">${SeshatIcons.icon(id, 36)}<span>${esc(U[id].n)}${window.SeshatITS ? SeshatITS.badge(id) : ''}</span></a>`;
 const modLink = id => { const m = KB_MODS.find(x => x.id === id); return m ? `<a class="kb-tag kind-${m.kind}" href="${ROOT + m.path}#kb">${SeshatModules.glyph(m.id, 16)} ${esc(m.n)}</a>` : ''; };
 const ext = (t, u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a>`;
-const bookList = list => `<ol class="kb-books">${list.map(([a, t, pub]) => `<li><span class="kb-auth">${esc(a)}</span> <b>${esc(t)}</b>. <span class="kb-pub">${esc(pub)}</span></li>`).join('')}</ol>`;
+// у каждого учебника — поиск в каталоге Российской государственной библиотеки и в Google Книгах
+const bookFind = (a, t) => { const q = encodeURIComponent(t + ' ' + a.split(',')[0]); return `<span class="kb-find">найти: <a href="https://search.rsl.ru/ru/search#q=${q}" target="_blank" rel="noopener">РГБ ↗</a> · <a href="https://www.google.com/search?tbm=bks&q=${q}" target="_blank" rel="noopener">Google Книги ↗</a></span>`; };
+const bookList = list => `<ol class="kb-books">${list.map(([a, t, pub]) => `<li><span class="kb-auth">${esc(a)}</span> <b>${esc(t)}</b>. <span class="kb-pub">${esc(pub)}</span> ${bookFind(a, t)}</li>`).join('')}</ol>`;
 
 /* ---------- главная базы знаний: на главной Сешат и в каждом модуле ---------- */
 const kbCard = (s, href) => `<a class="kb-card" href="${href || '#kb-' + s.id}"><b>${esc(s.t)}</b><span>${esc(s.d)}</span><small>${s.n()} ${s.unit || 'статей'}</small></a>`;

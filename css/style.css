@@ -1041,7 +1041,7 @@ a.its-pg::after{content:" ↗";font-size:.85em}
 .its-ndt-tbl td.p{white-space:normal}
 .its-scheme{margin:10px 0 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
 .sc-wrap{overflow-x:auto}
-.sc{display:block;width:100%;min-width:520px;height:auto;font-family:var(--f-body)}
+.sc{display:block;max-width:100%;height:auto;font-family:var(--f-body)}
 .sc-z{stroke-width:1.5}
 .z-an{fill:color-mix(in srgb,var(--phys) 22%,var(--surface));stroke:var(--phys)} i.z-an{background:color-mix(in srgb,var(--phys) 35%,var(--surface));border-color:var(--phys)}
 .z-ax{fill:color-mix(in srgb,var(--tert) 20%,var(--surface));stroke:var(--tert)} i.z-ax{background:color-mix(in srgb,var(--tert) 35%,var(--surface));border-color:var(--tert)}
@@ -1101,3 +1101,33 @@ a.its-pg::after{content:" ↗";font-size:.85em}
 .doc-card.doc-all{padding-left:18px}
 .doc-card.doc-all::before,.doc-head.doc-all::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;border-radius:10px 0 0 10px;background:#FFFFFF;box-shadow:inset 0 0 0 1.5px #A9A9A3}
 .doc-head.doc-all{background:var(--surface);padding-left:22px}
+
+/* ---------- связность базы знаний: ссылки в тексте, обратные ссылки, указатель ----------
+   цвет = к чему относится статья: белый — весь кластер, синий/бирюзовый/коричневый — вид воды модуля, серый — общие разделы */
+.wb-kind-nature{--wb:var(--tert)} .wb-kind-supply{--wb:var(--supply)} .wb-kind-waste{--wb:var(--waste)}
+.wb-common{--wb:var(--muted)} .wb-cluster{--wb:#B9B9B3} .wb-multi{--wb:var(--accent)}
+a.wl{color:inherit;text-decoration:none;border-bottom:1.5px solid color-mix(in srgb,var(--wb) 70%,transparent);background:color-mix(in srgb,var(--wb) 8%,transparent);border-radius:2px;padding:0 1px}
+a.wl:hover{background:color-mix(in srgb,var(--wb) 22%,transparent);border-bottom-color:var(--wb)}
+a.wl.wb-cluster{border-bottom:1.5px solid #FFFFFF;box-shadow:0 1.5px 0 #A9A9A3}
+a.wl.wb-multi{border-bottom:2px solid transparent;border-image:linear-gradient(90deg,var(--supply),var(--waste)) 1}
+a.wl.wl-d{font-variant-numeric:tabular-nums}
+.wl-type{display:inline-block;flex:none;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-right:6px;color:var(--ink);background:color-mix(in srgb,var(--wb) 18%,var(--surface));border-left:3px solid var(--wb);vertical-align:1px}
+.wl-type.wb-cluster{background:var(--surface2);border-left-color:#FFFFFF;box-shadow:inset 1px 0 0 #A9A9A3}
+.wl-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.4}
+.wl-list li{display:flex;align-items:baseline;gap:0}
+.wl-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:6px 18px}
+.wl-letters{display:flex;flex-wrap:wrap;gap:4px;position:sticky;top:0;z-index:2;padding:6px 0;background:var(--bg)}
+.wl-letters a{min-width:28px;text-align:center;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;font-weight:600;font-size:13px}
+.wl-letters a:hover{border-color:var(--accent)}
+.wl-sec h2{font-family:var(--f-display);font-weight:500;font-size:20px;margin:14px 0 8px;text-transform:none;letter-spacing:0}
+.wl-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12.5px;color:var(--muted);padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.wl-legend b{color:var(--ink);font-size:12.5px}
+.wl-legend span{display:inline-flex;align-items:center;gap:6px}
+.wl-legend i{display:inline-block;width:18px;height:4px;border-radius:2px;background:var(--wb)}
+.wl-legend i.wb-cluster{background:#FFFFFF;box-shadow:0 0 0 1px #A9A9A3}
+.wl-legend i.wb-multi{background:linear-gradient(90deg,var(--supply),var(--waste))}
+.wl-legend small{flex-basis:100%;font-size:12px}
+.wl-goindex{margin:0;font-size:14px}
+.wl-back .wl-list{font-size:13px}
+.wl-list a{color:var(--accent)}
+.kb-find{display:inline-block;font-size:12px;color:var(--muted);margin-left:4px}.kb-find a{color:var(--accent)}

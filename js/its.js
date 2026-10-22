@@ -663,7 +663,7 @@
     (S.dose || []).forEach(([i, t]) => { g += `<path class="sc-dose" d="M${x(i) + 26} 22V${Y - 4}" marker-end="url(#sc-a)"/><text class="sc-t sc-dt" x="${x(i) + 26}" y="16" text-anchor="middle">${E(t)}</text>`; });
     (S.side || []).forEach(([i, t]) => { g += `<path class="sc-side" d="M${x(i) + BW - 24} ${Y}V30" marker-end="url(#sc-a)"/><text class="sc-t" x="${x(i) + BW - 24}" y="${S.dose && S.dose.some(d => d[0] === i) ? 46 : 24}" text-anchor="middle">${E(t)}</text>`; });
     const used = [...new Set(S.z.map(z => z[0]))];
-    return `<figure class="its-scheme"><div class="sc-wrap"><svg class="sc" viewBox="0 0 ${W} ${HT}" role="img" aria-label="${E(S.t)}">
+    return `<figure class="its-scheme"><div class="sc-wrap"><svg class="sc" viewBox="0 0 ${W} ${HT}" style="width:${W}px;min-width:${Math.min(W, 520)}px" role="img" aria-label="${E(S.t)}">
       <defs><marker id="sc-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="sc-ah"/></marker></defs>${g}</svg></div>
       <figcaption><span><b>${E(S.t)}</b>${S.fig ? ` — по мотивам: ИТС 10-2019, ${E(S.fig)}, ${pg(S.p)}` : ` · ${DOC.short}, ${pg(S.p)}`}</span>
         <span class="sc-leg">${used.map(k => `<i class="z-${k}"></i>${E(ZONE[k])}`).join('')}${recs.some(r => r[3] === 'ras') ? '<i class="lg-ras"></i>возвратный ил' : ''}${recs.some(r => r[3] === 'int') ? '<i class="lg-int"></i>внутренний поток' : ''}</span></figcaption></figure>`;

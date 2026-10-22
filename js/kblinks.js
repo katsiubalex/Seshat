@@ -5,15 +5,28 @@
 
 const WL = (() => {
   const MODS = SeshatModules.MODULES, KIND_OF = Object.fromEntries(MODS.map(m => [m.id, m.kind]));
-  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', m: 'Модуль', a: 'Здание' };
+  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', m: 'Модуль', a: 'Здание', g: 'Термин' };
+  // тип статьи — значком (цвет занят принадлежностью)
+  const ICON = {
+    u: '<path d="M2 5h12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8.5c2-1 4 1 6 0s4-1 6 0"/>',
+    p: '<path d="M13 6a5 5 0 0 0-9.3-1.5M3 10a5 5 0 0 0 9.3 1.5"/><path d="M13 2.5V6H9.5M3 13.5V10h3.5"/>',
+    i: '<path d="M6 2h4M6.5 2v4.5L3 13a1 1 0 0 0 .9 1.5h8.2A1 1 0 0 0 13 13L9.5 6.5V2"/>',
+    d: '<path d="M4 1.5h5.5L12.5 4.5v10h-8.5z"/><path d="M9.5 1.5v3h3M6.5 8.5h4M6.5 11h4"/>',
+    f: '<path d="M2 3c2-1 4-1 6 .5 2-1.5 4-1.5 6-.5v10c-2-1-4-1-6 .5-2-1.5-4-1.5-6-.5z"/><path d="M8 3.5v10"/>',
+    h: '<circle cx="8" cy="4.5" r="2.5"/><path d="M3 14c0-3 2.2-5 5-5s5 2 5 5"/>',
+    m: '<path d="M8 1.5c2.5 3.5 4.5 6 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2.5 2-5 4.5-8.5z"/>',
+    a: '<path d="M2 14.5h12M3.5 14.5V6l4.5-3.5L12.5 6v8.5"/><path d="M6.5 14.5v-4h3v4"/>',
+    g: '<path d="M2.5 13l3-9 3 9M3.6 10h3.8"/><path d="M10 9.5h3.5M10 12.5h3.5"/>'
+  };
+  const icon = type => `<svg class="wl-ico" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[type] || ''}</svg>`;
   // принадлежность: kind-* (вид воды модуля), cluster (весь кластер), multi (несколько видов), common (общие разделы)
   const docBelong = d => { if (d.mods === 'all') return 'cluster'; const k = [...new Set(d.mods.map(m => KIND_OF[m]))]; return k.length === 1 ? 'kind-' + k[0] : 'multi'; };
 
   /* ---------- словарь терминов ---------- */
   // Основа слова: срезаем окончание и разрешаем любые окончания (падежи и числа)
   const stemWord = w => {
-    if (w.length < 5 || /[^а-яё-]/i.test(w)) return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return w.replace(/[аяоеыиуюйьё]{1,2}$/i, '') + '[а-яё]{0,4}';
+    if (w.length < 4 || /[^а-яё-]/i.test(w)) return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return w.replace(/[аяоеыиуюйьё]{1,2}$/i, '') + (w.length < 5 ? '[а-яё]{0,2}' : '[а-яё]{0,4}'); // короткие слова — только короткие окончания (жиры ≠ жирные)
   };
   const pat = phrase => phrase.split(/\s+/).map(stemWord).join('\\s+');
   const T = []; // [регулярное выражение, адрес, тип, принадлежность, заголовок]
@@ -65,6 +78,10 @@ const WL = (() => {
   const F_SYN = { hydraulics: ['гидравлика', 'гидравлический расчёт'], math: ['математическая статистика'], chemistry: ['химия воды'], microbiology: ['микробиология'], geotech: ['инженерная геология', 'механика грунтов'], pumps: ['насосные станции'] };
   SeshatKB.FUNDAMENTALS.forEach(f => add(F_SYN[f.id] || [f.t], ROOT + '#kb-f-' + f.id, 'f', 'common', f.t));
   SeshatKB.HUMANITIES.forEach(h => add({ anthropology: ['антропология воды'], philosophy: ['философия воды'], history: ['история санитарии'], commons: ['общее благо'], ethics: ['этика инженера'] }[h.id] || [h.t], ROOT + '#kb-h-' + h.id, 'h', 'common', h.t));
+  // термины глоссария (определения из нормативных документов)
+  const GL = (window.SeshatGlossary || { G: [] }).G, DOC_BY = Object.fromEntries(SeshatDocs.DOCS.map(d => [d.id, d]));
+  const glBelong = g => DOC_BY[g.src] ? docBelong(DOC_BY[g.src]) : 'common';
+  GL.forEach(g => add([g.t.replace(/\s*\(.*?\)\s*/g, ' ').trim(), ...((g.t.match(/\(([А-ЯЁA-Z]{2,})\)/) || []).slice(1))], ROOT + '#kb-g-' + g.id, 'g', glBelong(g), g.t));
   // модули
   MODS.forEach(m => add(m.id === 'yu' ? ['Ю Великий'] : [m.n], ROOT + m.path, 'm', 'kind-' + m.kind, m.n + ' — ' + m.d));
   // длинные термины проверяем раньше коротких
@@ -75,9 +92,9 @@ const WL = (() => {
   /* ---------- превращение терминов в ссылки ---------- */
   const SKIP = 'a,button,code,h1,h2,h3,input,select,textarea,sup,.kb-crumbs,.doc-id,.its-badge,.its-ndt,.kb-tag,.kb-tags,.gp-dl dt,.its-refs,.doc-links,.doc-rel,.sc,.kb-f';
   const norm = h => h.replace(/^.*?(#|$)/, '#');
-  function wikify(rootEl, selfHref) {
+  function wikify(rootEl, selfHref, used = new Set()) {
     if (!rootEl) return;
-    const used = new Set(), self = selfHref ? norm(selfHref) : null;
+    const self = selfHref ? norm(selfHref) : null;
     const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, { acceptNode: n => !n.nodeValue.trim() || n.parentElement.closest(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
     const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
     for (const node of nodes) {
@@ -112,14 +129,15 @@ const WL = (() => {
   SeshatKB.INDICATORS.forEach(p => ART.push({ href: '#kb-i-' + p.id, type: 'i', belong: 'kind-waste', t: p.t, text: [p.what, p.why, p.how].join(' ') }));
   SeshatDocs.DOCS.forEach(d => ART.push({ href: '#doc-' + d.id, type: 'd', belong: docBelong(d), t: d.short + ' — ' + d.title, text: [d.about, ...d.points, d.seshat].join(' ') }));
   SeshatKB.FUNDAMENTALS.forEach(f => ART.push({ href: ROOT + '#kb-f-' + f.id, type: 'f', belong: 'common', t: f.t, text: [f.lead, ...f.s.map(x => x[1])].join(' ') }));
+  GL.forEach(g => ART.push({ href: ROOT + '#kb-g-' + g.id, type: 'g', belong: glBelong(g), t: g.t, text: g.def }));
   SeshatKB.HUMANITIES.forEach(h => ART.push({ href: ROOT + '#kb-h-' + h.id, type: 'h', belong: 'common', t: h.t, text: [h.lead, ...h.s.map(x => x[1])].join(' ') }));
   const termsFor = href => T.filter(t => norm(t.href) === norm(href));
   const backlinks = href => { const ts = termsFor(href); return ts.length ? ART.filter(a => norm(a.href) !== norm(href) && ts.some(t => t.re.test(a.text))) : []; };
-  const chip = (type, belong) => `<span class="wl-type wb-${belong}" title="${TYPES[type]}">${TYPES[type]}</span>`;
+  const chip = (type, belong) => `<span class="wl-type wb-${belong}" title="${TYPES[type]}">${icon(type)}${TYPES[type]}</span>`;
   const linkItem = a => `<li>${chip(a.type, a.belong)}<a href="${a.href}">${esc(a.t)}</a></li>`;
   function backPanel(href) {
     const list = backlinks(href); if (!list.length) return '';
-    const order = ['u', 'p', 'i', 'd', 'f', 'h', 'a'];
+    const order = ['u', 'p', 'i', 'd', 'g', 'f', 'h', 'a'];
     list.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.t.localeCompare(b.t, 'ru'));
     return `<section class="panel wl-back"><h2>Где упоминается</h2><ul class="wl-list">${list.slice(0, 18).map(linkItem).join('')}</ul>${list.length > 18 ? `<p class="hint">и ещё ${list.length - 18}</p>` : ''}</section>`;
   }
@@ -137,36 +155,75 @@ const WL = (() => {
       <p class="hint">${all.length} статей и документов.</p>`;
   }
 
+  /* ---------- поиск по тексту всей базы знаний ---------- */
+  const low = s => s.toLowerCase().replace(/ё/g, 'е');
+  function searchHTML(q) {
+    const words = low(q).split(/\s+/).filter(w => w.length > 1); if (!words.length) return '';
+    const res = [];
+    ART.forEach(a => {
+      const tl = low(a.t), xl = low(a.text || '');
+      if (!words.every(w => tl.includes(w) || xl.includes(w))) return;
+      const score = words.reduce((s, w) => s + (tl.includes(w) ? 10 : 0) + (xl.split(w).length - 1), 0);
+      const at = Math.max(0, xl.indexOf(words[0]) - 60), raw = (a.text || '').slice(at, at + 200);
+      res.push({ a, score, snip: (at ? '…' : '') + esc(raw).replace(new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi'), '<mark>$1</mark>') + (raw.length >= 200 ? '…' : '') });
+    });
+    res.sort((x, y) => y.score - x.score);
+    if (!res.length) return `<div class="empty">В тексте базы знаний ничего не найдено по запросу «${esc(q)}».</div>`;
+    return `<section class="wl-sec"><h2>Найдено в тексте: ${res.length}</h2><ul class="wl-hits">${res.slice(0, 40).map(r => `<li>${chip(r.a.type, r.a.belong)}<a href="${r.a.href}">${esc(r.a.t)}</a>${r.snip ? `<p>${r.snip}</p>` : ''}</li>`).join('')}</ul></section>`;
+  }
+
+  /* ---------- глоссарий ---------- */
+  function glossaryHTML(q) {
+    const qq = low(q || '');
+    const list = GL.filter(g => !qq || low(g.t + ' ' + g.def).includes(qq)).sort((a, b) => a.t.localeCompare(b.t, 'ru'));
+    if (!list.length) return `<div class="empty">Нет терминов по запросу «${esc(q)}».</div>`;
+    return `<dl class="gl-list">${list.map(g => { const d = DOC_BY[g.src];
+      return `<div class="gl-item wb-${glBelong(g)}" id="gl-${g.id}"><dt>${esc(g.t)}</dt><dd><p>${g.q ? '«' + esc(g.def) + '»' : esc(g.def)}</p>
+        <p class="gl-src">${g.q ? 'Цитата' : 'Изложение'} · ${d ? `<a href="#doc-${d.id}">${esc(d.short)}</a>` : ''}, ${esc(g.ref)}</p></dd></div>`; }).join('')}</dl>
+      <p class="hint">${list.length} терминов. «Цитата» — дословно из документа, «Изложение» — кратко, точная формулировка в документе.</p>`;
+  }
+
   const LEGEND = `<div class="wl-legend"><b>Как читать ссылки</b>
     <span><i class="wb-cluster"></i>весь кластер «Водная инфраструктура»</span><span><i class="wb-kind-nature"></i>природная вода</span><span><i class="wb-kind-supply"></i>водоснабжение</span><span><i class="wb-kind-waste"></i>водоотведение</span><span><i class="wb-multi"></i>несколько видов воды</span><span><i class="wb-common"></i>общие разделы Сешат</span>
-    <small>Цвет — к чему относится статья, подпись при наведении — её тип: сооружение, процесс, показатель, документ, дисциплина.</small></div>`;
+    <small>Цвет — к чему относится статья. Тип — значком: ${['u', 'p', 'i', 'd', 'g', 'f'].map(k => `<span class="wl-ti">${icon(k)}${TYPES[k].toLowerCase()}</span>`).join(' ')}.</small></div>`;
 
-  return { wikify, backPanel, indexHTML, LEGEND, T, ART, backlinks };
+  return { wikify, backPanel, indexHTML, searchHTML, glossaryHTML, LEGEND, T, ART, GL, backlinks, icon };
 })();
 
 /* ---------- встраивание в базу знаний ---------- */
 (function () {
   const render = VIEW_RENDER.kb;
   VIEW_RENDER.kb = param => {
-    if (param === 'index') { // указатель — раздел общей базы знаний
-      kbRoot().innerHTML = `${crumbs(['Указатель статей'])}<header class="kb-head"><div><h1>Указатель статей</h1><p class="sub">Все статьи и документы базы знаний от А до Я. Цвет — к чему относится статья.</p></div></header>
-        ${WL.LEGEND}<input id="wl-q" type="search" class="lib-search kb-search" placeholder="Найти в указателе…" aria-label="Найти в указателе"><div id="wl-index">${WL.indexHTML('')}</div>`;
+    if (param === 'index') { // указатель и поиск по всей базе — раздел общей базы знаний
+      kbRoot().innerHTML = `${crumbs(['Указатель и поиск'])}<header class="kb-head"><div><h1>Указатель и поиск</h1><p class="sub">Все статьи, термины и документы базы знаний от А до Я. Поиск ищет и в заголовках, и в тексте статей всех модулей.</p></div></header>
+        ${WL.LEGEND}<input id="wl-q" type="search" class="lib-search kb-search" placeholder="Найти во всей базе знаний: термин, сооружение, документ…" aria-label="Найти во всей базе знаний"><div id="wl-index">${WL.indexHTML('')}</div>`;
+      return;
+    }
+    if (param === 'glossary' || /^g-/.test(param || '')) { // глоссарий: термины с определениями из норм
+      kbRoot().innerHTML = `${crumbs(['Глоссарий'])}<header class="kb-head"><div><h1>Глоссарий</h1><p class="sub">Термины с определениями из законов, сводов правил и справочников НДТ — с номером статьи или пункта.</p></div></header>
+        <input id="gl-q" type="search" class="lib-search kb-search" placeholder="Найти термин…" aria-label="Найти термин"><div id="gl-box">${WL.glossaryHTML('')}</div>`;
+      const el = param !== 'glossary' && document.getElementById('gl-' + param.slice(2));
+      if (el) { el.classList.add('on'); requestAnimationFrame(() => el.scrollIntoView({ block: 'center' })); }
       return;
     }
     render(param);
     const root = kbRoot(), m = /^([a-z])-(.+)$/.exec(param || '');
     if (!m) { // главная и разделы: легенда и вход в указатель
       const head = root.querySelector('.kb-head');
-      if (head && !param) head.insertAdjacentHTML('afterend', WL.LEGEND + `<p class="wl-goindex"><a href="${ROOT}#kb-index">Указатель всех статей от А до Я →</a></p>`);
+      if (head && !param) head.insertAdjacentHTML('afterend', WL.LEGEND + `<p class="wl-goindex"><a href="${ROOT}#kb-index">Указатель и поиск по всей базе знаний →</a></p>`);
       return;
     }
     const self = m[1] === 'd' ? '#doc-' + m[2] : m[1] === 'f' || m[1] === 'h' ? ROOT + '#kb-' + param : '#kb-' + param;
-    WL.wikify(root.querySelector('.kb-main, .doc-main'), self);
-    WL.wikify(root.querySelector('.kb-lead, .doc-lead'), self);
+    const used = new Set(); // каждый термин — одна ссылка на статью: сначала во вводной части, потом в основном тексте
+    WL.wikify(root.querySelector('.kb-lead, .doc-lead'), self, used);
+    WL.wikify(root.querySelector('.kb-main, .doc-main'), self, used);
     const side = root.querySelector('.kb-side, .doc-side');
     if (side) side.insertAdjacentHTML('beforeend', WL.backPanel(self));
   };
-  kbRoot().addEventListener('input', ev => { if (ev.target.id === 'wl-q') document.getElementById('wl-index').innerHTML = WL.indexHTML(ev.target.value); });
+  kbRoot().addEventListener('input', ev => {
+    if (ev.target.id === 'wl-q') { const v = ev.target.value.trim(); document.getElementById('wl-index').innerHTML = (v.length > 2 ? WL.searchHTML(v) : '') + WL.indexHTML(v.length > 2 ? '' : v).replace(/^/, v.length > 2 ? '<h2 class="wl-sub">Все статьи</h2>' : ''); }
+    if (ev.target.id === 'gl-q') document.getElementById('gl-box').innerHTML = WL.glossaryHTML(ev.target.value);
+  });
   // буквы указателя прокручивают, не меняя адрес раздела
   kbRoot().addEventListener('click', ev => {
     const a = ev.target.closest('[data-letter]'); if (!a) return;

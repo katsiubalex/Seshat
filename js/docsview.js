@@ -41,6 +41,30 @@ const DOC_LEGEND = `<p class="doc-legend"><span class="doc-sw doc-all"></span>о
   <span class="doc-sw doc-multi" style="--stripes:var(--supply) 0 50%,var(--waste) 50% 100%"></span>несколько видов воды</p>`;
 
 /* ---------- страница документа ---------- */
+const docModTag = id => { const m = DOC_MODS.find(x => x.id === id); return m ? `<span class="kb-tag kind-${m.kind}">${SeshatModules.glyph(m.id, 12)} ${esc(m.n)}</span>` : ''; };
+// «Где искать в документе»: тема → пункт → страница; на странице модуля сначала его темы
+function docFindHTML(d) {
+  if (!d.find || !d.find.length) return '';
+  const row = m => f => `<tr><td>${esc(f[1])}</td><td class="num">п. ${esc(f[2])}</td><td class="num">с. ${f[3]}</td>${m ? `<td>${docModTag(f[0])}</td>` : ''}</tr>`;
+  const head = m => `<thead><tr><th>Тема</th><th>Пункт</th><th>Стр.</th>${m ? '<th>Модуль</th>' : ''}</tr></thead>`;
+  const mine = d.find.filter(f => f[0] === PAGE), rest = d.find.filter(f => f[0] !== PAGE);
+  const tbl = (l, m) => `<div class="tbl-wrap"><table class="doc-find">${head(m)}<tbody>${l.map(row(m)).join('')}</tbody></table></div>`;
+  return `<section class="panel"><h2>Где искать в документе</h2>
+    ${mine.length ? tbl(mine, false) + `<details class="doc-more"><summary>Темы других модулей (${rest.length})</summary>${tbl(rest, true)}</details>` : tbl(rest, true)}
+    <p class="hint">Страницы — по официальному изданию${d.pagesNote ? ' ' + esc(d.pagesNote) : ''}.</p></section>`;
+}
+function docTocHTML(d) {
+  if (!d.toc || !d.toc.length) return '';
+  return `<section class="panel"><h2>Структура</h2><ol class="doc-toc">${d.toc.map(([n, tt, pg]) => `<li><span class="n">${esc(n)}</span><span>${esc(tt)}</span><span class="pg">${pg}</span></li>`).join('')}</ol></section>`;
+}
+function docStatusHTML(d) {
+  if (!d.changes && !d.checked && !d.replaces) return '';
+  return `<section class="panel doc-status"><h2>Редакции</h2>
+    ${d.changes ? `<ul class="doc-changes">${d.changes.map(([a, b, c]) => `<li><b>${esc(a)}</b><span>${esc(b)}</span><small>${esc(c)}</small></li>`).join('')}</ul>` : ''}
+    ${d.replaces ? `<p class="hint">Заменил: ${esc(d.replaces)}</p>` : ''}
+    ${d.checked ? `<p class="doc-checked"><b>Статус проверен ${esc(d.checked[0])}</b>${esc(d.checked[1])}</p>` : ''}
+  </section>`;
+}
 function docPageHTML(id, crumbsHtml) {
   const d = DOCS_BY_ID[id]; if (!d) return '';
   const t = docTone(d);
@@ -58,6 +82,7 @@ function docPageHTML(id, crumbsHtml) {
     <div class="doc-layout">
       <div class="doc-main">
         <section class="panel"><h2>Что важно</h2><ul class="doc-points">${d.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>
+        ${docFindHTML(d)}
         ${d.interactive ? `<section class="panel doc-interactive" id="doc-int"></section>` : ''}
         <section class="panel doc-seshat"><h2>В Сешат</h2><p>${esc(d.seshat)}</p>${d.go ? `<p><a class="btn" ${goHref(d.go[0])}>${esc(d.go[1])}</a></p>` : ''}</section>
       </div>
@@ -66,6 +91,8 @@ function docPageHTML(id, crumbsHtml) {
           <ul class="doc-links">${d.links.map(([tt, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(tt)} ↗</a></li>`).join('')}</ul>
           <p class="hint">Полный текст и действующая редакция — по ссылкам. Здесь — краткое изложение для учебных целей.</p>
         </section>
+        ${docStatusHTML(d)}
+        ${docTocHTML(d)}
         ${d.related && d.related.length ? `<section class="panel"><h2>Связанные документы</h2><ul class="doc-rel">${d.related.map(r => DOCS_BY_ID[r]).filter(Boolean).map(r => `<li><a href="#doc-${r.id}"><span class="doc-id">${esc(r.short)}</span><span>${esc(r.title)}</span></a></li>`).join('')}</ul></section>` : ''}
       </aside>
     </div>

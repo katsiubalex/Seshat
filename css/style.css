@@ -1131,3 +1131,39 @@ a.wl.wl-d{font-variant-numeric:tabular-nums}
 .wl-back .wl-list{font-size:13px}
 .wl-list a{color:var(--accent)}
 .kb-find{display:inline-block;font-size:12px;color:var(--muted);margin-left:4px}.kb-find a{color:var(--accent)}
+/* страница документа: где искать, структура, редакции */
+.doc-find{width:100%;border-collapse:collapse;font-size:.92rem}
+.doc-find th,.doc-find td{padding:.45rem .5rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.doc-find th{font-weight:600;color:var(--muted);font-size:.8rem}
+.doc-find td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
+.doc-find .kb-tag{font-size:.75rem;white-space:nowrap}
+.doc-more{margin-top:.6rem}.doc-more summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+.doc-toc{list-style:none;margin:0;padding:0;font-size:.88rem}
+.doc-toc li{display:grid;grid-template-columns:3.4em 1fr auto;gap:.4rem;padding:.3rem 0;border-bottom:1px dashed var(--line)}
+.doc-toc .n{color:var(--muted);font-variant-numeric:tabular-nums}.doc-toc .pg{color:var(--muted);font-variant-numeric:tabular-nums}
+.doc-changes{list-style:none;margin:0 0 .5rem;padding:0;font-size:.88rem}
+.doc-changes li{display:flex;flex-direction:column;padding:.35rem 0;border-bottom:1px solid var(--line)}
+.doc-changes small{color:var(--muted)}
+.doc-checked{font-size:.82rem;color:var(--muted);margin:.5rem 0 0}
+.doc-checked b{display:block;color:var(--ink,inherit);font-weight:600}
+/* значки типов статей, глоссарий, поиск по всей базе */
+.wl-ico{flex:none;margin-right:4px;vertical-align:-2px}
+.wl-ti{white-space:nowrap;margin-right:.5rem}.wl-ti .wl-ico{margin-right:3px}
+.wl-hits{list-style:none;margin:0;padding:0}
+.wl-hits li{padding:.6rem 0;border-bottom:1px solid var(--line)}
+.wl-hits p{margin:.25rem 0 0;font-size:.88rem;color:var(--muted);line-height:1.45}
+.wl-hits mark,.gl-list mark{background:color-mix(in srgb,var(--gold) 35%,transparent);color:inherit;border-radius:2px;padding:0 1px}
+.wl-sub{font-size:1rem;margin:1.5rem 0 .5rem}
+.gl-list{margin:0;display:grid;gap:.6rem}
+.gl-item{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--wb,var(--line));border-radius:8px;padding:.8rem 1rem;scroll-margin-top:80px}
+.gl-item.wb-cluster{border-left-color:#FFFFFF;box-shadow:inset 1px 0 0 #A9A9A3}
+.gl-item.on{outline:2px solid var(--accent);outline-offset:2px}
+.gl-item dt{font-weight:650;margin-bottom:.25rem}
+.gl-item dd{margin:0}.gl-item dd p{margin:0;line-height:1.5}
+.gl-item .gl-src{margin-top:.35rem;font-size:.8rem;color:var(--muted)}
+.wl-hits a{color:var(--accent);font-weight:600}
+.mt-list{list-style:none;margin:0 0 .6rem;padding:0}
+.mt-list li{display:flex;flex-direction:column;gap:.15rem;padding:.55rem 0;border-bottom:1px solid var(--line)}
+.mt-list b{font-family:var(--mono,ui-monospace,monospace);font-size:.9rem}
+.mt-list small{color:var(--muted)}
+.kb-main .panel .mt-list{padding-left:0;margin:0 0 .6rem}.mt-list a{color:var(--accent)}

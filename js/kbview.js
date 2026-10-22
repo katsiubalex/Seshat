@@ -18,11 +18,12 @@ const KB_SECTIONS = [
   { id: 'fund', t: 'Фундаментальные дисциплины', d: 'Гидравлика, математика и статистика, химия воды, микробиология, геология, насосы — основа всех модулей.', n: () => KB.FUNDAMENTALS.length },
   { id: 'hum', t: 'Человек и вода', d: 'Гуманитарные аспекты водопользования: антропология и философия воды, история санитарии, вода как общее благо, этика инженера.', n: () => KB.HUMANITIES.length },
   { id: 'journals', t: 'Научные журналы', d: 'Российские и международные журналы, где публикуют исследования по воде.', n: () => KB.JOURNALS.reduce((s, b) => s + b.list.length, 0), unit: 'журналов' },
-  { id: 'index', t: 'Указатель статей', d: 'Все статьи и документы базы знаний от А до Я. Цвет показывает, к чему относится статья.', n: () => (typeof WL !== 'undefined' ? WL.ART.length : 0), unit: 'статей' },
+  { id: 'glossary', t: 'Глоссарий', d: 'Термины с определениями из законов, сводов правил и справочников НДТ — с номером статьи или пункта.', n: () => (window.SeshatGlossary ? SeshatGlossary.G.length : 0), unit: 'терминов' },
+  { id: 'index', t: 'Указатель и поиск', d: 'Все статьи, термины и документы от А до Я и поиск по тексту всей базы знаний.', n: () => (typeof WL !== 'undefined' ? WL.ART.length : 0), unit: 'статей' },
   { id: 'comm', t: 'Профессиональные сообщества', d: 'Ассоциации и организации отрасли в России и мире: конференции, стандарты, обучение.', n: () => KB.COMMUNITIES.reduce((s, b) => s + b.list.length, 0), unit: 'организаций' }
 ];
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
-const UNIVERSAL = ['fund', 'hum', 'journals', 'comm', 'index'];
+const UNIVERSAL = ['glossary', 'index', 'fund', 'hum', 'journals', 'comm'];
 // разделы модулей: учебники есть у всех, у Тласольтеотль — ещё сооружения, процессы и показатели
 const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : ['books', 'docs']]));
 const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + (s === 'books' ? nBooks(id) : s === 'docs' ? docsOf(id).length : SEC[s].n()), 0);
@@ -179,11 +180,20 @@ function kbProc(id) {
   const side = `${numbers(p.n)}${units.length ? `<section class="panel"><h2>Где идёт</h2><div class="kb-units kb-units-col">${units.map(unitLink).join('')}</div></section>` : ''}`;
   kbRoot().innerHTML = article(head, main, side);
 }
+// методики измерений показателя: обозначение, метод, для каких вод, где подтверждено
+function methodsHTML(id) {
+  const S = window.SeshatMethods; if (!S) return '';
+  const list = S.M[id], fif = `<a href="${S.FIF[1]}" target="_blank" rel="noopener">${esc(S.FIF[0])} ↗</a>`;
+  if (!list) return S.TODO[id] ? `<section class="panel"><h2>Как измеряют</h2><p class="hint">Методика для этого показателя ещё подбирается по проверенным источникам. Действующие методики — в ${fif}.</p></section>` : '';
+  return `<section class="panel"><h2>Как измеряют</h2><ul class="mt-list">
+    ${list.map(([n, m, w, src]) => `<li><b>${esc(n)}</b><span>${esc(m)}</span><small>Воды: ${esc(w)} · подтверждено: ${src.map(s => `<a href="${S.SRC[s][1]}" target="_blank" rel="noopener" title="${esc(S.SRC[s][0])}">${{ normacs: 'NormaCS', spmi: 'ЦКП СПГУ', muctr: 'ЦКП РХТУ' }[s]} ↗</a>`).join(', ')}</small></li>`).join('')}
+  </ul><p class="hint">Перед применением проверьте действующую редакцию методики в ${fif}. Для контроля сброса используют методики из области аккредитации лаборатории.</p></section>`;
+}
 function kbInd(id) {
   const p = IND_BY[id], i = KB.INDICATORS.indexOf(p), par = p.k && PARAMS.find(x => x.k === p.k);
   const nv = p.k && state.norm[p.k], iv = p.k && state.c[p.k];
   const head = `${crumbs(['Показатели качества воды', '#kb-ind'], [p.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(p.u)}</span><h1>${esc(p.t)}</h1></div></header>`;
-  const main = `${sections([['Что это', p.what], ['Почему важно', p.why], ['Как снижают', p.how]])}${seq(KB.INDICATORS, i, x => '#kb-i-' + x.id, x => x.t)}`;
+  const main = `${sections([['Что это', p.what], ['Почему важно', p.why], ['Как снижают', p.how]])}${methodsHTML(p.id)}${seq(KB.INDICATORS, i, x => '#kb-i-' + x.id, x => x.t)}`;
   const side = `<section class="panel"><h2>Значения</h2><dl class="gp-dl"><dt>Городские стоки</dt><dd>${esc(p.typ)}</dd>${par ? `<dt>Ваши стоки</dt><dd>${fmt(iv)} ${esc(par.u)}</dd><dt>Ваш норматив</dt><dd>${nv == null || nv === '' ? 'не задан' : fmt(nv) + ' ' + esc(par.u)}</dd>` : ''}</dl>
       <p class="hint">Нормативы сброса — в документах <a href="#doc-pp1430">ПП № 1430</a> (НДТ) и <a href="#doc-pr296">приказе № 296</a> (рыбохозяйственные).</p></section>
     ${par ? '<section class="panel"><h2>В Тласольтеотль</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;

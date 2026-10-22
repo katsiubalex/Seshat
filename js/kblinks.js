@@ -151,7 +151,7 @@ const WL = (() => {
   const linkItem = a => `<li>${chip(a.type, a.belong)}<a href="${a.href}">${esc(a.t)}</a></li>`;
   function backPanel(href) {
     const list = backlinks(href); if (!list.length) return '';
-    const order = ['u', 'p', 'i', 'd', 'g', 'k', 'f', 'h', 'a'];
+    const order = ['u', 'p', 'i', 'd', 'g', 'k', 'f', 'h', 'y', 'a'];
     list.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.t.localeCompare(b.t, 'ru'));
     return `<section class="panel wl-back"><h2>Где упоминается</h2><ul class="wl-list">${list.slice(0, 18).map(linkItem).join('')}</ul>${list.length > 18 ? `<p class="hint">и ещё ${list.length - 18}</p>` : ''}</section>`;
   }

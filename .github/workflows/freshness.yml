@@ -1,0 +1,29 @@
+# Раз в неделю: битые ссылки и нормативные документы, которые давно не сверяли.
+# Если что-то найдено — открывается (или обновляется) задача «Проверка актуальности».
+name: Проверка актуальности
+on:
+  schedule:
+    - cron: '17 6 * * 1'   # по понедельникам, 09:17 по Москве
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Проверить ссылки и даты сверки
+        id: check
+        run: node tools/check-links.js --report report.md
+        continue-on-error: true
+      - name: Открыть или обновить задачу
+        if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh issue list --state open --search "Проверка актуальности in:title" --json number --jq '.[0].number')
+          if [ -n "$n" ]; then gh issue comment "$n" --body-file report.md; else gh issue create --title "Проверка актуальности" --body-file report.md; fi

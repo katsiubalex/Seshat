@@ -1,0 +1,54 @@
+name: Правка или ошибка
+description: Предложить исправление или дополнение к статье, документу, курсу или мифу
+title: "[Модуль] Правка: название материала"
+labels: ["правка"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что помогаете Сешат. Удобнее всего отправлять правку кнопкой «Предложить правку» под материалом на сайте — тогда поля ниже заполнятся сами.
+        Правку проверит куратор модуля; автор правки и проверяющий — разные люди. Правила — в [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md).
+  - type: input
+    id: page
+    attributes:
+      label: Страница
+      description: Название материала и ссылка на него
+    validations:
+      required: true
+  - type: input
+    id: module
+    attributes:
+      label: Модуль
+  - type: input
+    id: kind
+    attributes:
+      label: Вид правки
+      description: Ошибка в факте или расчёте · Устарела норма или не работает ссылка · Опечатка или неясная формулировка · Дополнение
+  - type: textarea
+    id: fragment
+    attributes:
+      label: Фрагмент
+      description: Текст на странице, к которому относится правка
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Что предлагаете
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Источник
+      description: Пункт нормы, страница учебника или ссылка. Не нужен только для опечаток.
+  - type: input
+    id: coi
+    attributes:
+      label: Конфликт интересов
+      description: Связаны ли вы с производителем или организацией, о которой идёт речь? «Нет» или «Да» и кого представляете.
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Как указать вас в истории правок
+      description: Необязательно

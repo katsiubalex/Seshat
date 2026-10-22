@@ -1,0 +1,37 @@
+name: Стать куратором или рецензентом
+description: Взять модуль под кураторство или проверять материалы как эксперт
+title: "Стать куратором или рецензентом"
+labels: ["кураторы"]
+body:
+  - type: dropdown
+    id: role
+    attributes:
+      label: Роль
+      options:
+        - Куратор модуля
+        - Эксперт-рецензент
+    validations:
+      required: true
+  - type: input
+    id: modules
+    attributes:
+      label: Модули
+      description: Например, «Очистка сточных вод», «Сети водоснабжения»
+    validations:
+      required: true
+  - type: textarea
+    id: qualification
+    attributes:
+      label: Квалификация
+      description: Образование, опыт, организация (кафедра, водоканал, проектный институт)
+    validations:
+      required: true
+  - type: textarea
+    id: coi
+    attributes:
+      label: Возможный конфликт интересов
+      description: Работаете ли вы у производителя оборудования, поставщика или заказчика, чьи решения описаны в модуле?
+  - type: input
+    id: contact
+    attributes:
+      label: Как с вами связаться

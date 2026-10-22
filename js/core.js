@@ -51,7 +51,7 @@ const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloa
 const STUB_MODULES = ['interior', 'fundamentals', 'basics', 'economics', 'decentral', 'safety', 'digital', 'construction', 'environment'];
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
-  hub: ['home', 'seshat', 'kb', 'about'],
+  hub: ['home', 'seshat', 'kb', 'contribute', 'about'],
   tlazolteotl: ['overview', 'constructor', 'projects', 'courses', 'kb'],
   // «Гуманитарные аспекты»: обзор, мифы о воде (#lore — список, #lore-<id> — статья), курсы и база знаний
   humanities: ['overview', 'lore', 'courses', 'kb']

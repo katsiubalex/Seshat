@@ -79,7 +79,7 @@ test('Сешат знает новые технологии и предлага�
 
 test('Сешат знает, где идёт разговор: главная, Тласольтеотль, модуль в разработке', () => {
   const hub = O.greet(ctx({ page: 'hub' })), dev = O.greet(ctx({ page: 'enki' })), tz = O.greet(ctx({ page: 'tlazolteotl' }));
-  assert.match(hub.text, /восемь модулей/);
+  assert.match(hub.text, /Водная инфраструктура/);
   assert.deepEqual(hub.options.map(o => o.id), O.HUB_MENU.map(o => o.id));
   assert.match(dev.text, /модуле Энки/);
   assert.ok(dev.options.some(o => o.id === 'lore:enki'));

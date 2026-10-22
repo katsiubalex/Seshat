@@ -47,7 +47,7 @@ const ROOT = document.body.dataset.root || '';
 // Какой странице принадлежит раздел. Ссылка на чужой раздел открывает нужную страницу.
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
-  hub: ['home', 'seshat', 'kb', 'docs', 'about', 'module'],
+  hub: ['home', 'seshat', 'kb', 'docs', 'about', 'module', 'lore'],
   tlazolteotl: ['constructor', 'projects', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
@@ -60,6 +60,7 @@ function parseView(h) {
   let m;
   if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return ['hub', 'docs', m[1]];
   if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) return ['hub', 'kb', m[1]];
+  if ((m = /^lore-([a-z]+)$/.exec(h))) return m[1] === 'tlazolteotl' ? ['tlazolteotl', 'lore', null] : ['hub', 'lore', m[1]];
   if ((m = /^m-([a-z]+)$/.exec(h))) return m[1] === 'tlazolteotl' ? ['tlazolteotl', 'constructor', null] : ['hub', 'module', m[1]];
   for (const [p, list] of Object.entries(PAGE_VIEWS)) if (list.includes(h)) return [p, h, null];
   return [PAGE, DEFAULT_VIEW[PAGE], null];
@@ -74,6 +75,7 @@ function showView(h) {
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   document.body.dataset.view = view;
+  document.body.dataset.param = param || '';
   if (VIEW_RENDER[view]) VIEW_RENDER[view](param);
   window.scrollTo(0, 0);
   document.dispatchEvent(new CustomEvent('viewchange', { detail: view }));

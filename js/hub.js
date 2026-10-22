@@ -3,6 +3,16 @@
 const { MODULES, KIND, glyph } = SeshatModules;
 const MOD = Object.fromEntries(MODULES.map(m => [m.id, m]));
 const modHref = m => m.ready ? m.path : '#m-' + m.id;
+const ABOUT = { tlaloc: 'о боге', hapi: 'о боге', yu: 'о легенде', enki: 'о боге', anahita: 'о богине', juturna: 'о богине', cloacina: 'о богине', tlazolteotl: 'о богине' };
+
+/* ---------- плашка модуля в меню: на странице модуля и его истории, ведёт к истории божества ---------- */
+function renderPlate() {
+  const box = document.getElementById('nav-plate'), v = document.body.dataset.view, id = document.body.dataset.param, m = MOD[id];
+  if (!m || (v !== 'module' && v !== 'lore')) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<a class="nav-module kind-${m.kind}" href="#lore-${id}" ${v === 'lore' ? 'aria-current="page"' : ''} title="${esc(m.n)}: ${ABOUT[id]}">${glyph(id, 20)}<span><b>${esc(m.n)}</b><small>${esc(m.d)}</small><em>${ABOUT[id]} →</em></span></a>`;
+}
+document.addEventListener('viewchange', renderPlate);
 
 /* ---------- меню: список модулей ---------- */
 document.getElementById('nav-modules').innerHTML = MODULES.map(m =>
@@ -68,12 +78,12 @@ function renderModule(id) {
   document.getElementById('module-root').innerHTML = `
     <article class="mod-page kind-${m.kind}">
       <a class="doc-back" href="#home">← Все модули</a>
-      <header class="mod-head">${glyph(id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])} · ${esc(m.culture)}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p></div></header>
+      <header class="mod-head">${glyph(id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])} · ${esc(m.culture)}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p><a class="mod-lore" href="#lore-${id}">${ABOUT[id][0].toUpperCase() + ABOUT[id].slice(1)} →</a></div></header>
       <p class="mod-status">Модуль в разработке. Здесь появится свой интерактивный тренажёр — так же, как конструктор очистных сооружений в модуле <a href="${MOD.tlazolteotl.path}">Тласольтеотль</a>.</p>
       <div class="kb-layout">
         <div class="kb-main">
           <section class="panel"><h2>Что будет в модуле</h2><ul>${m.will.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
-          <section class="panel"><h2>Почему ${esc(m.n)}</h2><p>${esc(m.legend)}</p></section>
+          <section class="panel"><h2>Почему ${esc(m.n)}</h2><p>${esc(m.legend)}</p><p><a href="#lore-${id}">Читать историю целиком →</a></p></section>
           <nav class="kb-seq">${prev ? `<a href="${modHref(prev)}">← ${esc(prev.n)}</a>` : '<span></span>'}${next ? `<a href="${modHref(next)}">${esc(next.n)} →</a>` : ''}</nav>
         </div>
         <aside class="kb-side">

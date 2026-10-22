@@ -26,3 +26,17 @@ test('ссылки на журналы и сообщества — https, уче
   for (const g of [...KB.JOURNALS, ...KB.COMMUNITIES]) for (const [t, d, u] of g.list) { assert.match(u, /^https:\/\//, t); assert.ok(d, t); }
   for (const b of KB.BOOKS) for (const [a, t, pub] of b.list) assert.ok(a && t && pub, t);
 });
+
+test('у каждого модуля есть история божества с главами и источником', () => {
+  const vm = require('node:vm'), fs = require('node:fs');
+  const src = fs.readFileSync(require.resolve('../js/lore.js'), 'utf8');
+  const ctx = { document: { getElementById: () => ({ addEventListener() {} }) }, VIEW_RENDER: {} };
+  vm.runInNewContext(src + '\nthis.LORE = LORE;', ctx);
+  const { MODULES } = require('../js/modules.js');
+  for (const m of MODULES) {
+    const L = ctx.LORE[m.id];
+    assert.ok(L, 'нет истории для ' + m.id);
+    assert.ok(L.chapters.length >= 4 && L.chapters.every(c => c.t && c.p.length), m.id);
+    assert.ok(L.sources.some(([, u]) => u && u.startsWith('https://')), m.id);
+  }
+});

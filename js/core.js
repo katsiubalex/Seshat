@@ -50,10 +50,10 @@ const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloa
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
   hub: ['home', 'seshat', 'kb', 'about'],
-  tlazolteotl: ['overview', 'constructor', 'projects', 'kb', 'lore']
+  tlazolteotl: ['overview', 'constructor', 'projects', 'courses', 'kb', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
-for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'constructor', 'kb', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
+for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'constructor', 'courses', 'kb', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
 const VIEWS = PAGE_VIEWS[PAGE];
 const VIEW_RENDER = Object.create(null); // разделы, которые перерисовываются при открытии
 // адрес #… → [страница, раздел, параметр]
@@ -65,11 +65,13 @@ function parseView(h) {
   // нормативные документы живут в базах знаний модулей: документ открывается в текущем модуле, если относится к нему
   if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return [docOwner(m[1]), 'kb', 'd-' + m[1]];
   if (h === 'docs') return [docOwner(), 'kb', 'docs'];
+  // курсы — отдельный раздел модуля; старые адреса #kb-courses и #kb-k-… ведут туда же
+  if ((m = /^(?:course|kb-k)-([a-z]+-[a-z]+)$/.exec(h))) return [courseOwner(m[1]), 'courses', m[1]];
+  if (h === 'kb-courses') return [PAGE === 'hub' ? 'tlazolteotl' : PAGE, 'courses', null];
   if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) {
     // сооружения, процессы и показатели — база знаний Тласольтеотль, учебники — своего модуля, остальное — общие разделы Сешат
     const x = m[1];
     const owner = /^d-/.test(x) ? docOwner(x.slice(2)) : x === 'docs' ? docOwner()
-      : /^k-/.test(x) ? courseOwner(x.slice(2)) : x === 'courses' ? (PAGE === 'hub' ? 'tlazolteotl' : PAGE)
       : /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
       : x === 'books' && PAGE !== 'hub' ? PAGE // учебники — у каждого модуля свои
       : 'hub';

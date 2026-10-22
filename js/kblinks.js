@@ -132,13 +132,13 @@ const WL = (() => {
   SeshatKB.FUNDAMENTALS.forEach(f => ART.push({ href: ROOT + '#kb-f-' + f.id, type: 'f', belong: 'common', t: f.t, text: [f.lead, ...f.s.map(x => x[1])].join(' ') }));
   const CRS = (window.SeshatCourses || { C: [] }).C;
   const kindBelong = mods => { const k = [...new Set(mods.map(m => KIND_OF[m]))]; return k.length === 1 ? 'kind-' + k[0] : 'multi'; };
-  CRS.forEach(c => ART.push({ href: ROOT + MODS.find(m => m.id === c.mods[0]).path + '#kb-k-' + c.id, type: 'k', belong: kindBelong(c.mods), t: c.t, text: [c.lead, ...c.out, ...c.L.map(l => l[0] + '. ' + l[1])].join(' ') }));
+  CRS.forEach(c => ART.push({ href: ROOT + MODS.find(m => m.id === c.mods[0]).path + '#course-' + c.id, type: 'k', belong: kindBelong(c.mods), t: c.t, text: [c.lead, ...c.out, ...c.L.map(l => l[0] + '. ' + l[1])].join(' ') }));
   // в каких курсах статья — материал к уроку
   function coursePanel(href) {
     const h = norm(href), list = CRS.filter(c => c.L.some(l => l[2].some(x => norm(x.split('@')[0]) === h)));
     if (!list.length) return '';
     return `<section class="panel wl-back"><h2>В курсах</h2><ul class="wl-list">${list.map(c => { const ls = c.L.map((l, i) => l[2].some(x => norm(x.split('@')[0]) === h) ? i + 1 : 0).filter(Boolean);
-      return `<li>${chip('k', kindBelong(c.mods))}<a href="${ROOT + MODS.find(m => m.id === c.mods[0]).path}#kb-k-${c.id}">${esc(c.t)}</a> <small class="hint">урок ${ls.join(', ')}</small></li>`; }).join('')}</ul></section>`;
+      return `<li>${chip('k', kindBelong(c.mods))}<a href="${ROOT + MODS.find(m => m.id === c.mods[0]).path}#course-${c.id}">${esc(c.t)}</a> <small class="hint">урок ${ls.join(', ')}</small></li>`; }).join('')}</ul></section>`;
   }
   GL.forEach(g => ART.push({ href: ROOT + '#kb-g-' + g.id, type: 'g', belong: glBelong(g), t: g.t, text: g.def }));
   SeshatKB.HUMANITIES.forEach(h => ART.push({ href: ROOT + '#kb-h-' + h.id, type: 'h', belong: 'common', t: h.t, text: [h.lead, ...h.s.map(x => x[1])].join(' ') }));

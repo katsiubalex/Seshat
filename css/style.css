@@ -1186,3 +1186,10 @@ a.wl.wl-d{font-variant-numeric:tabular-nums}
 .lesson-todo li{font-size:.85rem;color:var(--muted);border:1px dashed var(--line);border-radius:4px;padding:1px 6px}
 .lesson-ia li{font-size:.85rem;border-radius:4px;padding:1px 6px;background:color-mix(in srgb,var(--gold) 16%,var(--surface))}
 .lesson-ia li::before{content:"◆ ";color:var(--gold)}
+/* ссылки на учебники: куда ведёт ссылка */
+.kb-find{display:flex;flex-wrap:wrap;gap:.25rem .4rem;margin-top:.25rem}
+.kb-find a{font-size:.8rem;text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--ink);background:var(--surface)}
+.kb-find a b{font-weight:600;margin-right:.2rem;color:var(--accent)}
+.kb-find a.bk-read b{color:var(--tert)}.kb-find a.bk-buy b{color:var(--gold)}.kb-find a.bk-used b,.kb-find a.bk-lib b,.kb-find a.bk-ebs b{color:var(--muted)}
+.kb-find a:hover{border-color:var(--accent)}
+.bk-none{font-size:.8rem;color:var(--muted)}.bk-none a{border:0;padding:0;background:none;text-decoration:underline}

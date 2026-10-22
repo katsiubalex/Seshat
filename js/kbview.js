@@ -7,13 +7,15 @@
 const KB = SeshatKB;
 const kbUI = { q: '' };
 const KB_MODS = SeshatModules.MODULES, KB_MOD = KB_MODS.find(m => m.id === PAGE); // модуль этой страницы (на главной — нет)
-const booksOf = id => KB.MODULE_BOOKS[id] || [];
+// учебники модуля: подборка базы знаний + современные учебные издания (books.js), группы с одинаковым названием сливаются
+const BK = window.SeshatBooks || { LINKS: {}, EXTRA: {}, FUND: {}, key: () => '' };
+const booksOf = id => {
+  const out = (KB.MODULE_BOOKS[id] || []).map(g => ({ d: g.d, list: [...g.list] }));
+  (BK.EXTRA[id] || []).forEach(g => { const same = out.find(x => x.d === g.d); if (same) same.list.push(...g.list); else out.push({ d: g.d, list: [...g.list] }); });
+  return out;
+};
 const nBooks = id => booksOf(id).reduce((s, b) => s + b.list.length, 0);
-const COURSES = (window.SeshatCourses || { C: [] }).C, COURSE_BY = Object.fromEntries(COURSES.map(c => [c.id, c]));
-const LVL = ['Основы', 'Практика', 'Проектирование', 'Эксплуатация', 'Углублённый'];
-const coursesOf = id => COURSES.filter(c => c.mods.includes(id)).sort((a, b) => LVL.indexOf(a.lvl) - LVL.indexOf(b.lvl));
 const KB_SECTIONS = [
-  { id: 'courses', t: 'Курсы', d: 'Видеокурсы с интерактивными материалами: уроки, статьи базы знаний к каждому уроку и задания. Сейчас — программы и заготовки, видео готовятся.', n: () => coursesOf(PAGE).length, unit: 'курсов' },
   { id: 'units', t: 'Сооружения очистки', d: 'Как устроено и работает каждое из 40 сооружений, что оно удаляет и сколько стоит.', n: () => UNITS.length + KB.AUX.length },
   { id: 'proc', t: 'Физика и химия процессов', d: 'Осаждение, флотация, нитрификация, денитрификация, мембраны, обеззараживание — с уравнениями и ключевыми числами.', n: () => KB.PROCESSES.length },
   { id: 'ind', t: 'Показатели качества воды', d: 'Что означают БПК, ХПК, азот, фосфор и другие показатели, как их измеряют и почему они важны.', n: () => KB.INDICATORS.length },
@@ -29,8 +31,8 @@ const KB_SECTIONS = [
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
 const UNIVERSAL = ['glossary', 'index', 'fund', 'hum', 'journals', 'comm'];
 // разделы модулей: учебники есть у всех, у Тласольтеотль — ещё сооружения, процессы и показатели
-const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['courses', 'units', 'proc', 'ind', 'books', 'docs'] : ['courses', 'books', 'docs']]));
-const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + (s === 'books' ? nBooks(id) : s === 'docs' ? docsOf(id).length : s === 'courses' ? coursesOf(id).length : SEC[s].n()), 0);
+const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : ['books', 'docs']]));
+const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + (s === 'books' ? nBooks(id) : s === 'docs' ? docsOf(id).length : SEC[s].n()), 0);
 const PROC_BY = Object.fromEntries(KB.PROCESSES.map(p => [p.id, p]));
 const IND_BY = Object.fromEntries(KB.INDICATORS.map(p => [p.id, p]));
 const AUX_BY = Object.fromEntries(KB.AUX.map(p => [p.id, p]));
@@ -52,9 +54,15 @@ const procLink = id => PROC_BY[id] ? `<a class="kb-tag" href="#kb-p-${id}">${esc
 const unitLink = id => `<a class="kb-unit-link" href="#kb-u-${id}" style="--c:${STG[U[id].st].c}">${SeshatIcons.icon(id, 36)}<span>${esc(U[id].n)}${window.SeshatITS ? SeshatITS.badge(id) : ''}</span></a>`;
 const modLink = id => { const m = KB_MODS.find(x => x.id === id); return m ? `<a class="kb-tag kind-${m.kind}" href="${ROOT + m.path}#kb">${SeshatModules.glyph(m.id, 16)} ${esc(m.n)}</a>` : ''; };
 const ext = (t, u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a>`;
-// у каждого учебника — поиск в каталоге Российской государственной библиотеки и в Google Книгах
-const bookFind = (a, t) => { const q = encodeURIComponent(t + ' ' + a.split(',')[0]); return `<span class="kb-find">найти: <a href="https://search.rsl.ru/ru/search#q=${q}" target="_blank" rel="noopener">РГБ ↗</a> · <a href="https://www.google.com/search?tbm=bks&q=${q}" target="_blank" rel="noopener">Google Книги ↗</a></span>`; };
-const bookList = list => `<ol class="kb-books">${list.map(([a, t, pub]) => `<li><span class="kb-auth">${esc(a)}</span> <b>${esc(t)}</b>. <span class="kb-pub">${esc(pub)}</span> ${bookFind(a, t)}</li>`).join('')}</ol>`;
+// у каждого учебника — где его реально прочитать или купить; если нигде — поиск в каталоге РГБ
+const LINK_KIND = { read: 'Читать', buy: 'Купить', ebs: 'ЭБС', used: 'Букинист', lib: 'Библиотека' };
+const bookFind = (a, t, own) => {
+  const links = own || BK.LINKS[BK.key(a, t)];
+  if (links && links.length) return `<span class="kb-find">${links.map(([k, l, u]) => `<a class="bk-${k}" href="${esc(u)}" target="_blank" rel="noopener"><b>${LINK_KIND[k]}</b> ${esc(l)} ↗</a>`).join('')}</span>`;
+  const q = encodeURIComponent(t + ' ' + a.split(',')[0]);
+  return `<span class="kb-find"><span class="bk-none">Не переиздаётся, легальной копии нет — <a href="https://search.rsl.ru/ru/search#q=${q}" target="_blank" rel="noopener">найти в РГБ ↗</a></span></span>`;
+};
+const bookList = list => `<ol class="kb-books">${list.map(([a, t, pub, own]) => `<li><span class="kb-auth">${esc(a)}</span> <b>${esc(t)}</b>. <span class="kb-pub">${esc(pub)}</span> ${bookFind(a, t, own)}</li>`).join('')}</ol>`;
 
 /* ---------- главная базы знаний: на главной Сешат и в каждом модуле ---------- */
 const kbCard = (s, href) => `<a class="kb-card" href="${href || '#kb-' + s.id}"><b>${esc(s.t)}</b><span>${esc(s.d)}</span><small>${s.n()} ${s.unit || 'статей'}</small></a>`;
@@ -128,17 +136,13 @@ function kbSection(id) {
     body = `<div class="kb-grid kb-grid-sm">${KB.INDICATORS.map(p => `<a class="kb-card" href="#kb-i-${p.id}"><b>${esc(p.t)}</b><span>${esc(p.u)} · в городских стоках ${esc(p.typ)}</span></a>`).join('')}</div>`;
   } else if (id === 'books' && KB_MOD) {
     body = booksOf(PAGE).map(b => `<section class="panel kb-group"><h2>${esc(b.d)}</h2>${bookList(b.list)}</section>`).join('')
-      + `<p class="hint">Учебники по гидравлике, математике, химии воды и другим общим дисциплинам — в разделе <a href="${ROOT}#kb-fund">«Фундаментальные дисциплины»</a> базы знаний Сешат. Многие учебники переиздавались: ищите последнее издание.</p>`;
+      + `<p class="hint">Учебники по гидравлике, математике, химии воды и другим общим дисциплинам — в разделе <a href="${ROOT}#kb-fund">«Фундаментальные дисциплины»</a> базы знаний Сешат. Ссылки ведут в магазины, к издателям, в электронные библиотеки (по подписке) или к открытому тексту; классические книги, которые больше не издаются, — к букинистам.</p>`;
   } else if (id === 'books') { // на главной: учебники собраны по модулям
     body = `<p class="sub">Учебники теперь лежат в базах знаний модулей — у каждого своя дисциплина.</p><div class="kb-grid kb-mods">${KB_MODS.map(m => `<a class="kb-card kb-mod kind-${m.kind}" href="${ROOT + m.path}#kb-books">${SeshatModules.glyph(m.id, 26)}<b>${esc(m.n)}</b><span>${booksOf(m.id).map(b => esc(b.d)).join(' · ')}</span><small>${nBooks(m.id)} учебников</small></a>`).join('')}</div>`;
   } else if (id === 'docs' && KB_MOD) {
     body = `${DOC_LEGEND}<input id="docs-search" type="search" class="lib-search kb-search" placeholder="Найти: «НДТ», «ЗСО», «гидротехнические», «1430»…" aria-label="Поиск по документам модуля" value="${esc(kbUI.dq || '')}">
       <div id="docs-list">${docsListHTML(PAGE, kbUI.dq)}</div>
       <p class="hint docs-note">Перед использованием документа в работе проверьте его действующую редакцию: нормативные акты регулярно изменяются. Сроки действия и редакции проверены 22.10.2026.</p>`;
-  } else if (id === 'courses' && KB_MOD) {
-    const list = coursesOf(PAGE);
-    body = `<p class="hint">Курсы идут от основ к проектированию. Каждый урок — видео, текст с интерактивными схемами и подборка статей базы знаний. Курсы, общие для нескольких модулей, отмечены значками этих модулей.</p>`
-      + LVL.map(l => { const c = list.filter(x => x.lvl === l); return c.length ? `<section class="kb-group"><h2>${esc(l)}</h2><div class="kb-grid kb-grid-sm">${c.map(courseCard).join('')}</div></section>` : ''; }).join('');
   } else if (id === 'fund' || id === 'hum') {
     const list = id === 'fund' ? KB.FUNDAMENTALS : KB.HUMANITIES, p = id === 'fund' ? 'f' : 'h';
     body = `<div class="kb-grid kb-grid-sm">${list.map(x => `<a class="kb-card" href="#kb-${p}-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div>`;
@@ -148,44 +152,6 @@ function kbSection(id) {
   }
   const d = id === 'books' && KB_MOD ? `Учебники и справочники по дисциплинам модуля ${KB_MOD.n}.` : S.d;
   kbRoot().innerHTML = `${crumbs([S.t])}<header class="kb-head"><div><h1>${esc(S.t)}</h1><p class="sub">${esc(d)}</p></div></header>${body}`;
-}
-
-/* ---------- курсы ---------- */
-// название статьи по адресу — из корпуса вики-слоя (статьи, документы, термины)
-const kbTitle = href => {
-  const h = href.replace(/^.*?#/, '#'), a = typeof WL !== 'undefined' && WL.ART.find(x => x.href.replace(/^.*?#/, '#') === h);
-  return a ? { t: a.t, type: a.type, belong: a.belong } : { t: h, type: 'd', belong: 'common' };
-};
-const kbHref = h => /^#kb-(f|h|g)-/.test(h) ? ROOT + h : h;
-function courseCard(c) {
-  const other = c.mods.filter(m => m !== PAGE), n = c.L.length;
-  return `<a class="kb-card course-card" href="#kb-k-${c.id}"><span class="course-lvl">${esc(c.lvl)}</span><b>${esc(c.t)}</b><span>${esc(c.lead)}</span>
-    <small>${n} ${n < 5 ? 'урока' : 'уроков'} · заготовка${other.length ? ' · также в: ' + other.map(m => esc(KB_MODS.find(x => x.id === m).n)).join(', ') : ''}</small></a>`;
-}
-function lessonHTML(l, i) {
-  const [t, q, kb, todo, ia] = l;
-  const links = kb.map(x => { const [h, where] = x.split('@'), a = kbTitle(h);
-    return `<li><a href="${kbHref(h)}" class="wb-${a.belong}">${typeof WL !== 'undefined' ? WL.icon(a.type) : ''}${esc(a.t.split(' — ')[0])}</a>${where ? `<small>${esc(where)}</small>` : ''}</li>`; }).join('');
-  return `<li class="lesson" id="lesson-${i + 1}"><div class="lesson-n">${i + 1}</div><div class="lesson-b">
-    <h3>${esc(t)}</h3><p class="lesson-q">${esc(q)}</p>
-    <div class="lesson-video" aria-label="Видео урока появится позже"><span>▶</span><small>Видео в подготовке</small></div>
-    ${links ? `<h4>Читать в базе знаний</h4><ul class="lesson-links">${links}</ul>` : ''}
-    ${todo.length ? `<h4>Статьи, которые появятся</h4><ul class="lesson-todo">${todo.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-    ${ia.length ? `<h4>Интерактив</h4><ul class="lesson-ia">${ia.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-  </div></li>`;
-}
-function kbCourse(id) {
-  const c = COURSE_BY[id], mine = coursesOf(PAGE), i = mine.indexOf(c);
-  const head = `${crumbs([SEC.courses.t, '#kb-courses'], [c.t])}<header class="kb-ahead"><div><span class="gp-stage">Курс · ${esc(c.lvl)} · ${c.L.length} уроков</span><h1>${esc(c.t)}</h1><p class="kb-lead">${esc(c.lead)}</p></div></header>`;
-  const main = `<section class="panel"><h2>После курса вы сможете</h2><ul>${c.out.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
-    <section class="panel"><h2>Программа</h2><ol class="lessons">${c.L.map(lessonHTML).join('')}</ol></section>
-    ${i >= 0 ? seq(mine, i, x => '#kb-k-' + x.id, x => x.t) : ''}`;
-  const pre = (c.pre || []).map(p => COURSE_BY[p]).filter(Boolean);
-  const nk = c.L.reduce((s, l) => s + l[2].length, 0), nt = c.L.reduce((s, l) => s + l[3].length, 0), ni = c.L.reduce((s, l) => s + l[4].length, 0);
-  const side = `<section class="panel course-status"><h2>Готовность</h2><dl class="gp-dl"><dt>Программа</dt><dd>готова</dd><dt>Видео</dt><dd>0 из ${c.L.length}</dd><dt>Статьи базы знаний</dt><dd>${nk}</dd><dt>Статьи в плане</dt><dd>${nt}</dd><dt>Интерактивы в плане</dt><dd>${ni}</dd></dl></section>
-    ${pre.length ? `<section class="panel"><h2>Перед курсом</h2><ul class="kb-links">${pre.map(p => `<li><a href="#kb-k-${p.id}">${esc(p.t)}</a> <span class="hint">— ${esc(KB_MODS.find(m => m.id === p.mods[0]).n)}</span></li>`).join('')}</ul></section>` : ''}
-    <section class="panel"><h2>Модули</h2><p class="kb-tags">${c.mods.map(modLink).join('')}</p></section>`;
-  kbRoot().innerHTML = article(head, main, side);
 }
 
 /* ---------- статьи ---------- */
@@ -256,7 +222,8 @@ function kbFund(id, hum) {
   const S = SEC[hum ? 'hum' : 'fund'];
   const head = `${crumbs([S.t, '#kb-' + S.id], [x.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(S.t)}</span><h1>${esc(x.t)}</h1><p class="kb-lead">${esc(x.lead)}</p></div></header>`;
   const main = `${x.f ? `<section class="panel"><h2>Ключевые формулы</h2><div class="kb-f">${x.f.map(v => `<code>${esc(v)}</code>`).join('')}</div></section>` : ''}${sections(x.s)}${seq(list, i, v => `#kb-${pre}-${v.id}`, v => v.t)}`;
-  const side = `${x.books.length ? `<section class="panel"><h2>${hum ? 'Почитать' : 'Учебники'}</h2>${bookList(x.books)}</section>` : ''}${x.mods ? `<section class="panel"><h2>Где пригодится</h2><p class="kb-tags">${x.mods.map(modLink).join('')}</p></section>` : ''}`;
+  const fb = hum ? [] : BK.FUND[x.id] || [];
+  const side = `${x.books.length ? `<section class="panel"><h2>${hum ? 'Почитать' : 'Учебники'}</h2>${bookList(x.books)}</section>` : ''}${fb.length ? `<section class="panel"><h2>Современные учебные издания</h2>${bookList(fb)}</section>` : ''}${x.mods ? `<section class="panel"><h2>Где пригодится</h2><p class="kb-tags">${x.mods.map(modLink).join('')}</p></section>` : ''}`;
   kbRoot().innerHTML = article(head, main, side);
 }
 
@@ -279,7 +246,6 @@ function renderKB(param) {
   if (a === 'f' && FUND_BY[b]) return kbFund(b);
   if (a === 'h' && HUM_BY[b]) return kbFund(b, true);
   if (a === 'd' && b && DOCS_BY_ID[b]) return kbDoc(b);
-  if (a === 'k' && COURSE_BY[b]) return kbCourse(b);
   if (!b && SEC[a]) return kbSection(a);
   kbHome();
 }

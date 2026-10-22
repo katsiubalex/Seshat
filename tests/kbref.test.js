@@ -76,3 +76,15 @@ test('курсы: ссылки уроков ведут на существующ
     }
   }
 });
+
+test('учебники: у каждой книги базы знаний есть запись о том, где её взять, ссылки корректны', () => {
+  const B = require('../js/books.js');
+  const all = [...KB.BOOKS.flatMap(g => g.list), ...Object.values(KB.MODULE_BOOKS).flatMap(gs => gs.flatMap(g => g.list)), ...KB.FUNDAMENTALS.flatMap(f => f.books), ...KB.HUMANITIES.flatMap(f => f.books)];
+  for (const [a, t] of all) assert.ok(B.LINKS[B.key(a, t)], 'нет записи о ссылках: ' + a + ' — ' + t);
+  const kinds = ['read', 'buy', 'ebs', 'used', 'lib'];
+  const check = l => { assert.ok(kinds.includes(l[0]) && l[1], l.join(' ')); assert.match(l[2], /^https?:\/\//, l[2]); assert.ok(!/twirpx|studmed|obuchalka|totalarch|elima|b-ok|zlib|dokumen\.pub/.test(l[2]), 'пиратский сайт: ' + l[2]); };
+  Object.values(B.LINKS).forEach(ls => ls.forEach(check));
+  [...Object.values(B.EXTRA).flatMap(gs => gs.flatMap(g => g.list)), ...Object.values(B.FUND).flat()].forEach(b => { assert.equal(b.length, 4, b[1]); b[3].forEach(check); });
+  for (const f of Object.keys(B.FUND)) assert.ok(KB.FUNDAMENTALS.some(x => x.id === f), f);
+  for (const m of Object.keys(B.EXTRA)) assert.ok(MODS.includes(m), m);
+});

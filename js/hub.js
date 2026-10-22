@@ -1,4 +1,4 @@
-// Главная страница экосистемы Сешат: водный цикл из модулей, страницы модулей, «О проекте».
+// Главная страница инженерной платформы Сешат: водный цикл из модулей, страницы модулей, «О проекте».
 
 const { MODULES, KIND, GROUPS, glyph } = SeshatModules;
 const MOD = Object.fromEntries(MODULES.map(m => [m.id, m]));
@@ -7,7 +7,7 @@ const modHref = m => m.path;
 /* ---------- меню: список модулей ---------- */
 // меню сгруппировано: водная инфраструктура по пути воды, затем основы и смежные области
 const NAV_ORDER = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'interior', 'cloacina', 'tlazolteotl'];
-const navItem = m => `<a class="nav-link nav-mod kind-${m.kind}" href="${modHref(m)}">${glyph(m.id, 20)}<span class="nav-t">${esc(m.n)}<small>${esc(m.d)}${m.ready ? '' : m.stub ? ' · заготовка' : ' · скоро'}</small></span></a>`;
+const navItem = m => `<a class="nav-link nav-mod kind-${m.kind}" href="${modHref(m)}">${glyph(m.id, 20)}<span class="nav-t">${esc(m.n)}<small>${esc(m.d)}${m.ready || m.note ? '' : m.stub ? ' · заготовка' : ' · скоро'}</small></span></a>`;
 document.getElementById('nav-modules').innerHTML = NAV_ORDER.map(id => navItem(MOD[id])).join('')
   + ['base', 'related'].map(g => `<span class="nav-sub">${esc(GROUPS[g])}</span>` + MODULES.filter(m => m.group === g).map(navItem).join('')).join('');
 
@@ -18,7 +18,7 @@ const ORDER = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'interior',
 function card(id) {
   const m = MOD[id], pos = CELL[id] ? `grid-column:${CELL[id][0]};grid-row:${CELL[id][1]}` : '';
   return `<a class="mod-card kind-${m.kind}${m.ready ? ' ready' : ''}" data-id="${id}" href="${modHref(m)}" style="${pos}">
-    ${glyph(id, 30)}<b>${esc(m.n)}</b><span>${esc(m.d)}</span><em>${m.ready ? 'открыть модуль' : m.stub ? (m.wip ? 'заготовка · название в работе' : 'заготовка') : 'в разработке'}</em></a>`;
+    ${glyph(id, 30)}<b>${esc(m.n)}</b><span>${esc(m.d)}</span><em>${m.ready ? 'открыть модуль' : m.note ? esc(m.note) : m.stub ? (m.wip ? 'заготовка · название в работе' : 'заготовка') : 'в разработке'}</em></a>`;
 }
 const groupSection = (g, lead) => `<section class="mod-group" aria-labelledby="grp-${g}"><div class="cluster-head"><h2 id="grp-${g}">${esc(GROUPS[g])}</h2><p>${lead}</p></div>
   <div class="mod-row">${MODULES.filter(m => m.group === g).map(m => card(m.id)).join('')}</div></section>`;
@@ -27,19 +27,19 @@ function renderHome() {
   document.getElementById('home-root').innerHTML = `
     <header class="home-head">
       <h1>Сешат</h1>
-      <p class="home-lead">Образовательная экосистема. Каждый модуль — отдельная дисциплина со своим тренажёром, базой знаний и учебниками.</p>
-      <div class="home-actions">${ready.map(m => `<a class="btn primary" href="${m.path}">Открыть ${esc(m.n)}</a>`).join('')}<a class="btn" href="#seshat" data-go="seshat">Спросить Сешат</a></div>
+      <p class="home-lead">Инженерная платформа водного хозяйства. Каждый модуль — отдельная дисциплина со своей базой знаний, курсами и расчётным конструктором.</p>
+      <div class="home-actions">${ready.map(m => `<a class="btn primary" href="${m.path}">Открыть «${esc(m.n)}»</a>`).join('')}<a class="btn" href="#seshat" data-go="seshat">Спросить Сешат</a></div>
     </header>
     <section class="cycle-wrap" aria-labelledby="cluster-water">
       <div class="cluster-head"><h2 id="cluster-water">Водная инфраструктура</h2><p>Девять модулей проходят весь путь воды: от дождевой тучи через водопровод и здания до очищенного стока, который возвращается в реку.</p></div>
       <div class="cycle" id="cycle">${ORDER.map(card).join('')}<svg class="cycle-lines" id="cycle-lines" aria-hidden="true"></svg></div>
       <ul class="cycle-legend">${['nature', 'supply', 'building', 'waste'].map(k => `<li class="kind-${k}"><i></i>${KIND[k]}</li>`).join('')}</ul>
     </section>
-    ${groupSection('base', 'Общая опора всех модулей: фундаментальные науки и основы водоснабжения и водоотведения.')}
+    ${groupSection('base', 'Общая опора всех модулей: фундаментальные науки, основы водоснабжения и водоотведения и гуманитарные аспекты — история, философия, этика и мифы о воде.')}
     ${groupSection('related', 'Смежные области, без которых водное хозяйство не работает. Пока это заготовки модулей.')}
     <section class="home-more">
       <a class="home-link" href="#kb" data-go="kb"><b>База знаний</b><span>Сооружения, процессы, показатели воды, учебники и нормативные документы модулей, журналы и сообщества.</span></a>
-      <a class="home-link" href="#about" data-go="about"><b>О проекте</b><span>Для кого экосистема, почему такие имена и как связаться с автором.</span></a>
+      <a class="home-link" href="#about" data-go="about"><b>О проекте</b><span>Для кого платформа, откуда название и как связаться с автором.</span></a>
     </section>`;
   requestAnimationFrame(drawCycle);
 }
@@ -64,9 +64,6 @@ function drawCycle() {
 }
 window.addEventListener('resize', () => { if (document.body.dataset.view === 'home') drawCycle(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (document.body.dataset.view === 'home') drawCycle(); });
-
-/* ---------- «О проекте»: имена всех модулей ---------- */
-document.getElementById('about-names').innerHTML = MODULES.filter(m => m.legend).map(m => `<div class="name-card kind-${m.kind}"><h3>${glyph(m.id, 22)} ${esc(m.n)}</h3><p class="name-sub">${esc(m.d)}</p><p>${esc(m.legend)}</p></div>`).join('');
 
 VIEW_RENDER.home = renderHome;
 startPage();

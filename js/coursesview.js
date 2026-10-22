@@ -3,7 +3,7 @@
 const COURSES = (window.SeshatCourses || { C: [] }).C, COURSE_BY = Object.fromEntries(COURSES.map(c => [c.id, c]));
 const LVL = ['Основы', 'Практика', 'Проектирование', 'Эксплуатация', 'Углублённый'];
 const coursesOf = id => COURSES.filter(c => c.mods.includes(id)).sort((a, b) => LVL.indexOf(a.lvl) - LVL.indexOf(b.lvl));
-const plural = (n, one, few, many) => { const a = n % 100, b = n % 10; return a > 10 && a < 20 ? many : b === 1 ? one : b > 1 && b < 5 ? few : many; };
+const crsPlural = (n, one, few, many) => { const a = n % 100, b = n % 10; return a > 10 && a < 20 ? many : b === 1 ? one : b > 1 && b < 5 ? few : many; };
 const crsRoot = () => document.getElementById('courses-root');
 const crsCrumbs = (...items) => {
   const path = [['Курсы', items.length ? '#courses' : null], ...items];
@@ -20,12 +20,12 @@ const modName = id => (KB_MODS.find(x => x.id === id) || {}).n || id;
 function courseCard(c) {
   const other = c.mods.filter(m => m !== PAGE), n = c.L.length;
   return `<a class="kb-card course-card" href="#course-${c.id}"><b>${esc(c.t)}</b><span>${esc(c.lead)}</span>
-    <small>${n} ${plural(n, 'урок', 'урока', 'уроков')} · заготовка${other.length ? ' · также в: ' + other.map(m => esc(modName(m))).join(', ') : ''}</small></a>`;
+    <small>${n} ${crsPlural(n, 'урок', 'урока', 'уроков')} · заготовка${other.length ? ' · также в: ' + other.map(m => esc(modName(m))).join(', ') : ''}</small></a>`;
 }
 function coursesHome() {
   const list = coursesOf(PAGE), n = list.reduce((s, c) => s + c.L.length, 0);
   crsRoot().innerHTML = `${crsCrumbs()}<header class="kb-head"><div><p class="lore-kicker">${esc(KB_MOD.n)} · ${esc(KB_MOD.d)}</p><h1>Курсы</h1>
-      <p class="sub">${list.length ? `${list.length} ${plural(list.length, 'курс', 'курса', 'курсов')}, ${n} ${plural(n, 'урок', 'урока', 'уроков')} — от основ к проектированию.` : ''} Каждый урок: видео, текст с интерактивными схемами и подборка статей <a href="#kb">базы знаний</a>. Сейчас готовы программы, видео в подготовке.</p></div></header>
+      <p class="sub">${list.length ? `${list.length} ${crsPlural(list.length, 'курс', 'курса', 'курсов')}, ${n} ${crsPlural(n, 'урок', 'урока', 'уроков')} — от основ к проектированию.` : ''} Каждый урок: видео, текст с интерактивными схемами и подборка статей <a href="#kb">базы знаний</a>. Сейчас готовы программы, видео в подготовке.</p></div></header>
     ${list.length ? '' : '<div class="empty">Курсы этого модуля ещё не разработаны: сначала определим его программу.</div>'}
     ${LVL.map(l => { const c = list.filter(x => x.lvl === l); return c.length ? `<section class="kb-group"><h2>${esc(l)}</h2><div class="kb-grid kb-grid-sm">${c.map(courseCard).join('')}</div></section>` : ''; }).join('')}`;
 }

@@ -29,7 +29,7 @@ test('ссылки на журналы и сообщества — https, уче
 
 test('у каждого модуля свои учебники; общие разделы — фундаментальные и гуманитарные', () => {
   const { MODULES } = require('../js/modules.js');
-  for (const m of MODULES.filter(x => !x.stub)) { // у модулей-заготовок учебники появятся позже
+  for (const m of MODULES.filter(x => !x.stub && x.id !== 'humanities')) { // у заготовок учебники появятся позже; у «Гуманитарных аспектов» книги — в статьях
     const groups = KB.MODULE_BOOKS[m.id];
     assert.ok(groups && groups.length, 'нет учебников у ' + m.id);
     for (const g of groups) { assert.ok(g.d && g.list.length, m.id); for (const [a, t, pub] of g.list) assert.ok(a && t && pub, m.id + ': ' + t); }
@@ -37,18 +37,21 @@ test('у каждого модуля свои учебники; общие ра�
   const ids = new Set(MODULES.map(m => m.id));
   for (const f of KB.FUNDAMENTALS) { assert.ok(f.t && f.lead && f.s.length && f.books.length, f.id); for (const m of f.mods) assert.ok(ids.has(m), f.id + ' → ' + m); }
   for (const h of KB.HUMANITIES) assert.ok(h.t && h.lead && h.s.length >= 2, h.id);
+  assert.ok(KB.HUMANITIES.some(h => h.books.length), 'у гуманитарных статей должны быть книги');
 });
 
-test('у каждого модуля есть история божества с главами и источником', () => {
-  const vm = require('node:vm'), fs = require('node:fs');
-  const src = fs.readFileSync(require.resolve('../js/lore.js'), 'utf8');
-  const ctx = { document: { getElementById: () => ({ addEventListener() {} }) }, VIEW_RENDER: {} };
-  vm.runInNewContext(src + '\nthis.LORE = LORE;', ctx);
+test('мифы о воде: главы, источник и созвучные модули', () => {
+  const My = require('../js/myths.js');
   const { MODULES } = require('../js/modules.js');
-  for (const m of MODULES.filter(x => !x.stub)) { // у заготовок пока нет божества и истории
-    const L = ctx.LORE[m.id];
-    assert.ok(L, 'нет истории для ' + m.id);
-    assert.ok(L.chapters.length >= 4 && L.chapters.every(c => c.t && c.p.length), m.id);
-    assert.ok(L.sources.some(([, u]) => u && u.startsWith('https://')), m.id);
+  const ids = new Set(MODULES.map(m => m.id));
+  for (const g of My.GODS) {
+    assert.ok(g.name && g.epithet && g.culture && g.legend, g.id);
+    assert.ok(g.chapters.length >= 4 && g.chapters.every(c => c.t && c.p.length), g.id);
+    assert.ok(g.sources.some(([, u]) => u && u.startsWith('https://')), g.id);
+    assert.ok(g.mods.length >= 1 && g.mods.every(([m, why]) => ids.has(m) && why), g.id);
   }
+  // у каждого модуля водной инфраструктуры, кроме внутренних систем, есть созвучный миф
+  for (const m of MODULES.filter(x => x.group === 'water' && x.id !== 'interior')) assert.ok(My.forModule(m.id).length, m.id);
+  // модули называются по предмету: в названиях нет имён богов
+  for (const m of MODULES) assert.ok(!My.GODS.some(g => m.n.includes(g.name)), m.n);
 });

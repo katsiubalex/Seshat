@@ -77,27 +77,29 @@ test('Сешат знает новые технологии и предлага�
   assert.ok(O.recommendSteps(ctx({ q: dairy.q, c: dairy.c })).steps.includes('uasb'));
 });
 
-test('Сешат знает, где идёт разговор: главная, Тласольтеотль, модуль в разработке', () => {
+test('Сешат знает, где идёт разговор: главная, очистка сточных вод, модуль в разработке', () => {
   const hub = O.greet(ctx({ page: 'hub' })), dev = O.greet(ctx({ page: 'enki' })), tz = O.greet(ctx({ page: 'tlazolteotl' }));
   assert.match(hub.text, /Водная инфраструктура/);
   assert.deepEqual(hub.options.map(o => o.id), O.HUB_MENU.map(o => o.id));
-  assert.match(dev.text, /модуле Энки/);
-  assert.ok(dev.options.some(o => o.id === 'lore:enki'));
-  assert.match(tz.text, /модуле Тласольтеотль/);
+  assert.match(dev.text, /модуле «Водозаборные сооружения»/);
+  assert.ok(dev.options.some(o => o.id === 'books:enki'));
+  assert.match(tz.text, /модуле «Очистка сточных вод»/);
 });
 
-test('вопросы об экосистеме, модулях, богах и базе знаний', () => {
+test('вопросы о платформе, модулях, мифах и базе знаний', () => {
   const h = ctx({ page: 'hub' });
   const r1 = O.local({ text: 'кто такая Ютурна?' }, h);
-  assert.match(r1.text, /богиня источников/); assert.equal(r1.action.page, 'juturna'); assert.equal(r1.action.hash, 'lore');
+  assert.match(r1.text, /богиня источников/); assert.equal(r1.action.page, 'humanities'); assert.equal(r1.action.hash, 'lore-juturna');
+  assert.match(r1.text, /«Сети водоснабжения»/); // созвучный модуль
   const r2 = O.local({ text: 'расскажи про водозабор' }, h);
-  assert.match(r2.text, /^Энки/); assert.equal(r2.action.page, 'enki');
+  assert.match(r2.text, /^Водозаборные сооружения/); assert.equal(r2.action.page, 'enki');
+  assert.equal(O.local({ text: 'кто такая Сешат?' }, h).action.hash, 'lore-seshat');
   assert.equal(O.local({ text: 'что такое гидравлика' }, h).action.hash, 'kb-f-hydraulics');
   assert.equal(O.local({ text: 'что такое БПК' }, h).action.hash, 'kb-i-bod');
   assert.equal(O.local({ text: 'философия воды' }, h).action.hash, 'kb-h-philosophy');
-  assert.match(O.local({ text: 'почему модули названы именами богов' }, h).text, /имя божества/);
-  assert.match(O.local({ text: 'что почитать?' }, ctx({ page: 'cloacina' })).text, /модуля Клоацина/);
-  assert.match(O.local({ text: 'с чего начать' }, h).text, /Тласольтеотль/);
+  assert.match(O.local({ text: 'почему модули названы именами богов' }, h).text, /Гуманитарные аспекты/);
+  assert.match(O.local({ text: 'что почитать?' }, ctx({ page: 'cloacina' })).text, /модуля «Водоотводящие сети»/);
+  assert.match(O.local({ text: 'с чего начать' }, h).text, /Очистка сточных вод/);
   assert.equal(O.local({ text: 'как работает МБР?' }, h).action.hash, 'kb-u-mbr');
   const mods = O.local({ id: 'modules' }, h);
   assert.equal(mods.options.length, 9);

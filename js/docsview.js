@@ -69,7 +69,7 @@ function docStatusHTML(d) {
 function docPageHTML(id, crumbsHtml) {
   const d = DOCS_BY_ID[id]; if (!d) return '';
   const t = docTone(d);
-  // кнопка «в конструктор» из других модулей ведёт в Тласольтеотль
+  // кнопка «в конструктор» из других модулей ведёт в модуль «Очистка сточных вод»
   const goHref = g => g === 'constructor' && PAGE !== 'tlazolteotl' ? `href="${pageUrl('tlazolteotl', 'constructor')}"` : `href="#${g}" data-go="${g}"`;
   return `<article class="doc-page">
     ${crumbsHtml}

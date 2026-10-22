@@ -1,8 +1,8 @@
 // База знаний. Общие разделы Сешат (фундаментальные дисциплины, гуманитарные аспекты, журналы, сообщества) — на главной,
-// разделы модулей — внутри модулей: у каждого модуля свои учебники, у Тласольтеотль ещё сооружения, процессы и показатели.
+// разделы модулей — внутри модулей: у каждого модуля свои учебники, у «Очистки сточных вод» ещё сооружения, процессы и показатели.
 // Адреса: #kb — главная базы знаний этой страницы, #kb-<раздел> — раздел,
-// #kb-u-<id> сооружение, #kb-p-<id> процесс, #kb-i-<id> показатель, #kb-a-<id> вспомогательное здание (Тласольтеотль),
-// #kb-f-<id> фундаментальная дисциплина, #kb-h-<id> гуманитарная статья (главная). Чужие разделы core.js открывает у владельца.
+// #kb-u-<id> сооружение, #kb-p-<id> процесс, #kb-i-<id> показатель, #kb-a-<id> вспомогательное здание (очистка сточных вод),
+// #kb-f-<id> фундаментальная дисциплина, #kb-h-<id> гуманитарная статья («Гуманитарные аспекты»). Чужие разделы core.js открывает у владельца.
 
 const KB = SeshatKB;
 const kbUI = { q: '' };
@@ -12,6 +12,7 @@ const BK = window.SeshatBooks || { LINKS: {}, EXTRA: {}, FUND: {}, key: () => ''
 const booksOf = id => {
   // у «Основ» учебники — из статей их дисциплин
   if (['fundamentals', 'basics'].includes(id)) return KB.FUNDAMENTALS.filter(f => f.home === id).map(f => ({ d: f.t, list: [...f.books, ...(BK.FUND[f.id] || [])] }));
+  if (id === 'humanities') return KB.HUMANITIES.filter(h => h.books.length).map(h => ({ d: h.t, list: [...h.books] }));
   const out = (KB.MODULE_BOOKS[id] || []).map(g => ({ d: g.d, list: [...g.list] }));
   (BK.EXTRA[id] || []).forEach(g => { const same = out.find(x => x.d === g.d); if (same) same.list.push(...g.list); else out.push({ d: g.d, list: [...g.list] }); });
   return out;
@@ -25,15 +26,16 @@ const KB_SECTIONS = [
   { id: 'docs', t: 'Нормативные документы', d: 'Законы, правила, своды правил, санитарные нормы и справочники НДТ, которые относятся к модулю. Белые — общие для всего кластера «Водная инфраструктура».', n: () => docsOf(PAGE).length, unit: 'документов' },
   { id: 'fund', t: 'Основы', d: 'Фундаментальные дисциплины (математика, химия, микробиология, геология) и основы водоснабжения и водоотведения (гидравлика, насосы) — опора всех модулей.', n: () => KB.FUNDAMENTALS.length },
   { id: 'hum', t: 'Человек и вода', d: 'Гуманитарные аспекты водопользования: антропология и философия воды, история санитарии, вода как общее благо, этика инженера.', n: () => KB.HUMANITIES.length },
+  { id: 'myth', t: 'Мифы о воде', d: 'Боги и герои древних культур, чья сфера созвучна модулям Сешат: история, образ, обряды и связь с инженерной дисциплиной.', n: () => (window.SeshatMyths ? SeshatMyths.GODS.length : 0) },
   { id: 'journals', t: 'Научные журналы', d: 'Российские и международные журналы, где публикуют исследования по воде.', n: () => KB.JOURNALS.reduce((s, b) => s + b.list.length, 0), unit: 'журналов' },
   { id: 'glossary', t: 'Глоссарий', d: 'Термины с определениями из законов, сводов правил и справочников НДТ — с номером статьи или пункта.', n: () => (window.SeshatGlossary ? SeshatGlossary.G.length : 0), unit: 'терминов' },
   { id: 'index', t: 'Указатель и поиск', d: 'Все статьи, термины и документы от А до Я и поиск по тексту всей базы знаний.', n: () => (typeof WL !== 'undefined' ? WL.ART.length : 0), unit: 'статей' },
   { id: 'comm', t: 'Профессиональные сообщества', d: 'Ассоциации и организации отрасли в России и мире: конференции, стандарты, обучение.', n: () => KB.COMMUNITIES.reduce((s, b) => s + b.list.length, 0), unit: 'организаций' }
 ];
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
-const UNIVERSAL = ['glossary', 'index', 'fund', 'hum', 'journals', 'comm'];
-// разделы модулей: учебники есть у всех, у Тласольтеотль — ещё сооружения, процессы и показатели
-const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : m.group === 'base' ? ['fund', 'books'] : ['books', 'docs']]));
+const UNIVERSAL = ['glossary', 'index', 'fund', 'hum', 'myth', 'journals', 'comm'];
+// разделы модулей: учебники есть у всех, у «Очистки сточных вод» — ещё сооружения, процессы и показатели
+const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : m.id === 'humanities' ? ['hum', 'myth', 'books'] : m.group === 'base' ? ['fund', 'books'] : ['books', 'docs']]));
 // раздел «Основы» внутри модуля «Основ» — его статьи
 const secOf = id => id === 'fund' && KB_MOD && KB_MOD.group === 'base' ? { id: 'fund', t: 'Статьи', d: 'Статьи по дисциплинам модуля: ключевые понятия, формулы и учебники.', n: () => fundOf(PAGE).length } : SEC[id];
 const fundOf = id => KB.FUNDAMENTALS.filter(f => f.home === id);
@@ -76,7 +78,7 @@ function kbHome() {
     ? `${crumbs()}<header class="kb-head"><div><p class="lore-kicker">${esc(KB_MOD.n)} · ${esc(KB_MOD.d)}</p><h1>База знаний модуля</h1>
         <p class="sub">Статьи и учебники по дисциплине модуля. Общие разделы — фундаментальные дисциплины, гуманитарные аспекты, журналы и сообщества — в <a href="${ROOT}#kb">базе знаний Сешат</a>.</p></div></header>`
     : `${crumbs()}<header class="kb-head"><div><h1>База знаний Сешат</h1>
-        <p class="sub">Общие разделы для всей экосистемы и базы знаний модулей: у каждого модуля — свои сооружения, процессы и учебники.</p></div></header>`;
+        <p class="sub">Общие разделы для всей платформы и базы знаний модулей: у каждого модуля — свои сооружения, процессы и учебники.</p></div></header>`;
   kbRoot().innerHTML = `${head}
     <input id="kb-search" type="search" class="lib-search kb-search" placeholder="${KB_MOD ? 'Найти в базе знаний модуля…' : 'Найти: «гидравлика», «нитрификация», «Остром», «мембран»…'}" aria-label="Поиск по базе знаний" value="${esc(kbUI.q)}">
     <div id="kb-results"></div>`;
@@ -93,7 +95,7 @@ function kbResults() {
       return;
     }
     const mine = `<section class="kb-group"><h2>Разделы модуля</h2><div class="kb-grid">${own.map(id => kbCard(secOf(id))).join('')}</div></section>`;
-    const related = (KB_MOD.kb || []).map(h => { const p = PROC_BY[h.replace('kb-p-', '')]; return p ? `<li><a href="#${h}">${esc(p.t)}</a> <span class="hint">— из базы знаний Тласольтеотль</span></li>` : ''; }).join('');
+    const related = (KB_MOD.kb || []).map(h => { const p = PROC_BY[h.replace('kb-p-', '')]; return p ? `<li><a href="#${h}">${esc(p.t)}</a> <span class="hint">— из базы знаний модуля «Очистка сточных вод»</span></li>` : ''; }).join('');
     const fund = KB.FUNDAMENTALS.filter(f => f.mods.includes(PAGE));
     const start = PAGE === 'tlazolteotl' ? `<section class="panel kb-start"><h2>С чего начать</h2><ul class="kb-links">
         <li><a href="#kb-p-biooxidation">Как бактерии очищают воду</a> — основа всей биологической очистки.</li>
@@ -153,6 +155,8 @@ function kbSection(id) {
       <p class="hint">Статьи общие для всех модулей и открываются в базе знаний Сешат. Новые статьи по дисциплинам модуля появятся по мере работы над курсами.</p>`;
   } else if (id === 'fund') {
     body = ['fundamentals', 'basics'].map(h => { const m = KB_MODS.find(x => x.id === h); return `<section class="kb-group"><h2><a href="${ROOT + m.path}">${esc(m.n)}</a></h2><div class="kb-grid kb-grid-sm">${fundOf(h).map(x => `<a class="kb-card" href="#kb-f-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div></section>`; }).join('');
+  } else if (id === 'myth') {
+    body = window.SeshatMyths ? `<div class="kb-grid kb-grid-sm">${SeshatMyths.GODS.map(g => `<a class="kb-card" href="#lore-${g.id}"><b>${esc(g.name)}</b><span>${esc(g.epithet)} · ${esc(g.culture)}</span><small>Созвучно: ${g.mods.map(([m]) => esc((KB_MODS.find(x => x.id === m) || {}).n || m)).join(', ')}</small></a>`).join('')}</div>` : '';
   } else if (id === 'hum') {
     const list = KB.HUMANITIES, p = 'h';
     body = `<div class="kb-grid kb-grid-sm">${list.map(x => `<a class="kb-card" href="#kb-${p}-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div>`;
@@ -185,12 +189,12 @@ function kbUnit(id) {
   const main = `<section class="panel"><h2>Как работает</h2><p>${esc(P.how || '')}</p></section>
     ${window.SeshatITS ? SeshatITS.section(id) : ''}
     ${P.params && P.params.length ? `<section class="panel"><h2>Типовые параметры</h2><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-    <section class="panel"><h2>Что удаляет</h2>${eff.length ? `<ul class="kb-eff">${eff.map(([k, v]) => `<li><span>${EFF_NAME[k] || esc(PARAMS.find(p => p.k === k)?.n || k)}</span><b>${v}%</b></li>`).join('')}</ul><p class="hint">Типовые эффективности, принятые в расчётах Тласольтеотль. В карточке сооружения на плане их можно изменить.</p>` : '<p>Химический состав воды почти не меняет: сооружение нужно для защиты оборудования, выравнивания режима или обеззараживания.</p>'}</section>
+    <section class="panel"><h2>Что удаляет</h2>${eff.length ? `<ul class="kb-eff">${eff.map(([k, v]) => `<li><span>${EFF_NAME[k] || esc(PARAMS.find(p => p.k === k)?.n || k)}</span><b>${v}%</b></li>`).join('')}</ul><p class="hint">Типовые эффективности, принятые в расчётах конструктора очистки. В карточке сооружения на плане их можно изменить.</p>` : '<p>Химический состав воды почти не меняет: сооружение нужно для защиты оборудования, выравнивания режима или обеззараживания.</p>'}</section>
     ${procs.length ? `<section class="panel"><h2>Какие процессы идут</h2><p class="kb-tags">${procs.map(procLink).join('')}</p></section>` : ''}
     ${seq(UNITS, i, x => '#kb-u-' + x.id, x => x.n)}`;
   const side = `<section class="panel"><h2>Затраты</h2><dl class="gp-dl"><dt>Электроэнергия</dt><dd>${fmt(u.en)} кВт·ч/м³</dd><dt>Капзатраты</dt><dd>≈ ${u.cx} млн ₽ на 10 000 м³/сут</dd>${u.cons ? `<dt>Расходники</dt><dd>${fmt(u.cons)} ₽/м³</dd>` : ''}</dl><p class="hint">Ориентиры для учебных расчётов.</p></section>
     ${inds.length ? `<section class="panel"><h2>Показатели</h2><ul class="kb-links">${inds.map(k => `<li><a href="#kb-i-${k}">${esc(IND_BY[k].t)}</a></li>`).join('')}</ul></section>` : ''}
-    <section class="panel"><h2>Попробовать</h2><p>Добавьте сооружение на план и посмотрите, как оно меняет воду и затраты.</p><button type="button" class="primary" data-kbadd="${id}">Добавить в Тласольтеотль</button></section>`;
+    <section class="panel"><h2>Попробовать</h2><p>Добавьте сооружение на план и посмотрите, как оно меняет воду и затраты.</p><button type="button" class="primary" data-kbadd="${id}">Добавить в конструктор</button></section>`;
   kbRoot().innerHTML = article(head, main, side);
 }
 function kbProc(id) {
@@ -218,7 +222,7 @@ function kbInd(id) {
   const main = `${sections([['Что это', p.what], ['Почему важно', p.why], ['Как снижают', p.how]])}${methodsHTML(p.id)}${seq(KB.INDICATORS, i, x => '#kb-i-' + x.id, x => x.t)}`;
   const side = `<section class="panel"><h2>Значения</h2><dl class="gp-dl"><dt>Городские стоки</dt><dd>${esc(p.typ)}</dd>${par ? `<dt>Ваши стоки</dt><dd>${fmt(iv)} ${esc(par.u)}</dd><dt>Ваш норматив</dt><dd>${nv == null || nv === '' ? 'не задан' : fmt(nv) + ' ' + esc(par.u)}</dd>` : ''}</dl>
       <p class="hint">Нормативы сброса — в документах <a href="#doc-pp1430">ПП № 1430</a> (НДТ) и <a href="#doc-pr296">приказе № 296</a> (рыбохозяйственные).</p></section>
-    ${par ? '<section class="panel"><h2>В Тласольтеотль</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;
+    ${par ? '<section class="panel"><h2>В конструкторе</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;
   kbRoot().innerHTML = article(head, main, side);
 }
 function kbAux(id) {

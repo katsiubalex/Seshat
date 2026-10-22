@@ -5,7 +5,7 @@
 
 const WL = (() => {
   const MODS = SeshatModules.MODULES, KIND_OF = Object.fromEntries(MODS.map(m => [m.id, m.kind]));
-  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
+  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', y: 'Миф о воде', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
   // тип статьи — значком (цвет занят принадлежностью)
   const ICON = {
     u: '<path d="M2 5h12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8.5c2-1 4 1 6 0s4-1 6 0"/>',
@@ -14,6 +14,7 @@ const WL = (() => {
     d: '<path d="M4 1.5h5.5L12.5 4.5v10h-8.5z"/><path d="M9.5 1.5v3h3M6.5 8.5h4M6.5 11h4"/>',
     f: '<path d="M2 3c2-1 4-1 6 .5 2-1.5 4-1.5 6-.5v10c-2-1-4-1-6 .5-2-1.5-4-1.5-6-.5z"/><path d="M8 3.5v10"/>',
     h: '<circle cx="8" cy="4.5" r="2.5"/><path d="M3 14c0-3 2.2-5 5-5s5 2 5 5"/>',
+    y: '<path d="M8 1.5l1.8 4 4.2.4-3.2 2.8 1 4.3L8 10.8 4.2 13l1-4.3L2 5.9l4.2-.4z"/>',
     m: '<path d="M8 1.5c2.5 3.5 4.5 6 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2.5 2-5 4.5-8.5z"/>',
     a: '<path d="M2 14.5h12M3.5 14.5V6l4.5-3.5L12.5 6v8.5"/><path d="M6.5 14.5v-4h3v4"/>',
     g: '<path d="M2.5 13l3-9 3 9M3.6 10h3.8"/><path d="M10 9.5h3.5M10 12.5h3.5"/>',
@@ -33,7 +34,7 @@ const WL = (() => {
   const T = []; // [регулярное выражение, адрес, тип, принадлежность, заголовок]
   const add = (phrases, href, type, belong, title) => phrases.forEach(ph => T.push({ src: pat(ph), len: ph.length, href, type, belong, title }));
 
-  // сооружения (база знаний Тласольтеотль — водоотведение)
+  // сооружения (база знаний модуля «Очистка сточных вод» — водоотведение)
   const U_SYN = {
     coarse: ['решётки грубой очистки'], screens: ['тонкие решётки', 'ступенчатые решётки'], drum: ['барабанные сита', 'барабанное сито'],
     sand: ['аэрируемые песколовки', 'аэрируемая песколовка'], sandv: ['тангенциальные песколовки', 'вихревые песколовки'], grease: ['жироуловитель', 'нефтеловушка'],
@@ -83,8 +84,9 @@ const WL = (() => {
   const GL = (window.SeshatGlossary || { G: [] }).G, DOC_BY = Object.fromEntries(SeshatDocs.DOCS.map(d => [d.id, d]));
   const glBelong = g => DOC_BY[g.src] ? docBelong(DOC_BY[g.src]) : 'common';
   GL.forEach(g => add([g.t.replace(/\s*\(.*?\)\s*/g, ' ').trim(), ...((g.t.match(/\(([А-ЯЁA-Z]{2,})\)/) || []).slice(1))], ROOT + '#kb-g-' + g.id, 'g', glBelong(g), g.t));
-  // модули
-  MODS.forEach(m => add(m.id === 'yu' ? ['Ю Великий'] : [m.n], ROOT + m.path, 'm', 'kind-' + m.kind, m.n + ' — ' + m.d));
+  // мифы о воде: имена богов и героев ведут к статьям «Гуманитарных аспектов» (модули называются по предмету — их названия не связываем, слишком частые слова)
+  const MY = window.SeshatMyths ? SeshatMyths.GODS : [];
+  MY.forEach(g => add(g.id === 'yu' ? ['Ю Великий', 'Великий Ю'] : [g.name], ROOT + 'humanities/#lore-' + g.id, 'y', 'common', g.name + ' — ' + g.epithet[0].toLowerCase() + g.epithet.slice(1)));
   // длинные термины проверяем раньше коротких
   T.sort((a, b) => b.len - a.len);
   const B = '(?<![а-яёa-z0-9₀-₉])', E = '(?![а-яёa-z0-9])';
@@ -142,6 +144,7 @@ const WL = (() => {
   }
   GL.forEach(g => ART.push({ href: ROOT + '#kb-g-' + g.id, type: 'g', belong: glBelong(g), t: g.t, text: g.def }));
   SeshatKB.HUMANITIES.forEach(h => ART.push({ href: ROOT + '#kb-h-' + h.id, type: 'h', belong: 'common', t: h.t, text: [h.lead, ...h.s.map(x => x[1])].join(' ') }));
+  MY.forEach(g => ART.push({ href: ROOT + 'humanities/#lore-' + g.id, type: 'y', belong: 'common', t: g.name, text: [g.legend, g.lead, ...g.chapters.flatMap(c => c.p)].join(' ') }));
   const termsFor = href => T.filter(t => norm(t.href) === norm(href));
   const backlinks = href => { const ts = termsFor(href); return ts.length ? ART.filter(a => norm(a.href) !== norm(href) && ts.some(t => t.re.test(a.text))) : []; };
   const chip = (type, belong) => `<span class="wl-type wb-${belong}" title="${TYPES[type]}">${icon(type)}${TYPES[type]}</span>`;

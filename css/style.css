@@ -1204,3 +1204,20 @@ body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-i
 .mod-group{margin-top:28px}
 .mod-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
 .mod-row .mod-card{min-height:118px}
+/* «Гуманитарные аспекты»: мифы о воде и созвучные модули */
+.myth-card{position:relative}
+.myth-card .myth-sym{color:var(--gold);line-height:0;margin-bottom:2px}
+.myth-card .myth-sym .art{width:44px;height:44px}
+.myth-card .myth-ep{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.myth-name p:first-of-type{color:var(--gold);line-height:0;margin:0 0 6px}
+.lore-crumbs{margin:0 0 12px}
+.lore-mods{padding:34px 36px 6px;border-bottom:1px solid var(--line);scroll-margin-top:12px}
+.lore-mods h2{font-family:var(--f-display);font-weight:500;font-size:clamp(22px,2.6vw,28px);text-transform:none;letter-spacing:0;margin:0 0 4px}
+.myth-mods{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.myth-mods li{display:grid;grid-template-columns:minmax(200px,280px) minmax(0,1fr);gap:14px;align-items:center;padding:10px 14px;border:1px solid color-mix(in srgb,var(--k) 35%,var(--line));border-left:4px solid var(--k);border-radius:10px;background:var(--surface)}
+.myth-mods a{display:flex;align-items:center;gap:10px;color:var(--k);text-decoration:none}
+.myth-mods a b{font-family:var(--f-display);font-weight:500;font-size:16px}
+.myth-mods span{font-size:14.5px;line-height:1.5}
+.lore-acts{display:flex;flex-direction:column;gap:8px}
+.lore-seq{padding:10px 36px 30px}
+@media (max-width:760px){.myth-mods li{grid-template-columns:minmax(0,1fr);gap:4px}.lore-mods,.lore-seq{padding-left:4px;padding-right:4px}}

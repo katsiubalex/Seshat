@@ -1,4 +1,4 @@
-// Общее ядро экосистемы Сешат: подключается на главной странице и на страницах модулей.
+// Общее ядро инженерной платформы Сешат: подключается на главной странице и на страницах модулей.
 // Справочники, мелкие помощники, библиотека пользователя, уведомления и маршрутизация между страницами.
 // Страница описывает себя атрибутами <body data-page="hub|tlazolteotl" data-root="путь к корню сайта">.
 
@@ -45,17 +45,20 @@ function toast(msg, action) {
 const PAGE = document.body.dataset.page || 'hub';
 const ROOT = document.body.dataset.root || '';
 // Какой странице принадлежит раздел. Ссылка на чужой раздел открывает нужную страницу.
-// Модули в разработке: у каждого своя страница с обзором и историей божества
+// Модули в разработке: у каждого своя страница с обзором, эскизом конструктора, курсами и базой знаний
 const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina'];
 // модули-заготовки: пока только «О модуле», курсы и база знаний
 const STUB_MODULES = ['interior', 'fundamentals', 'basics', 'economics', 'decentral', 'safety', 'digital', 'construction', 'environment'];
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
   hub: ['home', 'seshat', 'kb', 'about'],
-  tlazolteotl: ['overview', 'constructor', 'projects', 'courses', 'kb', 'lore']
+  tlazolteotl: ['overview', 'constructor', 'projects', 'courses', 'kb'],
+  // «Гуманитарные аспекты»: обзор, мифы о воде (#lore — список, #lore-<id> — статья), курсы и база знаний
+  humanities: ['overview', 'lore', 'courses', 'kb']
 };
-const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
-for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'constructor', 'courses', 'kb', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
+const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor', humanities: 'overview' };
+PAGE_PATH.humanities = 'humanities/';
+for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'constructor', 'courses', 'kb']; DEFAULT_VIEW[id] = 'overview'; }
 for (const id of STUB_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'courses', 'kb']; DEFAULT_VIEW[id] = 'overview'; }
 const VIEWS = PAGE_VIEWS[PAGE];
 const VIEW_RENDER = Object.create(null); // разделы, которые перерисовываются при открытии
@@ -72,20 +75,23 @@ function parseView(h) {
   if ((m = /^(?:course|kb-k)-([a-z]+-[a-z]+)$/.exec(h))) return [courseOwner(m[1]), 'courses', m[1]];
   if (h === 'kb-courses') return [PAGE === 'hub' ? 'tlazolteotl' : PAGE, 'courses', null];
   if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) {
-    // сооружения, процессы и показатели — база знаний Тласольтеотль, учебники — своего модуля, остальное — общие разделы Сешат
+    // сооружения, процессы и показатели — база знаний модуля «Очистка сточных вод», учебники — своего модуля, остальное — общие разделы Сешат
     const x = m[1];
     const owner = /^d-/.test(x) ? docOwner(x.slice(2)) : x === 'docs' ? (PAGE !== 'hub' ? PAGE : docOwner())
       : /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
+      : /^h-/.test(x) || ['hum', 'myth'].includes(x) ? 'humanities' // гуманитарные статьи и мифы — в «Гуманитарных аспектах»
       : (x === 'books' && PAGE !== 'hub') || (x === 'fund' && ['fundamentals', 'basics'].includes(PAGE)) ? PAGE // учебники — у каждого модуля свои; статьи «Основ» — у своих модулей
       : 'hub';
     return [owner, 'kb', m[1]];
   }
   if ((m = /^m-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], DEFAULT_VIEW[m[1]], null];
-  if ((m = /^lore-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], 'lore', null];
+  // мифы о воде живут в «Гуманитарных аспектах»: #lore — все мифы, #lore-<id> — статья (старый адрес #lore модулей ведёт к списку)
+  if ((m = /^lore-([a-z]+)$/.exec(h))) return ['humanities', 'lore', m[1]];
+  if (h === 'lore') return ['humanities', 'lore', null];
   for (const [p, list] of Object.entries(PAGE_VIEWS)) if (list.includes(h)) return [p, h, null];
   return [PAGE, DEFAULT_VIEW[PAGE], null];
 }
-// В каком модуле открыть нормативный документ: в текущем, если документ к нему относится, иначе — в Тласольтеотль или первом подходящем
+// В каком модуле открыть нормативный документ: в текущем, если документ к нему относится, иначе — в «Очистке сточных вод» или первом подходящем
 const ALL_MODULES = [...DEV_MODULES, 'tlazolteotl', 'interior']; // кластер «Водная инфраструктура»
 function docOwner(id) {
   const d = id && window.SeshatDocs && SeshatDocs.DOCS.find(x => x.id === id);
@@ -100,8 +106,8 @@ function courseOwner(id) {
   return c.mods.includes(PAGE) ? PAGE : c.mods[0];
 }
 const pageUrl = (page, hash) => {
-  const [, view] = parseView(hash || '');
-  return ROOT + PAGE_PATH[page] + (hash && !/^(m|lore)-/.test(hash) ? '#' + hash : view === 'lore' ? '#lore' : '');
+  const [, view, param] = parseView(hash || '');
+  return ROOT + PAGE_PATH[page] + (view === 'lore' ? (param ? '#lore-' + param : '#lore') : hash && !/^m-/.test(hash) ? '#' + hash : '');
 };
 function showView(h) {
   const [page, view, param] = parseView(h);

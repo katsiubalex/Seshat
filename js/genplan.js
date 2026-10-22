@@ -3,6 +3,8 @@
 // врезают в трубы из каталога, делают параллельные линии. Использует состояние и функции app.js и projects.js.
 
 const gpUI = { sel: null, edge: null, aux: null, pick: null, cam: null, layer: 'plan', qp: 'bod', mode: 'plan', drawer: null, sheet: false, pane: 'pfd' };
+// история правок схемы: отменить и вернуть
+const HIST = { undo: [], redo: [], cur: null, skip: false };
 const SVGNS = 'http://www.w3.org/2000/svg';
 const n1 = v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 });
 const n0 = v => Math.round(v).toLocaleString('ru-RU');
@@ -236,10 +238,7 @@ let gpView = null; // то, что сейчас нарисовано: нужно
 function renderPlan(sim, eco) {
   const steps = SeshatGraph.norm(state.steps), canvas = document.getElementById('gp-canvas');
   renderPlanTools(steps);
-  if (!steps.length) {
-    canvas.innerHTML = '<div class="plan-empty"><b>Площадка пуста</b><span>Нажмите на технологию в каталоге внизу, чтобы узнать, что она делает, и поставить её на план. Можно и сразу перетащить. Обычно станция начинается с решёток и песколовок.</span></div>';
-    gpView = null; return null;
-  }
+  if (!steps.length) { canvas.innerHTML = startSteps(); gpView = null; return null; }
   sim.src = SeshatGraph.flows(steps).src;
   const r = canvas.getBoundingClientRect();
   const L = SeshatPlan.layout(state.q, steps, { aspect: r.width && r.height ? r.width / r.height : 1.6 });
@@ -279,6 +278,8 @@ function renderPlan(sim, eco) {
 }
 function renderPlanTools(steps) {
   const positioned = steps.some(s => s.x != null);
+  const hist = `<div class="seg" role="group" aria-label="История правок"><button type="button" data-hist="undo" title="Отменить (Ctrl+Z)" aria-label="Отменить" ${HIST.undo.length ? '' : 'disabled'}>↶</button><button type="button" data-hist="redo" title="Вернуть (Ctrl+Shift+Z)" aria-label="Вернуть" ${HIST.redo.length ? '' : 'disabled'}>↷</button></div>`;
+  if (!steps.length) { document.getElementById('plan-tools').innerHTML = `<span class="pt-space"></span>${hist}`; return; }
   const layers = [['plan', 'План'], ['quality', 'Качество'], ['cost', 'Затраты'], ['energy', 'Энергия']];
   const legend = gpUI.layer === 'quality'
     ? `<div class="seg seg-sm" role="group" aria-label="Показатель">${QP.map(([k, n]) => `<button type="button" data-qp="${k}" aria-pressed="${gpUI.qp === k}">${n}</button>`).join('')}</div>
@@ -291,6 +292,7 @@ function renderPlanTools(steps) {
     ${legend}
     <span class="pt-space"></span>
     ${positioned ? '<button type="button" data-gpact="auto">Расставить заново</button>' : ''}
+    ${hist}
     <div class="seg" role="group" aria-label="Масштаб"><button type="button" data-zoom="in" aria-label="Приблизить">+</button><button type="button" data-zoom="out" aria-label="Отдалить">−</button><button type="button" data-zoom="fit" aria-label="Показать всё">⤢</button></div>`;
 }
 
@@ -303,12 +305,22 @@ function renderHud(sim, eco, L) {
   const scheme = refItem('scheme', state.ref.scheme), dirty = typeof isDirty === 'function' && scheme && isDirty('scheme');
   document.getElementById('hud-scheme-name').textContent = (ui.draft.scheme ? ui.draft.scheme.name : currentName('scheme', 'Без названия')) + (dirty ? ' •' : '');
   const { list, pass } = normsState(sim.out);
-  document.getElementById('hud-norms').innerHTML = list.length
-    ? `<span class="hud-score ${pass === list.length ? 'ok' : 'bad'}">${pass} из ${list.length}</span>` + list.map(p => {
-      const v = sim.out[p.k], n = state.norm[p.k], ok = v <= n;
-      return `<button type="button" class="hud-chip ${ok ? 'ok' : 'bad'}" data-pane="res" title="${esc(p.n)}: на выходе ${fmt(v)}, норматив ${fmt(n)} ${p.u}">${SHORT[p.k]} <b>${fmt(v)}</b>${ok ? '' : ` <small>×${fmt(v / n)}</small>`}</button>`;
-    }).join('')
-    : '<button type="button" class="hud-chip" data-open="drw-out">Нормативы не заданы</button>';
+  const box = document.getElementById('hud-norms'), pe = document.getElementById('pop-norms'), open = pe ? !pe.hidden : false;
+  if (!list.length) box.innerHTML = '<button type="button" class="hud-chip" data-open="drw-out">Нормативы не заданы</button>';
+  else {
+    const all = pass === list.length, empty = !state.steps.length;
+    // сначала то, что не в норме: так видно, над чем работать
+    const rows = list.map(p => ({ p, v: sim.out[p.k], n: state.norm[p.k] })).map(r => ({ ...r, ok: r.v <= r.n })).sort((a, b) => a.ok - b.ok || (b.v / b.n) - (a.v / a.n));
+    box.innerHTML = `<button type="button" class="hud-prog ${all ? 'ok' : 'bad'}" id="btn-norms" aria-expanded="${open}" aria-controls="pop-norms">
+        <span class="hud-prog-t"><b>${pass} из ${list.length}</b> в норме</span>
+        <span class="hud-prog-bar" aria-hidden="true">${rows.map(r => `<i class="${r.ok ? 'ok' : 'bad'}"></i>`).join('')}</span><span aria-hidden="true">▾</span></button>
+      <div class="pop pop-norms" id="pop-norms" ${open ? '' : 'hidden'}>
+        <p class="pop-h">${empty ? 'Схема пуста: на выпуске — исходные стоки.' : all ? 'Все нормативы выполнены.' : `Не в норме: ${list.length - pass}. Число «×» — во сколько раз превышен норматив.`}</p>
+        <table class="out-tbl"><thead><tr><th class="p">Показатель</th><th>выпуск</th><th>норма</th><th></th></tr></thead><tbody>
+        ${rows.map(r => `<tr><td class="p">${esc(r.p.n)}</td><td class="num">${fmt(r.v)}</td><td class="num">${fmt(r.n)}</td><td><span class="pill ${r.ok ? 'ok' : 'bad'}">${r.ok ? 'в норме' : '×' + fmt(r.v / r.n)}</span></td></tr>`).join('')}</tbody></table>
+        <p class="pop-acts"><button type="button" data-open="drw-out">Сменить нормативы</button><button type="button" data-pane="res">Очистка по ступеням</button></p>
+      </div>`;
+  }
   const area = L ? `<span title="Площадь участка"><b>${n1(L.area.site / 1e4)}</b> га</span>` : '';
   document.getElementById('hud-money').innerHTML = `
     <span title="Капитальные затраты"><b>${mln(eco.total.capex)}</b></span>
@@ -368,13 +380,18 @@ function renderStudio() {
   const sim = lastSim; if (!sim) return;
   const L = gpUI.mode === 'plan' ? renderPlan(sim, eco) : SeshatPlan.layout(state.q, SeshatGraph.norm(state.steps));
   renderHud(sim, eco, L); renderEdges(sim); renderOutCheck(sim);
+  // аналитика появляется, когда есть что анализировать
+  const empty = !state.steps.length; document.getElementById('btn-sheet').hidden = empty;
+  if (empty && gpUI.sheet) setSheet(false);
   renderCard(L);
 }
 function renderCard(L) {
   const card = document.getElementById('gp-info');
   if (gpUI.pick || (gpUI.mode === 'plan' && L && (gpUI.sel != null || gpUI.edge || gpUI.aux))) { card.hidden = false; renderUnitCard(lastSim, eco, L); }
   else { card.hidden = true; card.innerHTML = ''; }
-  document.querySelectorAll('#library [data-add]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.add === gpUI.pick)));
+  document.getElementById('sd-main').classList.toggle('has-card', !card.hidden);
+  renderNext();
+  decorateShelf();
 }
 // Выбор сооружения, трубы или технологии из каталога не перерисовывает план:
 // иначе перезапускаются анимации и экран дёргается. Меняются только подсветка и карточка.
@@ -392,7 +409,7 @@ function setPick(id) { gpUI.pick = id; gpUI.sel = null; gpUI.aux = null; syncSel
 /* ---------- карточка сооружения или трубы ---------- */
 function gpName(i, steps) { return `${i + 1}. ${U[steps[i].u].n.split(' (')[0]}`; }
 function renderUnitCard(sim, ec, L) {
-  const box = document.getElementById('gp-info'), i = gpUI.sel, steps = L.steps, q = state.q;
+  const box = document.getElementById('gp-info'), i = gpUI.sel, steps = L ? L.steps : [], q = state.q;
   const close = '<button type="button" class="icon-btn card-close" data-gpnav="close" aria-label="Закрыть карточку">✕</button>';
   if (gpUI.pick) {
     const id = gpUI.pick, u = U[id], P = SeshatPlan.PLAN[id], st = STG[u.st], ed = gpUI.mode === 'plan' && gpUI.edge;
@@ -403,7 +420,7 @@ function renderUnitCard(sim, ec, L) {
       <div class="gp-head" style="--c:${st.c}">${SeshatIcons.icon(id, 56, u.n)}<div><span class="gp-stage">Каталог · ${esc(st.n)}</span><h2>${esc(u.n)}</h2></div></div>
       ${u.d ? `<p>${esc(u.d)}</p>` : ''}
       <div class="gp-acts gp-put">${where}</div>
-      <p class="hint">${ed ? 'Сооружение встанет в выбранную трубу между двумя сооружениями.' : 'Встанет в конец схемы. Можно и перетащить из каталога прямо в нужное место плана или на трубу.'}</p>
+      <p class="hint">${ed ? 'Сооружение встанет в выбранную трубу между двумя сооружениями.' : 'Встанет в схему по порядку стадий очистки. Можно и перетащить из каталога прямо в нужное место плана или на трубу.'}</p>
       ${P ? `<h3>Как работает</h3><p>${esc(P.how)}</p>` : ''}
       ${eff ? `<h3>Типично снижает</h3><ul>${eff}</ul>` : ''}
       ${P && P.params ? `<h3>Типовые параметры</h3><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
@@ -520,6 +537,14 @@ function addUnit(id, where) {
     const size = SeshatPlan.unitSize(id, state.q), fixed = withPositions(gpView.L.blocks);
     const out = G.place(fixed, { ...mk(id), x: Math.round((where.pt.x - size.w / 2) * 2) / 2, y: Math.round((where.pt.y - size.h / 2) * 2) / 2 });
     gpCommit(out, G.lastPos()[n], `${name}: стоит на плане. Подведите к нему трубу, чтобы оно заработало`);
+    return;
+  }
+  // без указанного места — по порядку стадий: перед первой ступенью более поздней стадии
+  const ORDER = ['mech', 'phys', 'bio', 'tert', 'dis'], k = ORDER.indexOf(U[id].st);
+  const idx = cur.findIndex(s => !s.idle && ORDER.indexOf(U[s.u].st) > k);
+  if (idx >= 0 && !cur.some(s => s.x != null)) {
+    const out = G.insertBefore(cur, idx, mk(id));
+    gpCommit(out, gpUI.mode === 'plan' ? idx : null, `${name}: встало перед «${U[cur[idx].u].n.split(' (')[0]}»`);
     return;
   }
   const out = G.append(cur, mk(id));
@@ -682,8 +707,8 @@ shelf.addEventListener('pointermove', ev => {
     document.body.appendChild(d.ghost);
   }
   d.ghost.style.transform = `translate(${ev.clientX + 12}px, ${ev.clientY + 12}px)`;
-  const over = gpView && gpUI.mode === 'plan' && document.elementFromPoint(ev.clientX, ev.clientY)?.closest('#gp-canvas');
-  d.edge = over ? nearestEdge(svgPoint(gpView.svg, ev), 16) : null;
+  const over = gpUI.mode === 'plan' && document.elementFromPoint(ev.clientX, ev.clientY)?.closest('#gp-canvas');
+  d.edge = over && gpView ? nearestEdge(svgPoint(gpView.svg, ev), 16) : null;
   d.over = !!over;
   gpCanvas.classList.toggle('drop-on', d.over);
   gpView && gpView.pipes.querySelectorAll('.gp-pipe.drop').forEach(x => x.classList.remove('drop'));
@@ -696,7 +721,7 @@ function shelfEnd(ev, cancel) {
   if (!d.active) { if (!cancel) setPick(d.id); return; }
   d.ghost.remove();
   if (cancel || !d.over) return;
-  addUnit(d.id, d.edge ? { edge: d.edge } : { pt: svgPoint(gpView.svg, ev) });
+  addUnit(d.id, d.edge ? { edge: d.edge } : gpView ? { pt: svgPoint(gpView.svg, ev) } : null);
 }
 shelf.addEventListener('pointerup', ev => shelfEnd(ev, false));
 shelf.addEventListener('pointercancel', ev => shelfEnd(ev, true));
@@ -780,6 +805,117 @@ document.getElementById('view-constructor').addEventListener('click', ev => {
 document.getElementById('btn-sheet').addEventListener('click', () => setSheet(!gpUI.sheet));
 document.getElementById('sheet-close').addEventListener('click', () => setSheet(false));
 document.getElementById('sheet-tabs').addEventListener('click', ev => { const b = ev.target.closest('[data-pane]'); if (b) setSheet(true, b.dataset.pane); });
+
+/* ---------- пустая площадка: три шага к первой схеме ---------- */
+function startSteps() {
+  const c = state.c, nm = currentName('norm', ''), { list } = normsState(state.c), first = UNITS.find(u => u.st === 'mech');
+  const step = (n, done, t, p, btn) => `<li class="ss-step${done ? ' done' : ''}"><span class="ss-n">${done ? '✓' : n}</span><div><b>${t}</b><p>${p}</p>${btn}</div></li>`;
+  return `<div class="start-steps"><h2>Соберите очистные за три шага</h2><ol>
+    ${step(1, true, 'Откуда стоки', `${n0(state.q)} м³/сут · БПК₅ ${fmt(c.bod)} · N-NH₄ ${fmt(c.nh4)} · P ${fmt(c.p)} мг/л`, '<button type="button" data-open="drw-in">Изменить стоки</button>')}
+    ${step(2, list.length > 0, 'Куда сброс', list.length ? `${esc(nm || 'Нормативы')} · ${list.length} показателей` : 'Нормативы водоёма не выбраны', `<button type="button" data-open="drw-out">${list.length ? 'Сменить нормативы' : 'Выбрать нормативы'}</button>`)}
+    ${step(3, false, 'Первое сооружение', 'Станция обычно начинается с решёток. Нажмите на технологию в каталоге внизу — увидите, что она делает, и поставите её на план. Можно и просто перетащить.', `<span class="ss-acts"><button type="button" class="primary" data-pick="${first.id}">${esc(first.n.split(' (')[0])}</button><button type="button" data-scheme-pop>Взять готовую схему</button></span>`)}
+  </ol></div>`;
+}
+document.getElementById('gp-canvas').addEventListener('click', ev => {
+  const o = ev.target.closest('.start-steps [data-open]'); if (o) { setDrawer(o.dataset.open); return; }
+  const k = ev.target.closest('.start-steps [data-pick]'); if (k) { showInShelf(k.dataset.pick); return; }
+  if (ev.target.closest('[data-scheme-pop]')) { ev.stopPropagation(); togglePop(true); }
+});
+
+/* ---------- каталог: подсказки Сешат и то, что уже стоит на плане ---------- */
+let NEXT = null; // текущий совет: { text, recs: [id], act }
+let nextHidden = null; // скрытый совет вернётся, когда схема изменится и совет станет другим
+function decorateShelf() {
+  const have = new Set(state.steps.map(s => s.u)), recs = new Set(NEXT && NEXT.recs || []);
+  document.querySelectorAll('#library [data-add]').forEach(b => {
+    const id = b.dataset.add;
+    b.setAttribute('aria-pressed', String(id === gpUI.pick));
+    b.classList.toggle('have', have.has(id)); b.classList.toggle('rec', recs.has(id));
+    b.dataset.tag = recs.has(id) ? 'совет' : have.has(id) ? 'на плане' : '';
+  });
+}
+new MutationObserver(decorateShelf).observe(document.getElementById('library'), { childList: true });
+// показать технологию в каталоге: открыть её стадию и карточку
+function showInShelf(id) {
+  libUI.q = ''; document.getElementById('lib-search').value = ''; libUI.tab = U[id].st; renderLibrary();
+  setPick(id);
+  const b = document.querySelector(`#library [data-add="${id}"]`); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+}
+
+/* ---------- следующий шаг: одна строка от Сешат прямо на плане ---------- */
+const DEFICIT_ORDER = ['ss', 'bod', 'cod', 'nh4', 'no2', 'no3', 'p', 'oil', 'fat'];
+const effScore = (u, k) => k === 'nh4' ? (u.eff.nit || u.eff.nh4 || 0) : k === 'no3' || k === 'no2' ? Math.max(u.eff.den || 0, u.eff[k] || 0) : k === 'p' ? Math.max(u.eff.bioP || 0, u.eff.p || 0) : (u.eff[k] || 0);
+function nextStep(sim) {
+  const steps = SeshatGraph.norm(state.steps);
+  if (!steps.length) return null;
+  const idle = steps.findIndex(s => s.idle);
+  if (idle >= 0) return { text: `${gpName(idle, steps)} не подключено. Потяните трубу от кружка ● соседнего сооружения к нему или включите его в конец схемы.`, act: { sel: idle, label: 'Показать' } };
+  const { list, pass } = normsState(sim.out);
+  if (!list.length) return { text: 'Нормативы водоёма не выбраны, поэтому неясно, достаточно ли очистки.', act: { open: 'drw-out', label: 'Выбрать нормативы' } };
+  if (pass === list.length) return { ok: true, text: 'Все нормативы выполнены. Посмотрите затраты на слое «Затраты» или сохраните схему.', act: { layer: 'cost', label: 'Слой «Затраты»' } };
+  const fails = list.filter(p => sim.out[p.k] > state.norm[p.k]).sort((a, b) => (DEFICIT_ORDER.indexOf(a.k) + 99) % 99 - (DEFICIT_ORDER.indexOf(b.k) + 99) % 99);
+  const p = fails[0], have = new Set(steps.map(s => s.u));
+  // сначала технологии, которые закрывают больше нарушений сразу, при равенстве — более дешёвые
+  const covers = u => fails.filter(f => effScore(u, f.k) >= 40).length;
+  // вторую биологию поверх первой не советуем: после неё нужна доочистка
+  const hasBio = steps.some(x => U[x.u].bio);
+  let recs = UNITS.filter(u => !have.has(u.id) && u.id !== 'ro' && !(hasBio && (u.bio || u.st === 'mech' || u.st === 'phys')) && effScore(u, p.k) >= 40).sort((a, b) => covers(b) - covers(a) || (a.cx || 0) - (b.cx || 0)).slice(0, 3).map(u => u.id);
+  if (!recs.length && !have.has('ro')) recs = ['ro'];
+  const more = fails.length > 1 ? ` Ещё не в норме: ${fails.slice(1).map(x => SHORT[x.k]).join(', ')}.` : '';
+  return { text: `${p.n}: на выпуске ${fmt(sim.out[p.k])} мг/л, это ×${fmt(sim.out[p.k] / state.norm[p.k])} от нормы.${more}`, recs };
+}
+function renderNext() {
+  const box = document.getElementById('gp-next'); if (!box) return;
+  NEXT = lastSim ? nextStep(lastSim) : null;
+  if (!NEXT || gpUI.mode !== 'plan' || NEXT.text === nextHidden) { box.hidden = true; return; }
+  box.hidden = false; box.className = 'gp-next' + (NEXT.ok ? ' ok' : '');
+  const recs = (NEXT.recs || []).map(id => `<button type="button" data-next-pick="${id}">${esc(U[id].n.split(' (')[0])}</button>`).join('');
+  box.innerHTML = `<button type="button" class="icon-btn gp-next-x" data-next-hide aria-label="Скрыть совет">✕</button><span class="gp-next-k">Сешат</span><p>${esc(NEXT.text)}</p>${recs ? `<div class="gp-next-acts"><span>Подойдёт:</span>${recs}</div>` : NEXT.act ? `<div class="gp-next-acts"><button type="button" data-next-act>${esc(NEXT.act.label)}</button></div>` : ''}`;
+}
+document.getElementById('gp-next').addEventListener('click', ev => {
+  if (ev.target.closest('[data-next-hide]')) { nextHidden = NEXT && NEXT.text; renderNext(); return; }
+  const p = ev.target.closest('[data-next-pick]'); if (p) { showInShelf(p.dataset.nextPick); return; }
+  if (!ev.target.closest('[data-next-act]') || !NEXT || !NEXT.act) return;
+  const a = NEXT.act;
+  if (a.open) setDrawer(a.open); else if (a.layer) { gpUI.layer = a.layer; renderStudio(); } else if (a.sel != null) gpSelect(a.sel);
+});
+
+/* ---------- отменить и вернуть ---------- */
+HIST.cur = JSON.stringify(SeshatGraph.norm(state.steps));
+AFTER_UPDATE.unshift(() => {
+  const s = JSON.stringify(state.steps);
+  if (s === HIST.cur) return;
+  if (!HIST.skip) { HIST.undo.push(HIST.cur); if (HIST.undo.length > 100) HIST.undo.shift(); HIST.redo = []; }
+  HIST.skip = false; HIST.cur = s;
+});
+function histGo(dir) {
+  const from = dir === 'undo' ? HIST.undo : HIST.redo, to = dir === 'undo' ? HIST.redo : HIST.undo;
+  if (!from.length) return;
+  to.push(HIST.cur); HIST.skip = true;
+  state.steps = JSON.parse(from.pop());
+  gpUI.sel = null; gpUI.edge = null; gpUI.aux = null; gpUI.pick = null;
+  update();
+  toast(dir === 'undo' ? 'Правка отменена' : 'Правка возвращена');
+}
+document.getElementById('plan-tools').addEventListener('click', ev => { const h = ev.target.closest('[data-hist]'); if (h) histGo(h.dataset.hist); });
+document.addEventListener('keydown', ev => {
+  if (document.body.dataset.view !== 'constructor' || !(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+  if (ev.target.closest && ev.target.closest('input,select,textarea,[contenteditable]')) return;
+  const k = ev.key.toLowerCase();
+  if ((k === 'z' || k === 'я') && !ev.shiftKey) { ev.preventDefault(); histGo('undo'); }
+  else if (((k === 'z' || k === 'я') && ev.shiftKey) || k === 'y' || k === 'н') { ev.preventDefault(); histGo('redo'); }
+});
+
+/* ---------- нормативы в верхней панели: раскрывающийся список ---------- */
+document.getElementById('hud-norms').addEventListener('click', ev => {
+  if (!ev.target.closest('#btn-norms')) return;
+  const pop = document.getElementById('pop-norms'), open = pop.hidden;
+  pop.hidden = !open; ev.target.closest('#btn-norms').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('pointerdown', ev => {
+  const pop = document.getElementById('pop-norms');
+  if (pop && !pop.hidden && !ev.target.closest('#hud-norms')) { pop.hidden = true; document.getElementById('btn-norms')?.setAttribute('aria-expanded', 'false'); }
+});
 
 /* ---------- запуск ---------- */
 try { const m = localStorage.getItem('seshat-mode'); if (m === 'list' || m === 'plan') gpUI.mode = m; } catch (e) {}

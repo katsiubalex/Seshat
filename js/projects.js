@@ -1,30 +1,7 @@
 // Раздел «Проекты»: общие для объекта стоки, нормативы и цены + варианты схем, их сравнение.
 // Использует общие функции и состояние конструктора из app.js. Проекты сохраняются сразу при любом изменении.
 
-/* ---------- навигация ---------- */
-const VIEWS = ['seshat', 'constructor', 'projects', 'kb', 'docs', 'about'];
-const VIEW_RENDER = { projects: () => renderProjects() }; // разделы, которые перерисовываются при открытии
-function showView(view) {
-  if (view === 'home') view = 'seshat'; // старые ссылки на главную
-  if (view === 'genplan') view = 'constructor'; // генплан теперь часть конструктора
-  let param = null;
-  const m = /^doc-([a-z0-9]+)$/.exec(view); // #doc-<id> — страница документа
-  if (m) { param = m[1]; view = 'docs'; }
-  const k = /^kb-([a-zA-Z0-9-]+)$/.exec(view); // #kb-… — раздел или статья базы знаний
-  if (k) { param = k[1]; view = 'kb'; }
-  if (!VIEWS.includes(view)) view = 'seshat';
-  for (const v of VIEWS) document.getElementById('view-' + v).hidden = v !== view;
-  document.querySelectorAll('.nav-link').forEach(a => {
-    if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-  });
-  document.body.dataset.view = view;
-  if (VIEW_RENDER[view]) VIEW_RENDER[view](param);
-  window.scrollTo(0, 0);
-  document.dispatchEvent(new CustomEvent('viewchange', { detail: view }));
-}
-function viewFromHash() { return (location.hash || '#seshat').slice(1); }
-window.addEventListener('hashchange', () => showView(viewFromHash()));
-function go(view) { if (viewFromHash() === view) showView(view); else location.hash = view; }
+VIEW_RENDER.projects = () => renderProjects();
 
 function renderNavCount() {
   const n = store.list('project').length;
@@ -370,4 +347,4 @@ state.projectOpen = projectOpenId() || store.list('project')[0]?.id || null;
 renderNavCount();
 renderCtx();
 // Библиотека загружена из файла — обновить список проектов.
-document.getElementById('file-import').addEventListener('change', () => setTimeout(() => { renderNavCount(); if (viewFromHash() === 'projects') renderProjects(); }, 50));
+document.addEventListener('libraryimport', () => { renderNavCount(); if (document.body.dataset.view === 'projects') renderProjects(); });

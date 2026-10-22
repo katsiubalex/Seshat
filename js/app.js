@@ -1,18 +1,5 @@
 // Интерфейс конструктора. Данные — в data.js, расчёт — в model.js, библиотека пользователя — в store.js.
-const { PARAMS, SHORT, STAGES, UNITS, PRESETS, NORMS } = SeshatData;
-const { fmt } = SeshatModel;
-const U = Object.fromEntries(UNITS.map(u => [u.id, u]));
-const STG = Object.fromEntries(STAGES.map(s => [s.id, s]));
-const STATE_KEY = 'seshat-state';
-const store = SeshatStore.createStore(SeshatStore.localAdapter('seshat-library'));
-const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
-const clone = o => JSON.parse(JSON.stringify(o));
-// Числа в полях: принимаем и точку, и запятую; показываем с запятой.
-function parseNum(s) { const t = String(s).replace(/\s/g, '').replace(',', '.'); if (t === '') return null; const v = Number(t); return isFinite(v) && v >= 0 ? v : NaN; }
-const showNum = v => v == null || v === '' ? '' : String(v).replace('.', ',');
-const NUM_ATTRS = 'type="text" inputmode="decimal" autocomplete="off" spellcheck="false"';
-function markInvalid(el, v) { if (Number.isNaN(v)) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid'); }
-function mk(id) { return { u: id, eff: { ...U[id].eff } }; }
+// Справочники и помощники (U, STG, esc, parseNum, toast, store…) — в core.js.
 
 /* ---------- три вида сохраняемых данных ---------- */
 // ref в state — какая запись сейчас открыта: 'b:<id>' — встроенный пример, 'u:<id>' — запись пользователя, null — без названия.
@@ -84,17 +71,6 @@ function loadState() {
 }
 function saveState() { try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {} }
 state = loadState();
-
-/* ---------- уведомления ---------- */
-let toastTimer;
-function toast(msg, action) {
-  const el = document.getElementById('toast');
-  el.innerHTML = `<span>${esc(msg)}</span>${action ? `<button type="button" id="toast-act">${esc(action.label)}</button>` : ''}`;
-  el.hidden = false;
-  if (action) document.getElementById('toast-act').onclick = () => { action.run(); el.hidden = true; };
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, action ? 7000 : 2600);
-}
 
 /* ---------- панель сохранения (одна на каждый вид данных) ---------- */
 // Состояния панели: открыт пример → «Создать»; открыта своя запись → «Создать», «Сохранить», «Удалить»;
@@ -381,18 +357,6 @@ const ECO_ITEMS = [
   { k: 'sludge', n: 'Вывоз осадка', s: 'Осадок', c: 'var(--mech)' },
   { k: 'repair', n: 'Ремонт и обслуживание', s: 'Ремонт', c: 'var(--muted)' }
 ];
-const rub = v => Math.round(v).toLocaleString('ru-RU');
-function mln(v) {
-  if (v >= 1000) return (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд ₽';
-  return v.toLocaleString('ru-RU', { maximumFractionDigits: v < 10 ? 1 : 0 }) + ' млн ₽';
-}
-function money(v) { // ₽ в сутки или в год, кратко
-  if (v >= 1e9) return (v / 1e9).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд ₽';
-  if (v >= 1e6) return (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млн ₽';
-  if (v >= 1e4) return (v / 1e3).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + ' тыс. ₽';
-  return rub(v) + ' ₽';
-}
-
 function renderPrices() {
   const box = document.getElementById('prices');
   box.innerHTML = Object.entries(SeshatData.ECON.prices).map(([k, p]) =>
@@ -474,22 +438,7 @@ document.getElementById('ndt-help').addEventListener('click', ev => {
   openItem('norm', 'b:' + b.dataset.ndt);
 });
 
-/* ---------- выгрузка и загрузка библиотеки ---------- */
-document.getElementById('btn-export').onclick=()=>{
- if(!store.count()){toast('В библиотеке пока ничего нет. Сохраните профиль, схему или нормативы.');return}
- const blob=new Blob([JSON.stringify(store.exportAll(),null,2)],{type:'application/json'});
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);
- a.download=`сешат-библиотека-${new Date().toISOString().slice(0,10)}.json`;
- document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-};
-document.getElementById('file-import').addEventListener('change',async ev=>{
- const f=ev.target.files[0];ev.target.value='';if(!f)return;
- try{
-  const r=store.importAll(JSON.parse(await f.text()));
-  toast(`Загружено: ${r.added} новых, ${r.updated} обновлено${r.skipped?`, ${r.skipped} пропущено с ошибками`:''}.`);
-  renderBars();
- }catch(e){toast(e instanceof SyntaxError?'Файл повреждён: это не JSON.':e.message)}
-});
+document.addEventListener('libraryimport', () => renderBars());
 
 Object.keys(KINDS).forEach(bindBar);
 renderInputs();renderPrices();renderLibrary();update();

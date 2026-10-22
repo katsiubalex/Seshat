@@ -34,7 +34,8 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 const SURFACES = [
   { log: 'dlg-log', opts: 'dlg-options', form: 'dlg-ask', input: 'dlg-input', visible: () => document.body.dataset.view === 'seshat' },
   { log: 'mini-log', opts: 'mini-options', form: 'mini-ask', input: 'mini-input', visible: () => !document.getElementById('mini').hidden }
-].map(s => ({ ...s, log: document.getElementById(s.log), opts: document.getElementById(s.opts), form: document.getElementById(s.form), input: document.getElementById(s.input) }));
+].map(s => ({ ...s, log: document.getElementById(s.log), opts: document.getElementById(s.opts), form: document.getElementById(s.form), input: document.getElementById(s.input) }))
+  .filter(s => s.log); // на странице модуля полного окна разговора нет — только мини-окно
 talk.history = [];      // [{ who: 'seshat'|'you', text }]
 talk.reply = null;      // последний ответ Сешат: варианты и действие
 talk.shown = 0;         // сколько символов последней реплики уже напечатано
@@ -94,6 +95,9 @@ function startTalk() {
 }
 function runAction(a) {
   if (a.type === 'link') { go(a.view); return; }
+  if (a.type === 'apply' && PAGE !== 'tlazolteotl') { // с главной: собрать схему на странице Тласольтеотль
+    setPending({ steps: a.steps }); go('constructor'); return;
+  }
   if (a.type === 'apply') {
     state.steps = a.steps.map(mk);
     state.ctx = null;
@@ -154,7 +158,7 @@ document.addEventListener('pointerdown', ev => {
 /* ---------- эмблема: перелетает между центром экрана диалога и правым верхним углом ---------- */
 const DOCK = 56;
 function placeOrb(animate) {
-  const big = document.body.dataset.view === 'seshat';
+  const big = document.body.dataset.view === 'seshat' && !!document.getElementById('orb-slot');
   const vw = document.documentElement.clientWidth;
   let x, y, size;
   if (big) {
@@ -175,6 +179,6 @@ let orbReady = false;
 document.addEventListener('viewchange', () => { placeOrb(orbReady); orbReady = true; });
 window.addEventListener('resize', () => placeOrb(false));
 // место под эмблему может сдвинуться (шрифты, длина диалога) — следим за ним
-if (window.ResizeObserver) new ResizeObserver(() => { if (document.body.dataset.view === 'seshat' && orbReady) placeOrb(false); }).observe(document.getElementById('view-seshat'));
+if (window.ResizeObserver && document.getElementById('view-seshat')) new ResizeObserver(() => { if (document.body.dataset.view === 'seshat' && orbReady) placeOrb(false); }).observe(document.getElementById('view-seshat'));
 window.addEventListener('scroll', () => { if (document.body.dataset.view === 'seshat') placeOrb(false); }, { passive: true });
 orb.addEventListener('click', () => { if (document.body.dataset.view === 'seshat') return; if (mini.hidden) openMini(); else closeMini(); });

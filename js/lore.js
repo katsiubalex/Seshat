@@ -198,7 +198,7 @@ function renderLore(id) {
   const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
   root.innerHTML = `
     <header class="lore-hero">
-      <div class="lore-orn" aria-hidden="true">${SeshatModules.glyph(id, 88)}</div>
+      <div class="lore-orn" aria-hidden="true">${window.SeshatArt ? SeshatArt.symbol(id, 96) : SeshatModules.glyph(id, 88)}</div>
       <p class="lore-kicker">${esc(L.epithet)}</p>
       <h1>${esc(L.name)}</h1>
       <p class="lore-native">${esc(L.native)}</p>
@@ -213,6 +213,7 @@ function renderLore(id) {
         ${c.q ? `<blockquote>${esc(c.q)}</blockquote>` : ''}
         ${c.p.map(x => `<p>${esc(x)}</p>`).join('')}
       </div>
+      ${window.SeshatArt && SeshatArt.lore(id, i) ? `<figure class="lore-fig" aria-hidden="true">${SeshatArt.lore(id, i)}</figure>` : ''}
     </section>`).join('')}
     <footer class="lore-foot">
       ${id === 'tlazolteotl' ? '<a class="btn primary" href="#constructor" data-go="constructor">К конструктору</a>' : '<a class="btn primary" href="#overview" data-go="overview">К модулю</a>'}

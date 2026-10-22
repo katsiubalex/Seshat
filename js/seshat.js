@@ -97,7 +97,7 @@ function runAction(a) {
   if (a.type === 'link') { go(a.view); return; }
   if (a.type === 'url') { if (a.page === PAGE) go(a.hash); else location.href = pageUrl(a.page, a.hash); return; }
   if (a.type === 'apply' && PAGE !== 'tlazolteotl') { // с главной: собрать схему на странице Тласольтеотль
-    setPending({ steps: a.steps }); go('constructor'); return;
+    setPending({ steps: a.steps }); location.href = pageUrl('tlazolteotl', 'constructor'); return;
   }
   if (a.type === 'apply') {
     state.steps = a.steps.map(mk);

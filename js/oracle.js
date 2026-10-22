@@ -283,6 +283,7 @@
     return { text, options: [{ id: 'review', label: 'Посмотри на мою текущую схему' }, back], action: { type: 'apply', steps, label: 'Собрать эту схему в конструкторе' } };
   }
   function topic(id, ctx) {
+    const tz = pageOf(ctx) === 'tlazolteotl';
     const T = {
       nitrogen: 'Азот приходит в основном как аммоний. Нитрификаторы в аэробной зоне окисляют его до нитратов, а денитрификаторы в аноксидной зоне превращают нитраты в газообразный азот. Им нужна органика: примерно 4 мг БПК₅ на 1 мг азота. Если её мало, откажитесь от первичных отстойников или добавьте внешний углерод — метанол на денитрифицирующих фильтрах.',
       phosphorus: 'Фосфор удаляют двумя путями. Биологически — в схеме A²/O: в анаэробной зоне бактерии выделяют фосфор, а в аэробной поглощают его с избытком и уходят с илом. Реагентно — солями алюминия или железа, которые связывают фосфаты в осадок. Для норматива ниже 1 мг/л обычно сочетают оба способа и ставят фильтры.',
@@ -291,7 +292,7 @@
       genplan: 'В конструкторе схема показана как план станции: размеры сооружений зависят от расхода, их можно двигать, соединять трубами и делать параллельные линии. Нажмите на сооружение, чтобы увидеть, как оно работает.'
     };
     const links = { cost: { view: 'projects', label: 'Сравнить варианты в проектах' }, genplan: { view: 'constructor', label: 'Открыть план' }, sludge: { view: 'constructor', label: 'Посмотреть на плане' } };
-    return { text: T[id], options: [back], action: links[id] ? { type: 'link', ...links[id] } : undefined };
+    return { text: T[id], options: [back], action: !links[id] ? undefined : tz ? { type: 'link', ...links[id] } : open('tlazolteotl', links[id].view, links[id].label) };
   }
   function bye(ctx) { return { text: 'Хорошо. Если понадобится помощь, возвращайтесь.', options: [back], action: pageOf(ctx) === 'tlazolteotl' ? { type: 'link', view: 'constructor', label: 'Открыть конструктор' } : undefined }; }
   function unknown(ctx) {

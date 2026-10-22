@@ -53,7 +53,7 @@ const PAGE_VIEWS = {
   tlazolteotl: ['overview', 'constructor', 'projects', 'kb', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
-for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'kb', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
+for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'constructor', 'kb', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
 const VIEWS = PAGE_VIEWS[PAGE];
 const VIEW_RENDER = Object.create(null); // разделы, которые перерисовываются при открытии
 // адрес #… → [страница, раздел, параметр]

@@ -922,3 +922,35 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .kb-tag .glyph{vertical-align:-3px;color:var(--k)}
 .kb-themed .kb-res small{color:var(--k)}
 #kb-results{display:flex;flex-direction:column;gap:18px}
+
+/* ---------- рисунки: символы божеств, иллюстрации к историям, эскизы конструкторов ---------- */
+:root{--water-line:#2D7FAE}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--water-line:#72BBE0}}
+:root[data-theme=dark]{--water-line:#72BBE0}
+.art{display:block;overflow:visible}
+.art .s{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.art .w{fill:none;stroke:var(--water-line);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.art .f,.art .f2{fill:color-mix(in srgb,currentColor 14%,transparent)}
+.art .d{fill:currentColor;stroke:none}
+.art .t{fill:currentColor;font:9px var(--f-body)}
+.art .t.big{font:600 16px var(--f-display)}
+.nav-link svg.nav-sym .s,.nav-link svg.nav-sym .w{stroke-width:1.5}
+.lore-orn .art{width:150px;height:150px}
+.lore-orn{transform:none;opacity:.32;right:20px;top:20px}
+.lore-ch{grid-template-columns:96px minmax(0,1fr) minmax(180px,260px);align-items:start}
+.lore-fig{margin:6px 0 0;padding:14px;border-radius:14px;color:var(--k);background:color-mix(in srgb,var(--k) 7%,var(--surface));border:1px solid color-mix(in srgb,var(--k) 25%,var(--line))}
+.lore-fig .art{width:100%;height:auto}
+@media (max-width:1100px){.lore-ch{grid-template-columns:96px minmax(0,1fr)}.lore-fig{grid-column:2;max-width:360px}}
+@media (max-width:860px){.lore-orn{transform:none;opacity:.2}.lore-orn .art{width:96px;height:96px}.lore-fig{grid-column:1;max-width:none}}
+.sketch-card{position:relative;margin:0;padding:16px;border-radius:14px;border:1.5px dashed color-mix(in srgb,var(--k) 50%,var(--line));background:repeating-linear-gradient(0deg,transparent 0 23px,color-mix(in srgb,var(--k) 6%,transparent) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,color-mix(in srgb,var(--k) 6%,transparent) 23px 24px),var(--surface);color:var(--k)}
+.sketch-card figcaption{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.5}
+.sketch-tag{position:absolute;top:10px;right:12px;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--k);border:1px solid var(--k);border-radius:20px;padding:2px 8px;background:var(--surface)}
+.sketch{display:block;width:100%;height:auto;font-family:var(--f-body)}
+.sketch .sk-p{fill:color-mix(in srgb,var(--surface) 80%,transparent);stroke:color-mix(in srgb,currentColor 45%,transparent);stroke-dasharray:5 4;stroke-width:1.2}
+.sketch .sk-chip{fill:color-mix(in srgb,currentColor 12%,transparent);stroke:none}
+.sketch .sk-t{fill:var(--ink);font-size:12px;font-weight:600}
+.sketch .sk-n{fill:var(--muted);font-size:11px}
+.sketch .sk-s{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.sketch .sk-w{fill:none;stroke:var(--water-line);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sketch .sk-f{fill:color-mix(in srgb,var(--water-line) 22%,transparent);stroke:none}
+.sketch .sk-node{fill:var(--surface);stroke:currentColor;stroke-width:2}

@@ -211,7 +211,7 @@ function renderKB(param) {
 document.getElementById('kb-root').addEventListener('input', ev => { if (ev.target.id === 'kb-search') { kbUI.q = ev.target.value; kbResults(); } });
 document.getElementById('kb-root').addEventListener('click', ev => {
   const b = ev.target.closest('[data-kbadd]'); if (!b) return;
-  addUnit(b.dataset.kbadd); go('constructor');
+  addUnit(b.dataset.kbadd); if (PAGE === 'tlazolteotl') go('constructor'); else location.href = pageUrl('tlazolteotl', 'constructor');
 });
 // база знаний модуля окрашена в цвет модуля
 if (KB_MOD) kbRoot().classList.add('kb-themed', 'kind-' + KB_MOD.kind);

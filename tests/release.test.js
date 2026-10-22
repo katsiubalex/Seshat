@@ -8,7 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const { version } = require('../package.json');
 // главная страница экосистемы и страницы модулей
-const PAGES = ['index.html', ...['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina', 'tlazolteotl'].map(m => m + '/index.html')];
+const PAGES = ['index.html', ...require('../js/modules.js').MODULES.map(m => m.id + '/index.html')];
 const refs = PAGES.flatMap(p => {
   const html = fs.readFileSync(path.join(root, p), 'utf8'), dir = path.dirname(p);
   return [...html.matchAll(/(?:href|src)="((?:\.\.\/)?(?:css|js|assets)\/[^"]+)"/g)].map(m => path.join(dir, m[1]));

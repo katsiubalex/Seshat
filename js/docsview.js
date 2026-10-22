@@ -7,13 +7,13 @@ const nf = (v, d = 2) => v == null ? '—' : v.toLocaleString('ru-RU', { maximum
    Белый — документ общий для всего кластера «Водная инфраструктура» (относится ко всем модулям).
    Цветной — документ только для части модулей: цвет их вида воды; если видов несколько — полосы нескольких цветов. */
 const DOC_MODS = SeshatModules.MODULES;
-const docMods = d => d.mods === 'all' ? DOC_MODS.map(m => m.id) : d.mods;
+const docMods = d => d.mods === 'all' ? DOC_MODS.filter(m => m.group === 'water').map(m => m.id) : d.mods; // «все» — кластер «Водная инфраструктура»
 const docKinds = d => d.mods === 'all' ? [] : [...new Set(DOC_MODS.filter(m => d.mods.includes(m.id)).map(m => m.kind))];
 const docsOf = id => SeshatDocs.DOCS.filter(d => docMods(d).includes(id));
 function docTone(d) {
   const k = docKinds(d);
   if (!k.length) return { cls: 'doc-all', style: '' };
-  return { cls: 'doc-kind' + (k.length === 1 ? ' kind-' + k[0] : ' doc-multi'), style: k.length > 1 ? `--stripes:${k.map((x, i) => `var(--${x === 'nature' ? 'tert' : x === 'supply' ? 'supply' : 'waste'}) ${i * 100 / k.length}% ${(i + 1) * 100 / k.length}%`).join(',')}` : '' };
+  return { cls: 'doc-kind' + (k.length === 1 ? ' kind-' + k[0] : ' doc-multi'), style: k.length > 1 ? `--stripes:${k.map((x, i) => `var(--${SeshatModules.KIND_VAR[x]}) ${i * 100 / k.length}% ${(i + 1) * 100 / k.length}%`).join(',')}` : '' };
 }
 const docModChips = d => d.mods === 'all'
   ? '<span class="doc-cluster">все модули кластера «Водная инфраструктура»</span>'
@@ -33,7 +33,7 @@ function docCard(d) {
 function docsListHTML(modId, q) {
   const qq = (q || '').trim().toLowerCase().replace(/ё/g, 'е');
   const list = docsOf(modId).filter(d => !qq || [d.short, d.title, d.type, d.about, d.num || '', ...d.points].join(' ').toLowerCase().replace(/ё/g, 'е').includes(qq));
-  if (!list.length) return `<div class="empty">Ничего не найдено по запросу «${esc(q)}».</div>`;
+  if (!list.length) return qq ? `<div class="empty">Ничего не найдено по запросу «${esc(q)}».</div>` : '<div class="empty">Документы модуля ещё подбираются.</div>';
   return DOC_GROUPS.map(g => { const l = list.filter(d => d.group === g); return l.length ? `<section class="kb-group"><h2>${esc(g)}</h2><div class="docs-grid">${l.map(docCard).join('')}</div></section>` : ''; }).join('');
 }
 const DOC_LEGEND = `<p class="doc-legend"><span class="doc-sw doc-all"></span>общий для всего кластера «Водная инфраструктура»

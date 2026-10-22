@@ -1193,3 +1193,14 @@ a.wl.wl-d{font-variant-numeric:tabular-nums}
 .kb-find a.bk-read b{color:var(--tert)}.kb-find a.bk-buy b{color:var(--gold)}.kb-find a.bk-used b,.kb-find a.bk-lib b,.kb-find a.bk-ebs b{color:var(--muted)}
 .kb-find a:hover{border-color:var(--accent)}
 .bk-none{font-size:.8rem;color:var(--muted)}.bk-none a{border:0;padding:0;background:none;text-decoration:underline}
+/* новые виды модулей: внутренние системы зданий, основы, смежные области */
+.kind-building{--k:var(--mech)} .kind-base{--k:var(--gold)} .kind-related{--k:var(--muted)}
+body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-ink:var(--on-k);--accent-soft:color-mix(in srgb,var(--k) 15%,var(--surface))}
+.name-card.kind-building h3,.name-card.kind-base h3,.name-card.kind-related h3{color:var(--k)}
+.doc-sw.kind-building{background:color-mix(in srgb,var(--k) 35%,var(--surface));border-color:var(--k)}
+.wb-kind-building{--wb:var(--mech)} .wb-kind-base{--wb:var(--gold)} .wb-kind-related{--wb:var(--muted)}
+.mod-wip{display:inline-block;margin-left:.5rem;font-size:.72rem;font-weight:600;letter-spacing:.03em;padding:2px 7px;border-radius:999px;border:1px dashed var(--k,var(--line));color:var(--k,var(--muted));vertical-align:middle}
+/* главная: «Основы» и «Смежные области» */
+.mod-group{margin-top:28px}
+.mod-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.mod-row .mod-card{min-height:118px}

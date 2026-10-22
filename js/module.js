@@ -6,10 +6,33 @@
   const m = MOD[PAGE];
   const cap = s => s[0].toUpperCase() + s.slice(1);
   // соседи по пути воды — переход сразу на их страницы
-  const PATH = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina', 'tlazolteotl'];
+  const PATH = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'interior', 'cloacina', 'tlazolteotl'];
   const href = x => ROOT + x.path;
 
+  // модуль-заготовка: что в нём будет, курсы и база знаний; конструктора и истории пока нет
+  function renderStub() {
+    const i = PATH.indexOf(m.id), prev = MOD[PATH[i - 1]], next = MOD[PATH[i + 1]];
+    const same = MODULES.filter(x => x.group === m.group && x.id !== m.id);
+    const nC = (window.SeshatCourses ? SeshatCourses.C.filter(c => c.mods.includes(m.id)).length : 0);
+    document.getElementById('overview-root').innerHTML = `
+      <article class="mod-page kind-${m.kind}">
+        <header class="mod-head">${glyph(m.id, 64)}<div><span class="gp-stage">${esc(SeshatModules.GROUPS[m.group])}${m.group === 'water' ? ' · ' + esc(KIND[m.kind]) : ''}</span><h1>${esc(m.n)}${m.wip ? `<span class="mod-wip">${esc(m.wip)}</span>` : ''}</h1><p class="mod-domain">${esc(m.d)}</p></div></header>
+        <div class="mod-status"><span>Модуль-заготовка. Программа и наполнение уточняются; ${nC ? `уже есть ${nC} ${nC < 5 ? 'курса' : 'курсов'} — в разделе <a href="#courses">«Курсы»</a>` : 'курсы появятся позже'}, база знаний собирается.</span></div>
+        <div class="kb-layout">
+          <div class="kb-main">
+            <section class="panel"><h2>Что будет в модуле</h2><ul>${m.will.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
+            ${i >= 0 ? `<nav class="kb-seq">${prev ? `<a href="${href(prev)}">← ${esc(prev.n)}</a>` : '<span></span>'}${next ? `<a href="${href(next)}">${esc(next.n)} →</a>` : ''}</nav>` : ''}
+          </div>
+          <aside class="kb-side">
+            <section class="panel"><h2>Дисциплины</h2><p class="kb-tags">${m.disc.map(d => `<span class="kb-tag">${esc(d)}</span>`).join('')}</p></section>
+            <section class="panel"><h2>Разделы</h2><ul class="kb-links"><li><a href="#courses">Курсы</a></li><li><a href="#kb">База знаний</a></li></ul></section>
+            ${m.group !== 'water' ? `<section class="panel"><h2>${esc(SeshatModules.GROUPS[m.group])}</h2><ul class="kb-links">${same.map(x => `<li><a href="${href(x)}">${esc(x.n)}</a></li>`).join('')}</ul></section>` : ''}
+          </aside>
+        </div>
+      </article>`;
+  }
   function renderOverview() {
+    if (m.stub) return renderStub();
     const i = PATH.indexOf(m.id), prev = MOD[PATH[i - 1]], next = MOD[PATH[i + 1]];
     const kb = (m.ready ? [['kb-units', 'Сооружения очистки'], ['kb-proc', 'Физика и химия процессов'], ['kb-ind', 'Показатели качества воды']] : []).concat([['kb-books', 'Учебники модуля']]).map(([h, t]) => `<li><a href="#${h}">${t}</a></li>`).join('')
       + (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
@@ -54,6 +77,6 @@
         <section class="panel"><h2>Что будет в конструкторе</h2><ul>${k[2].map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
       </article>`;
   }
-  if (!m.ready) VIEW_RENDER.constructor = renderConstructor;
-  if (DEV_MODULES.includes(PAGE)) startPage(); // у Тласольтеотль страницу запускает main.js
+  if (!m.ready && !m.stub) VIEW_RENDER.constructor = renderConstructor;
+  if (DEV_MODULES.includes(PAGE) || STUB_MODULES.includes(PAGE)) startPage(); // у Тласольтеотль страницу запускает main.js
 })();

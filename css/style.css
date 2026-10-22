@@ -893,3 +893,4 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mod-lore{font-size:14px;color:var(--k);font-weight:600;text-decoration:none;margin-top:2px}
 .mod-lore:hover{text-decoration:underline}
 .mod-page .panel p a{color:var(--accent)}
+.lore.kind-nature{--k:var(--tert)}.lore.kind-supply{--k:var(--accent)}.lore.kind-waste{--k:var(--mech)}

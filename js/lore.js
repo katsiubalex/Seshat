@@ -215,7 +215,7 @@ function renderLore(id) {
       </div>
     </section>`).join('')}
     <footer class="lore-foot">
-      ${id === 'tlazolteotl' ? (PAGE === 'tlazolteotl' ? '<a class="btn primary" href="#constructor" data-go="constructor">К конструктору</a>' : '<a class="btn primary" href="tlazolteotl/">Открыть модуль</a>') : `<a class="btn primary" href="#m-${id}" data-go="m-${id}">К модулю</a>`}
+      ${id === 'tlazolteotl' ? '<a class="btn primary" href="#constructor" data-go="constructor">К конструктору</a>' : '<a class="btn primary" href="#overview" data-go="overview">К модулю</a>'}
       <div><h3>Источники</h3><ul>${L.sources.map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a>` : esc(t)}</li>`).join('')}</ul>
       <p class="hint">Пересказ для учебных целей. Сведения об ацтекских божествах дошли до нас в основном через испанских хронистов XVI века, и толкования исследователей расходятся.</p></div>
     </footer>`;

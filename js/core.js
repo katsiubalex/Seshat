@@ -45,27 +45,34 @@ function toast(msg, action) {
 const PAGE = document.body.dataset.page || 'hub';
 const ROOT = document.body.dataset.root || '';
 // Какой странице принадлежит раздел. Ссылка на чужой раздел открывает нужную страницу.
+// Модули в разработке: у каждого своя страница с обзором и историей божества
+const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina'];
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
-  hub: ['home', 'seshat', 'kb', 'docs', 'about', 'module', 'lore'],
+  hub: ['home', 'seshat', 'kb', 'docs', 'about'],
   tlazolteotl: ['constructor', 'projects', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
+for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
 const VIEWS = PAGE_VIEWS[PAGE];
 const VIEW_RENDER = Object.create(null); // разделы, которые перерисовываются при открытии
 // адрес #… → [страница, раздел, параметр]
 function parseView(h) {
   if (!h) return [PAGE, DEFAULT_VIEW[PAGE], null];
   if (h === 'genplan') h = 'constructor';                       // генплан теперь часть конструктора
+  if (VIEWS.includes(h)) return [PAGE, h, null];                 // свои разделы страницы
   let m;
   if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return ['hub', 'docs', m[1]];
   if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) return ['hub', 'kb', m[1]];
-  if ((m = /^lore-([a-z]+)$/.exec(h))) return m[1] === 'tlazolteotl' ? ['tlazolteotl', 'lore', null] : ['hub', 'lore', m[1]];
-  if ((m = /^m-([a-z]+)$/.exec(h))) return m[1] === 'tlazolteotl' ? ['tlazolteotl', 'constructor', null] : ['hub', 'module', m[1]];
+  if ((m = /^m-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], DEFAULT_VIEW[m[1]], null];
+  if ((m = /^lore-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], 'lore', null];
   for (const [p, list] of Object.entries(PAGE_VIEWS)) if (list.includes(h)) return [p, h, null];
   return [PAGE, DEFAULT_VIEW[PAGE], null];
 }
-const pageUrl = (page, hash) => ROOT + PAGE_PATH[page] + (hash ? '#' + hash : '');
+const pageUrl = (page, hash) => {
+  const [, view] = parseView(hash || '');
+  return ROOT + PAGE_PATH[page] + (hash && !/^(m|lore)-/.test(hash) ? '#' + hash : view === 'lore' ? '#lore' : '');
+};
 function showView(h) {
   const [page, view, param] = parseView(h);
   if (page !== PAGE) { location.replace(pageUrl(page, h)); return; }
@@ -94,14 +101,14 @@ function takePending() {
 }
 
 /* ---------- выгрузка и загрузка библиотеки ---------- */
-document.getElementById('btn-export').onclick = () => {
+if (document.getElementById('btn-export')) document.getElementById('btn-export').onclick = () => {
   if (!store.count()) { toast('В библиотеке пока ничего нет. Сохраните профиль, схему или нормативы.'); return; }
   const blob = new Blob([JSON.stringify(store.exportAll(), null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `сешат-библиотека-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
-document.getElementById('file-import').addEventListener('change', async ev => {
+document.getElementById('file-import')?.addEventListener('change', async ev => {
   const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
   try {
     const r = store.importAll(JSON.parse(await f.text()));
@@ -118,7 +125,11 @@ function setTheme(t) {
   document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === cur)));
 }
 document.addEventListener('click', ev => { const b = ev.target.closest('[data-theme-set]'); if (b) setTheme(b.dataset.themeSet); });
-setTheme(document.documentElement.dataset.theme || 'auto');
+function storedTheme() { try { return localStorage.getItem('seshat-theme') || 'auto'; } catch (e) { return 'auto'; } }
+setTheme(storedTheme());
+// тему меняют только на главной Сешат; открытые страницы модулей подхватывают её сразу
+window.addEventListener('storage', ev => { if (ev.key === 'seshat-theme') setTheme(storedTheme()); });
+window.addEventListener('pageshow', () => setTheme(storedTheme()));
 
 /* ---------- запуск страницы ---------- */
 function startPage() {

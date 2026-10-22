@@ -2,21 +2,11 @@
 
 const { MODULES, KIND, glyph } = SeshatModules;
 const MOD = Object.fromEntries(MODULES.map(m => [m.id, m]));
-const modHref = m => m.ready ? m.path : '#m-' + m.id;
-const ABOUT = { tlaloc: 'о боге', hapi: 'о боге', yu: 'о легенде', enki: 'о боге', anahita: 'о богине', juturna: 'о богине', cloacina: 'о богине', tlazolteotl: 'о богине' };
-
-/* ---------- плашка модуля в меню: на странице модуля и его истории, ведёт к истории божества ---------- */
-function renderPlate() {
-  const box = document.getElementById('nav-plate'), v = document.body.dataset.view, id = document.body.dataset.param, m = MOD[id];
-  if (!m || (v !== 'module' && v !== 'lore')) { box.hidden = true; box.innerHTML = ''; return; }
-  box.hidden = false;
-  box.innerHTML = `<a class="nav-module kind-${m.kind}" href="#lore-${id}" ${v === 'lore' ? 'aria-current="page"' : ''} title="${esc(m.n)}: ${ABOUT[id]}">${glyph(id, 20)}<span><b>${esc(m.n)}</b><small>${esc(m.d)}</small><em>${ABOUT[id]} →</em></span></a>`;
-}
-document.addEventListener('viewchange', renderPlate);
+const modHref = m => m.path;
 
 /* ---------- меню: список модулей ---------- */
 document.getElementById('nav-modules').innerHTML = MODULES.map(m =>
-  `<a class="nav-link nav-mod kind-${m.kind}" href="${modHref(m)}" ${m.ready ? '' : `data-view="module" data-param="${m.id}"`}>${glyph(m.id, 20)}<span class="nav-t">${esc(m.n)}<small>${esc(m.d)}${m.ready ? '' : ' · скоро'}</small></span></a>`).join('');
+  `<a class="nav-link nav-mod kind-${m.kind}" href="${modHref(m)}">${glyph(m.id, 20)}<span class="nav-t">${esc(m.n)}<small>${esc(m.d)}${m.ready ? '' : ' · скоро'}</small></span></a>`).join('');
 
 /* ---------- главная: водный цикл ---------- */
 // место на поле 5 × 2: путь воды слева направо по верхнему ряду и обратно по нижнему
@@ -69,34 +59,8 @@ function drawCycle() {
 window.addEventListener('resize', () => { if (document.body.dataset.view === 'home') drawCycle(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (document.body.dataset.view === 'home') drawCycle(); });
 
-/* ---------- страница модуля в разработке ---------- */
-function renderModule(id) {
-  const m = MOD[id]; if (!m) { go('home'); return; }
-  const path = ['tlaloc', 'hapi', 'enki', 'anahita', 'juturna', 'cloacina', 'tlazolteotl', 'yu'];
-  const i = path.indexOf(id), prev = MOD[path[i - 1]], next = MOD[path[i + 1]];
-  const kb = (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
-  document.getElementById('module-root').innerHTML = `
-    <article class="mod-page kind-${m.kind}">
-      <a class="doc-back" href="#home">← Все модули</a>
-      <header class="mod-head">${glyph(id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])} · ${esc(m.culture)}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p><a class="mod-lore" href="#lore-${id}">${ABOUT[id][0].toUpperCase() + ABOUT[id].slice(1)} →</a></div></header>
-      <p class="mod-status">Модуль в разработке. Здесь появится свой интерактивный тренажёр — так же, как конструктор очистных сооружений в модуле <a href="${MOD.tlazolteotl.path}">Тласольтеотль</a>.</p>
-      <div class="kb-layout">
-        <div class="kb-main">
-          <section class="panel"><h2>Что будет в модуле</h2><ul>${m.will.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
-          <section class="panel"><h2>Почему ${esc(m.n)}</h2><p>${esc(m.legend)}</p><p><a href="#lore-${id}">Читать историю целиком →</a></p></section>
-          <nav class="kb-seq">${prev ? `<a href="${modHref(prev)}">← ${esc(prev.n)}</a>` : '<span></span>'}${next ? `<a href="${modHref(next)}">${esc(next.n)} →</a>` : ''}</nav>
-        </div>
-        <aside class="kb-side">
-          <section class="panel"><h2>Дисциплины</h2><p class="kb-tags">${m.disc.map(d => `<span class="kb-tag">${esc(d)}</span>`).join('')}</p></section>
-          <section class="panel"><h2>Уже сейчас</h2><ul class="kb-links">${kb}<li><a href="#kb-books">Учебники по дисциплинам</a></li><li><a href="#docs">Нормативные документы</a></li></ul></section>
-        </aside>
-      </div>
-    </article>`;
-}
-
 /* ---------- «О проекте»: имена всех модулей ---------- */
 document.getElementById('about-names').innerHTML = MODULES.map(m => `<div class="name-card kind-${m.kind}"><h3>${glyph(m.id, 22)} ${esc(m.n)}</h3><p class="name-sub">${esc(m.d)}</p><p>${esc(m.legend)}</p></div>`).join('');
 
 VIEW_RENDER.home = renderHome;
-VIEW_RENDER.module = renderModule;
 startPage();

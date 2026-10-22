@@ -1075,10 +1075,6 @@ a.its-pg::after{content:" ↗";font-size:.85em}
 /* ---------- нормативные документы в базах знаний модулей ----------
    белый — общий для кластера «Водная инфраструктура»; цвет — вид воды модулей, к которым документ относится */
 .doc-card,.doc-head{position:relative}
-.doc-card.doc-all{background:#FFFFFF;color:#1B1E22;border-color:#D6D6D1;box-shadow:0 1px 0 rgba(0,0,0,.04)}
-.doc-card.doc-all .doc-card-type,.doc-card.doc-all .doc-card-about{color:#5E6267}
-.doc-card.doc-all .doc-card-go{color:#23272C}
-.doc-card.doc-all .doc-id{background:#EFEFEC;color:#1B1E22}
 .doc-card.doc-kind{border-color:color-mix(in srgb,var(--k,var(--line)) 45%,var(--line));background:color-mix(in srgb,var(--k,var(--surface)) 12%,var(--surface));padding-left:18px}
 .doc-card.doc-kind::before,.doc-head.doc-kind::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;border-radius:10px 0 0 10px;background:var(--k)}
 .doc-card.doc-multi{background:var(--surface2)}
@@ -1089,9 +1085,6 @@ a.its-pg::after{content:" ↗";font-size:.85em}
 .doc-head.doc-kind,.doc-head.doc-all{padding:14px 16px 14px 22px;border-radius:12px;border:1px solid var(--line);max-width:none}
 .doc-head.doc-kind{background:color-mix(in srgb,var(--k,var(--surface)) 10%,var(--surface))}
 .doc-head.doc-multi{background:var(--surface2)}
-.doc-head.doc-all{background:#FFFFFF;color:#1B1E22;padding-left:16px}
-.doc-head.doc-all .doc-meta,.doc-head.doc-all .doc-lead{color:#3E4247}
-.doc-head.doc-all .doc-id{background:#EFEFEC;color:#1B1E22}
 .doc-mods{display:flex;flex-wrap:wrap;gap:6px;margin:0}
 .doc-mods .kb-tag{color:var(--k);border-color:color-mix(in srgb,var(--k) 45%,var(--line))}
 .doc-cluster{font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid #D6D6D1;background:#FFFFFF;color:#1B1E22}
@@ -1103,3 +1096,8 @@ a.its-pg::after{content:" ↗";font-size:.85em}
 .kb-cluster > .sub{margin:-4px 0 10px;color:var(--muted)}
 .doc-card.doc-multi{border-color:var(--line)}
 #docs-list .kb-group{margin-top:18px}#docs-list .kb-group:first-child{margin-top:4px}
+
+/* общий для кластера документ: обычная карточка с белой полосой-выделением */
+.doc-card.doc-all{padding-left:18px}
+.doc-card.doc-all::before,.doc-head.doc-all::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;border-radius:10px 0 0 10px;background:#FFFFFF;box-shadow:inset 0 0 0 1.5px #A9A9A3}
+.doc-head.doc-all{background:var(--surface);padding-left:22px}

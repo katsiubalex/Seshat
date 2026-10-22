@@ -897,3 +897,8 @@ a.nav-module:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mod-ready{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
 .mod-acts{display:flex;flex-wrap:wrap;gap:8px}
 .mod-acts .btn{font-size:14px;padding:7px 14px}
+.kb-mod{--c:var(--k)}
+.kb-mod .glyph{color:var(--k)}
+.kb-mod b{color:var(--ink)}
+.kb-mod:hover{border-color:var(--k)}
+.kb-sub{margin-top:14px!important}

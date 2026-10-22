@@ -50,10 +50,10 @@ const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloa
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
   hub: ['home', 'seshat', 'kb', 'docs', 'about'],
-  tlazolteotl: ['overview', 'constructor', 'projects', 'lore']
+  tlazolteotl: ['overview', 'constructor', 'projects', 'kb', 'lore']
 };
 const DEFAULT_VIEW = { hub: 'home', tlazolteotl: 'constructor' };
-for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
+for (const id of DEV_MODULES) { PAGE_PATH[id] = id + '/'; PAGE_VIEWS[id] = ['overview', 'kb', 'lore']; DEFAULT_VIEW[id] = 'overview'; }
 const VIEWS = PAGE_VIEWS[PAGE];
 const VIEW_RENDER = Object.create(null); // разделы, которые перерисовываются при открытии
 // адрес #… → [страница, раздел, параметр]
@@ -63,7 +63,11 @@ function parseView(h) {
   if (VIEWS.includes(h)) return [PAGE, h, null];                 // свои разделы страницы
   let m;
   if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return ['hub', 'docs', m[1]];
-  if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) return ['hub', 'kb', m[1]];
+  if ((m = /^kb-([a-zA-Z0-9-]+)$/.exec(h))) {
+    // сооружения и процессы очистки сточных вод — база знаний Тласольтеотль, остальное — общие разделы Сешат
+    const owner = /^(u|p|a)-/.test(m[1]) || ['units', 'proc'].includes(m[1]) ? 'tlazolteotl' : 'hub';
+    return [owner, 'kb', m[1]];
+  }
   if ((m = /^m-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], DEFAULT_VIEW[m[1]], null];
   if ((m = /^lore-([a-z]+)$/.exec(h)) && PAGE_PATH[m[1]] != null) return [m[1], 'lore', null];
   for (const [p, list] of Object.entries(PAGE_VIEWS)) if (list.includes(h)) return [p, h, null];

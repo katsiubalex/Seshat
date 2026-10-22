@@ -1,6 +1,8 @@
-// Раздел «База знаний»: мини-энциклопедия по очистке сточных вод.
-// Адреса: #kb — главная, #kb-units / -proc / -ind / -books / -journals / -comm — разделы,
+// База знаний. Универсальные разделы (показатели, учебники, журналы, сообщества) живут на главной Сешат,
+// специфические — у своих модулей: сооружения и процессы очистки сточных вод — в Тласольтеотль.
+// Адреса: #kb — главная базы знаний этой страницы, #kb-units / -proc / -ind / -books / -journals / -comm — разделы,
 // #kb-u-<id> — сооружение, #kb-p-<id> — процесс, #kb-i-<id> — показатель, #kb-a-<id> — вспомогательное здание.
+// Чужие разделы core.js открывает на странице владельца.
 
 const KB = SeshatKB;
 const kbUI = { q: '' };
@@ -12,6 +14,10 @@ const KB_SECTIONS = [
   { id: 'journals', t: 'Научные журналы', d: 'Российские и международные журналы, где публикуют исследования по очистке воды.', n: () => KB.JOURNALS.reduce((s, b) => s + b.list.length, 0) },
   { id: 'comm', t: 'Профессиональные сообщества', d: 'Ассоциации и организации отрасли в России и мире: конференции, стандарты, обучение.', n: () => KB.COMMUNITIES.reduce((s, b) => s + b.list.length, 0) }
 ];
+const UNIVERSAL = ['ind', 'books', 'journals', 'comm'];
+const MODULE_KB = { tlazolteotl: ['units', 'proc'] }; // разделы, подведомственные модулям
+const KB_MODS = SeshatModules.MODULES, KB_MOD = KB_MODS.find(m => m.id === PAGE); // модуль этой страницы (на главной — нет)
+const kbCount = id => (MODULE_KB[id] || []).reduce((n, s) => n + KB_SECTIONS.find(x => x.id === s).n(), 0);
 const PROC_BY = Object.fromEntries(KB.PROCESSES.map(p => [p.id, p]));
 const IND_BY = Object.fromEntries(KB.INDICATORS.map(p => [p.id, p]));
 const AUX_BY = Object.fromEntries(KB.AUX.map(p => [p.id, p]));
@@ -19,40 +25,57 @@ const EFF_IND = { ss: 'ss', bod: 'bod', cod: 'cod', nh4: 'nh4', no2: 'no2', no3:
 const EFF_NAME = { nit: 'нитрификация', den: 'денитрификация', bioP: 'биоудаление P' };
 const norm = s => String(s).toLowerCase().replace(/ё/g, 'е');
 const kbRoot = () => document.getElementById('kb-root');
-const crumbs = (...items) => `<nav class="kb-crumbs" aria-label="Навигация"><a href="#kb">База знаний</a>${items.map(([t, h]) => h ? ` / <a href="${h}">${esc(t)}</a>` : ` / <span>${esc(t)}</span>`).join('')}</nav>`;
+const crumbs = (...items) => `<nav class="kb-crumbs" aria-label="Навигация"><a href="#kb">База знаний${KB_MOD ? ' · ' + esc(KB_MOD.n) : ''}</a>${items.map(([t, h]) => h ? ` / <a href="${h}">${esc(t)}</a>` : ` / <span>${esc(t)}</span>`).join('')}</nav>`;
 const procLink = id => PROC_BY[id] ? `<a class="kb-tag" href="#kb-p-${id}">${esc(PROC_BY[id].t)}</a>` : '';
 const unitLink = id => `<a class="kb-unit-link" href="#kb-u-${id}" style="--c:${STG[U[id].st].c}">${SeshatIcons.icon(id, 36)}<span>${esc(U[id].n)}</span></a>`;
 const ext = (t, u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a>`;
 
-/* ---------- главная ---------- */
+/* ---------- главная базы знаний: на главной Сешат и в каждом модуле ---------- */
+const kbCard = (s, href) => `<a class="kb-card" href="${href || '#kb-' + s.id}"><b>${esc(s.t)}</b><span>${esc(s.d)}</span><small>${s.n()} ${({ books: 'учебников', journals: 'журналов', comm: 'организаций' })[s.id] || 'статей'}</small></a>`;
 function kbHome() {
-  kbRoot().innerHTML = `<header class="kb-head"><div>
-      <h1>База знаний</h1>
-      <p class="sub">Мини-энциклопедия по очистке сточных вод: сооружения, процессы, показатели, учебники, журналы и сообщества. Всё, что встречается в Тласольтеотль, здесь можно прочитать подробнее.</p>
-    </div></header>
-    <input id="kb-search" type="search" class="lib-search kb-search" placeholder="Найти в базе знаний: «нитрификация», «ХПК», «мембран», «Хенце»…" aria-label="Поиск по базе знаний" value="${esc(kbUI.q)}">
+  const head = KB_MOD
+    ? `<header class="kb-head"><div><p class="lore-kicker kind-${KB_MOD.kind}" style="color:var(--k)">${esc(KB_MOD.n)} · ${esc(KB_MOD.d)}</p><h1>База знаний модуля</h1>
+        <p class="sub">${(MODULE_KB[PAGE] || []).length ? 'Статьи по дисциплине модуля. Общие для всей экосистемы разделы — показатели воды, учебники, журналы и сообщества — собраны в базе знаний Сешат.' : 'Раздел наполняется вместе с модулем. Пока здесь — смежные статьи из других модулей и общие разделы Сешат.'}</p></div></header>`
+    : `<header class="kb-head"><div><h1>База знаний Сешат</h1>
+        <p class="sub">Общие разделы для всей экосистемы и базы знаний модулей: у каждого модуля — свои сооружения, процессы и расчёты.</p></div></header>`;
+  kbRoot().innerHTML = `${head}
+    <input id="kb-search" type="search" class="lib-search kb-search" placeholder="${KB_MOD ? 'Найти в базе знаний модуля и общих разделах…' : 'Найти: «нитрификация», «ХПК», «мембран», «Хенце»…'}" aria-label="Поиск по базе знаний" value="${esc(kbUI.q)}">
     <div id="kb-results"></div>`;
   kbResults();
 }
 function kbResults() {
   const box = document.getElementById('kb-results'), q = norm(kbUI.q.trim());
+  const own = KB_MOD ? (MODULE_KB[PAGE] || []) : [];
   if (!q) {
-    box.innerHTML = `<div class="kb-grid">${KB_SECTIONS.map(s => `<a class="kb-card" href="#kb-${s.id}"><b>${esc(s.t)}</b><span>${esc(s.d)}</span><small>${s.n()} ${({ books: 'учебников', journals: 'журналов', comm: 'организаций' })[s.id] || 'статей'}</small></a>`).join('')}</div>
-      <section class="panel kb-start"><h2>С чего начать</h2><ul class="kb-links">
+    const uni = `<section class="kb-group"><h2>${KB_MOD ? 'Общие разделы Сешат' : 'Общие разделы'}</h2><div class="kb-grid">${UNIVERSAL.map(id => kbCard(KB_SECTIONS.find(s => s.id === id))).join('')}</div></section>`;
+    if (!KB_MOD) {
+      box.innerHTML = uni + `<section class="kb-group"><h2>Базы знаний модулей</h2><div class="kb-grid kb-mods">${KB_MODS.map(m => {
+        const n = kbCount(m.id);
+        return `<a class="kb-card kb-mod kind-${m.kind}" href="${ROOT + m.path}#kb">${SeshatModules.glyph(m.id, 26)}<b>${esc(m.n)}</b><span>${esc(m.d)}</span><small>${n ? n + ' статей' : 'наполняется'}</small></a>`;
+      }).join('')}</div></section>`;
+      return;
+    }
+    const mine = own.length ? `<section class="kb-group"><h2>Разделы модуля</h2><div class="kb-grid">${own.map(id => kbCard(KB_SECTIONS.find(s => s.id === id))).join('')}</div></section>` : '';
+    const related = (KB_MOD.kb || []).map(h => { const p = PROC_BY[h.replace('kb-p-', '')]; return p ? `<li><a href="#${h}">${esc(p.t)}</a> <span class="hint">— из базы знаний Тласольтеотль</span></li>` : ''; }).join('');
+    const start = PAGE === 'tlazolteotl' ? `<section class="panel kb-start"><h2>С чего начать</h2><ul class="kb-links">
         <li><a href="#kb-p-biooxidation">Как бактерии очищают воду</a> — основа всей биологической очистки.</li>
         <li><a href="#kb-p-nitrification">Нитрификация</a> и <a href="#kb-p-denitrification">денитрификация</a> — как удаляют азот.</li>
         <li><a href="#kb-i-bod">БПК₅</a> и <a href="#kb-i-cod">ХПК</a> — два главных показателя органики.</li>
         <li><a href="#kb-p-sedimentation">Осаждение</a> — почему отстойники считают по площади, а не по глубине.</li>
-      </ul></section>`;
+      </ul></section>` : '';
+    const soon = !own.length ? `<section class="panel"><h2>Что появится здесь</h2><ul class="kb-links">${KB_MOD.will.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${related ? `<h2 class="kb-sub">Смежные статьи уже сейчас</h2><ul class="kb-links">${related}</ul>` : ''}</section>` : '';
+    box.innerHTML = mine + start + soon + uni;
     return;
   }
   const stem = q.length > 5 ? q.slice(0, -2) : q, hit = t => norm(t).includes(stem);
-  const res = [];
-  UNITS.forEach(u => { const P = SeshatPlan.PLAN[u.id] || {}; if (hit(u.n + ' ' + u.d + ' ' + (P.how || ''))) res.push(['Сооружение', u.n, '#kb-u-' + u.id]); });
-  KB.AUX.forEach(a => { if (hit(a.t + ' ' + a.lead + a.s.map(x => x.join(' ')).join(' '))) res.push(['Сооружение', a.t, '#kb-a-' + a.id]); });
-  KB.PROCESSES.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Процесс', p.t, '#kb-p-' + p.id]); });
+  const res = [], withMod = !KB_MOD; // на главной Сешат ищем и по модулям, в модуле — по своему модулю и общим разделам
+  if (withMod || own.includes('units')) {
+    UNITS.forEach(u => { const P = SeshatPlan.PLAN[u.id] || {}; if (hit(u.n + ' ' + u.d + ' ' + (P.how || ''))) res.push(['Сооружение', u.n, '#kb-u-' + u.id]); });
+    KB.AUX.forEach(a => { if (hit(a.t + ' ' + a.lead + a.s.map(x => x.join(' ')).join(' '))) res.push(['Сооружение', a.t, '#kb-a-' + a.id]); });
+  }
+  if (withMod || own.includes('proc')) KB.PROCESSES.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Процесс', p.t, '#kb-p-' + p.id]); });
   KB.INDICATORS.forEach(p => { if (hit([p.t, p.what, p.why, p.how].join(' '))) res.push(['Показатель', p.t, '#kb-i-' + p.id]); });
-  KB.BOOKS.forEach(b => b.list.forEach(([a, t, pub]) => { if (hit(a + ' ' + t + ' ' + b.d)) res.push(['Учебник', `${a} ${t}`, '#kb-books']); }));
+  KB.BOOKS.forEach(b => b.list.forEach(([a, t]) => { if (hit(a + ' ' + t + ' ' + b.d)) res.push(['Учебник', `${a} ${t}`, '#kb-books']); }));
   KB.JOURNALS.forEach(b => b.list.forEach(([t, d]) => { if (hit(t + ' ' + d)) res.push(['Журнал', t, '#kb-journals']); }));
   KB.COMMUNITIES.forEach(b => b.list.forEach(([t, d]) => { if (hit(t + ' ' + d)) res.push(['Сообщество', t, '#kb-comm']); }));
   box.innerHTML = res.length ? `<p class="hint">Найдено: ${res.length}</p><ul class="kb-res">${res.map(([k, t, h]) => `<li><a href="${h}"><small>${k}</small><span>${esc(t)}</span></a></li>`).join('')}</ul>`

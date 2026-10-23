@@ -19,9 +19,11 @@
     f: id => ({ files: [`content/kb/fundamentals/${id}.md`, 'js/books.js'], type: 'Дисциплина', md: ['fundamentals', id] }),
     h: id => ({ files: [`content/kb/humanities/${id}.md`], type: 'Человек и вода', md: ['humanities', id] }),
     d: id => ({ files: ['js/docs.js'], find: idPat(id), type: 'Документ', key: 'doc-' + id }),
-    g: id => ({ files: [`content/glossary/${id}.md`], type: 'Термин', md: ['glossary', id] })
+    g: id => ({ files: [`content/glossary/${id}.md`], type: 'Термин', md: ['glossary', id] }),
+    w: id => ({ files: [`content/kb/drinking/${id}.md`], type: 'Водоподготовка', md: ['drinking', id] }),
+    v: id => ({ files: ['js/dwcalc.js'], find: idPat(id), type: 'Сооружение водоподготовки' })
   };
-  const BY_SECTION = { units: 'js/data.js', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
+  const BY_SECTION = { dwu: 'js/dwcalc.js', dwk: 'content/kb/drinking', units: 'js/data.js', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
     myth: 'content/myths', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'content/glossary' };
 
   // материал, открытый сейчас: ключ (адрес без «#»), тип, файлы данных

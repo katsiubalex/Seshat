@@ -22,6 +22,8 @@ const KB_SECTIONS = [
   { id: 'units', t: 'Сооружения очистки', d: 'Как устроено и работает каждое из 40 сооружений, что оно удаляет и сколько стоит.', n: () => UNITS.length + KB.AUX.length },
   { id: 'proc', t: 'Физика и химия процессов', d: 'Осаждение, флотация, нитрификация, денитрификация, мембраны, обеззараживание — с уравнениями и ключевыми числами.', n: () => KB.PROCESSES.length },
   { id: 'ind', t: 'Показатели качества воды', d: 'Что означают БПК, ХПК, азот, фосфор и другие показатели, как их измеряют и почему они важны.', n: () => KB.INDICATORS.length },
+  { id: 'dwu', t: 'Сооружения водоподготовки', d: 'Как работает каждое сооружение станции водоподготовки, когда его применяют и какое качество воды оно даёт — по СП 31.13330.2021.', n: () => (window.SeshatDW ? SeshatDW.UNITS.length : 0) },
+  { id: 'dwk', t: 'Водоподготовка: процессы и показатели', d: 'Классы воды источников и выбор технологии, коагуляция, отстаивание, фильтрование, обезжелезивание, обеззараживание, нормативы питьевой воды.', n: () => KB.DRINKING.length },
   { id: 'books', t: 'Учебники', d: 'Учебники и справочники по дисциплинам модуля — российские и зарубежные.', n: () => nBooks(PAGE), unit: 'учебников' },
   { id: 'docs', t: 'Нормативные документы', d: 'Законы, правила, своды правил, санитарные нормы и справочники НДТ, которые относятся к модулю. Белые — общие для всего кластера «Водная инфраструктура».', n: () => docsOf(PAGE).length, unit: 'документов' },
   { id: 'fund', t: 'Основы', d: 'Фундаментальные дисциплины (математика, химия, микробиология, геология) и основы водоснабжения и водоотведения (гидравлика, насосы) — опора всех модулей.', n: () => KB.FUNDAMENTALS.length },
@@ -35,7 +37,7 @@ const KB_SECTIONS = [
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
 const UNIVERSAL = ['glossary', 'index', 'fund', 'hum', 'myth', 'journals', 'comm'];
 // разделы модулей: учебники есть у всех, у «Очистки сточных вод» — ещё сооружения, процессы и показатели
-const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : m.id === 'humanities' ? ['hum', 'myth', 'books'] : m.group === 'base' ? ['fund', 'books'] : ['books', 'docs']]));
+const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : m.id === 'humanities' ? ['hum', 'myth', 'books'] : m.id === 'anahita' ? ['dwu', 'dwk', 'books', 'docs'] : m.group === 'base' ? ['fund', 'books'] : ['books', 'docs']]));
 // раздел «Основы» внутри модуля «Основ» — его статьи
 const secOf = id => id === 'fund' && KB_MOD && KB_MOD.group === 'base' ? { id: 'fund', t: 'Статьи', d: 'Статьи по дисциплинам модуля: ключевые понятия, формулы и учебники.', n: () => fundOf(PAGE).length } : SEC[id];
 const fundOf = id => KB.FUNDAMENTALS.filter(f => f.home === id);
@@ -45,6 +47,14 @@ const IND_BY = Object.fromEntries(KB.INDICATORS.map(p => [p.id, p]));
 const AUX_BY = Object.fromEntries(KB.AUX.map(p => [p.id, p]));
 const FUND_BY = Object.fromEntries(KB.FUNDAMENTALS.map(p => [p.id, p]));
 const HUM_BY = Object.fromEntries(KB.HUMANITIES.map(p => [p.id, p]));
+const DW_BY = Object.fromEntries(KB.DRINKING.map(p => [p.id, p]));
+// статьи водоподготовки, связанные с сооружением
+const DW_ART = { micro: ['dw-classes'], presettle: ['dw-clarification'], biopre: ['dw-oxidation'], aersimple: ['dw-iron'], aerdeep: ['dw-iron'], prechlor: ['dw-oxidation', 'dw-disinfection'], preozone: ['dw-oxidation'], kmno4: ['dw-iron', 'dw-oxidation'],
+  alkali: ['dw-coagulation'], coag: ['dw-coagulation'], vsettle: ['dw-clarification'], hsettle: ['dw-clarification'], clarifier: ['dw-clarification'], flot: ['dw-clarification'], prefilt: ['dw-filtration'],
+  rfilter: ['dw-filtration'], cclar: ['dw-filtration'], sfilter: ['dw-filtration'], gfilter: ['dw-iron'], biofilt: ['dw-iron'], uf: ['dw-filtration', 'dw-softening'], ozone: ['dw-oxidation'], gac: ['dw-oxidation'], pac: ['dw-oxidation'],
+  alumina: ['dw-fluoride'], softlime: ['dw-softening'], nacat: ['dw-softening'], ro: ['dw-softening'], stab: ['dw-softening'], chlor: ['dw-disinfection'], chloramine: ['dw-disinfection'], clo2: ['dw-disinfection'], uv: ['dw-disinfection'] };
+// ссылка на пункт документа: «СП 31.13330.2021, табл. 11, с. 33»
+const docRef = x => { const D = DOCS_BY_ID[x.doc]; return `<a href="#doc-${x.doc}">${esc(D ? D.short : x.doc)}</a>, ${esc(x.where)}${x.page ? `, с. ${x.page}` : ''}`; };
 const EFF_IND = { ss: 'ss', bod: 'bod', cod: 'cod', nh4: 'nh4', no2: 'no2', no3: 'no3', p: 'p', oil: 'oil', fat: 'fat', nit: 'nh4', den: 'no3', bioP: 'p' };
 const EFF_NAME = { nit: 'нитрификация', den: 'денитрификация', bioP: 'биоудаление P' };
 const norm = s => String(s).toLowerCase().replace(/ё/g, 'е');
@@ -97,7 +107,12 @@ function kbResults() {
     const mine = `<section class="kb-group"><h2>Разделы модуля</h2><div class="kb-grid">${own.map(id => kbCard(secOf(id))).join('')}</div></section>`;
     const related = (KB_MOD.kb || []).map(h => { const p = PROC_BY[h.replace('kb-p-', '')]; return p ? `<li><a href="#${h}">${esc(p.t)}</a> <span class="hint">— из базы знаний модуля «Очистка сточных вод»</span></li>` : ''; }).join('');
     const fund = KB.FUNDAMENTALS.filter(f => f.mods.includes(PAGE));
-    const start = PAGE === 'tlazolteotl' ? `<section class="panel kb-start"><h2>С чего начать</h2><ul class="kb-links">
+    const start = PAGE === 'anahita' ? `<section class="panel kb-start"><h2>С чего начать</h2><ul class="kb-links">
+        <li><a href="#kb-w-dw-classes">Классы воды источников и выбор технологии</a> — как свод правил подбирает схему очистки.</li>
+        <li><a href="#kb-w-dw-coagulation">Коагуляция</a>, <a href="#kb-w-dw-clarification">отстаивание</a> и <a href="#kb-w-dw-filtration">фильтрование</a> — основа очистки поверхностных вод.</li>
+        <li><a href="#kb-w-dw-iron">Обезжелезивание</a> — главная задача для подземных вод.</li>
+        <li><a href="#kb-w-dw-disinfection">Обеззараживание</a> и <a href="#kb-w-dw-micro">микробиологические показатели</a>.</li>
+      </ul></section>` : PAGE === 'tlazolteotl' ? `<section class="panel kb-start"><h2>С чего начать</h2><ul class="kb-links">
         <li><a href="#kb-p-biooxidation">Как бактерии очищают воду</a> — основа всей биологической очистки.</li>
         <li><a href="#kb-p-nitrification">Нитрификация</a> и <a href="#kb-p-denitrification">денитрификация</a> — как удаляют азот.</li>
         <li><a href="#kb-i-bod">БПК₅</a> и <a href="#kb-i-cod">ХПК</a> — два главных показателя органики.</li>
@@ -115,6 +130,8 @@ function kbResults() {
   }
   if (KB_MOD) docsOf(PAGE).forEach(d => { if (hit(d.short + ' ' + d.title + ' ' + d.about)) res.push(['Документ', d.short + ' — ' + d.title, '#doc-' + d.id]); });
   if (all || own.includes('proc')) KB.PROCESSES.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Процесс', p.t, '#kb-p-' + p.id]); });
+  if ((all || own.includes('dwu')) && window.SeshatDW) SeshatDW.UNITS.forEach(u => { if (hit(u.n + ' ' + u.d + ' ' + u.how + ' ' + u.params.join(' '))) res.push(['Сооружение водоподготовки', u.n, (PAGE === 'anahita' ? '' : ROOT + 'anahita/') + '#kb-v-' + u.id]); });
+  if (all || own.includes('dwk')) KB.DRINKING.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Водоподготовка', p.t, (PAGE === 'anahita' ? '' : ROOT + 'anahita/') + '#kb-w-' + p.id]); });
   if (all || own.includes('ind')) KB.INDICATORS.forEach(p => { if (hit([p.t, p.what, p.why, p.how].join(' '))) res.push(['Показатель', p.t, '#kb-i-' + p.id]); });
   (all ? KB_MODS.map(m => m.id) : [PAGE]).forEach(mid => booksOf(mid).forEach(b => b.list.forEach(([a, t]) => {
     if (hit(a + ' ' + t + ' ' + b.d)) res.push(['Учебник', `${a} ${t}`, mid === PAGE ? '#kb-books' : ROOT + KB_MODS.find(m => m.id === mid).path + '#kb-books']);
@@ -155,6 +172,13 @@ function kbSection(id) {
       <p class="hint">Статьи общие для всех модулей и открываются в базе знаний Сешат. Новые статьи по дисциплинам модуля появятся по мере работы над курсами.</p>`;
   } else if (id === 'fund') {
     body = ['fundamentals', 'basics'].map(h => { const m = KB_MODS.find(x => x.id === h); return `<section class="kb-group"><h2><a href="${ROOT + m.path}">${esc(m.n)}</a></h2><div class="kb-grid kb-grid-sm">${fundOf(h).map(x => `<a class="kb-card" href="#kb-f-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div></section>`; }).join('');
+  } else if (id === 'dwu' && window.SeshatDW) {
+    const DW = SeshatDW;
+    body = `<p class="hint">Сооружения сгруппированы по стадиям, код — обозначение метода в табл. Б.3 <a href="#doc-sp31">СП 31.13330.2021</a>. Любое сооружение можно поставить в схему в <a href="#constructor" data-go="constructor">конструкторе</a>.</p>`
+      + DW.STAGES.map(st => `<section class="kb-group"><h2>${esc(st.n)}</h2><div class="kb-grid kb-grid-sm">${DW.UNITS.filter(u => u.st === st.id).map(u => `<a class="kb-card" href="#kb-v-${u.id}"><b>${esc(u.n)}</b><span>${esc(u.d)}</span>${u.code ? `<small>Код: ${esc(u.code)}</small>` : ''}</a>`).join('')}</div></section>`).join('');
+  } else if (id === 'dwk') {
+    const groups = [...new Set(KB.DRINKING.map(p => p.g))];
+    body = groups.map(g => `<section class="kb-group"><h2>${esc(g)}</h2><div class="kb-grid kb-grid-sm">${KB.DRINKING.filter(p => p.g === g).map(p => `<a class="kb-card" href="#kb-w-${p.id}"><b>${esc(p.t)}</b><span>${esc(p.lead)}</span></a>`).join('')}</div></section>`).join('');
   } else if (id === 'myth') {
     body = window.SeshatMyths ? `<div class="kb-grid kb-grid-sm">${SeshatMyths.GODS.map(g => `<a class="kb-card" href="#lore-${g.id}"><b>${esc(g.name)}</b><span>${esc(g.epithet)} · ${esc(g.culture)}</span><small>Созвучно: ${g.mods.map(([m]) => esc((KB_MODS.find(x => x.id === m) || {}).n || m)).join(', ')}</small></a>`).join('')}</div>` : '';
   } else if (id === 'hum') {
@@ -243,6 +267,33 @@ function kbFund(id, hum) {
   kbRoot().innerHTML = article(head, main, side);
 }
 
+/* ---------- водоподготовка: сооружения и статьи ---------- */
+function kbDWUnit(id) {
+  const DW = SeshatDW, u = DW.BY[id], i = DW.UNITS.indexOf(u), st = DW.STAGES.find(s => s.id === u.st);
+  const arts = (DW_ART[id] || []).map(a => DW_BY[a]).filter(Boolean);
+  const head = `${crumbs([SEC.dwu.t, '#kb-dwu'], [u.n])}<header class="kb-ahead"><div><span class="gp-stage">${esc(st.n)}${u.code ? ' · код ' + esc(u.code) : ''}</span><h1>${esc(u.n)}</h1><p class="kb-lead">${esc(u.d)}</p></div></header>`;
+  const main = `<section class="panel"><h2>Как работает</h2><p>${esc(u.how)}</p></section>
+    <section class="panel"><h2>Условия применения и параметры</h2><ul>${u.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
+    ${u.est && u.est.length ? `<p class="hint">Влияние на ${u.est.map(k => esc((DW.PARAMS.find(p => p.k === k) || {}).n || k).toLowerCase()).join(', ')} в конструкторе — учебный ориентир: свод правил этих чисел не даёт.</p>` : ''}
+    ${seq(DW.UNITS, i, x => '#kb-v-' + x.id, x => x.n)}`;
+  const side = `<section class="panel"><h2>Источники</h2><ul class="kb-links">${u.refs.map(x => `<li>${docRef(x)}</li>`).join('')}</ul></section>
+    ${arts.length ? `<section class="panel"><h2>Статьи</h2><ul class="kb-links">${arts.map(a => `<li><a href="#kb-w-${a.id}">${esc(a.t)}</a></li>`).join('')}</ul></section>` : ''}
+    <section class="panel"><h2>Попробовать</h2><p>Поставьте сооружение в схему и посмотрите, как оно меняет качество воды.</p><button type="button" class="primary" data-dwadd="${id}">Добавить в конструктор</button></section>`;
+  kbRoot().innerHTML = article(head, main, side);
+}
+// статья водоподготовки: формулы, разделы, ключевые числа, источники (пункт и страница) и связь с конструктором
+function kbDW(id) {
+  const p = DW_BY[id], i = KB.DRINKING.indexOf(p);
+  const units = window.SeshatDW ? Object.entries(DW_ART).filter(([, l]) => l.includes(id)).map(([u]) => SeshatDW.BY[u]).filter(Boolean) : [];
+  const head = `${crumbs([SEC.dwk.t, '#kb-dwk'], [p.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(p.g)}</span><h1>${esc(p.t)}</h1><p class="kb-lead">${esc(p.lead)}</p></div></header>`;
+  const main = `${p.f ? `<section class="panel"><h2>Формулы</h2><div class="kb-f">${p.f.map(x => `<code>${esc(x)}</code>`).join('')}</div></section>` : ''}${sections(p.s)}${seq(KB.DRINKING, i, x => '#kb-w-' + x.id, x => x.t)}`;
+  const src = p.src.map(([doc, t, where, url]) => `<li>${doc && DOCS_BY_ID[doc] ? `<a href="#doc-${doc}">${esc(t)}</a>` : url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(t)} ↗</a>` : esc(t)}${where ? ` <span class="hint">— ${esc(where)}</span>` : ''}</li>`).join('');
+  const side = `${numbers(p.n)}<section class="panel"><h2>Источники</h2><ul class="kb-links">${src}</ul>${p.need ? `<p class="hint">Источник уточняется: ${esc(p.need[0].toLowerCase() + p.need.slice(1))}</p>` : ''}</section>
+    ${units.length ? `<section class="panel"><h2>Сооружения</h2><ul class="kb-links">${units.map(u => `<li><a href="#kb-v-${u.id}">${esc(u.n)}</a></li>`).join('')}</ul></section>` : ''}
+    ${p.tool ? `<section class="panel"><h2>В конструкторе</h2><p>${esc(p.tool)}</p><a class="btn" href="#constructor" data-go="constructor">Открыть конструктор</a></section>` : ''}`;
+  kbRoot().innerHTML = article(head, main, side);
+}
+
 /* ---------- нормативные документы модуля ---------- */
 function kbDoc(id) {
   const d = DOCS_BY_ID[id];
@@ -261,6 +312,8 @@ function renderKB(param) {
   if (a === 'a' && AUX_BY[b]) return kbAux(b);
   if (a === 'f' && FUND_BY[b]) return kbFund(b);
   if (a === 'h' && HUM_BY[b]) return kbFund(b, true);
+  if (a === 'v' && window.SeshatDW && SeshatDW.BY[b]) return kbDWUnit(b);
+  if (a === 'w' && DW_BY[b]) return kbDW(b);
   if (a === 'd' && b && DOCS_BY_ID[b]) return kbDoc(b);
   if (!b && SEC[a]) return kbSection(a);
   kbHome();
@@ -270,6 +323,7 @@ document.getElementById('kb-root').addEventListener('input', ev => {
   if (ev.target.id === 'docs-search') { kbUI.dq = ev.target.value; document.getElementById('docs-list').innerHTML = docsListHTML(PAGE, kbUI.dq); }
 });
 document.getElementById('kb-root').addEventListener('click', ev => {
+  const d = ev.target.closest('[data-dwadd]'); if (d && window.SeshatDWView) { SeshatDWView.add(d.dataset.dwadd); go('constructor'); return; }
   const b = ev.target.closest('[data-kbadd]'); if (!b) return;
   addUnit(b.dataset.kbadd); if (PAGE === 'tlazolteotl') go('constructor'); else location.href = pageUrl('tlazolteotl', 'constructor');
 });

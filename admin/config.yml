@@ -98,6 +98,22 @@ collections:
       - { name: title, label: "Название", widget: string }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
       - { name: body, label: "Текст: разделы, «## Почитать», «## Источники»", widget: text }
+  - name: drinking
+    label: "Водоподготовка: процессы и показатели"
+    label_singular: "Статья"
+    folder: content/kb/drinking
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Название", widget: string }
+      - { name: group, label: "Группа", widget: select, options: ["Выбор технологии", "Процессы", "Показатели"] }
+      - { name: need, label: "Что ещё не подтверждено источником", widget: string, required: false }
+      - { name: tool, label: "Как попробовать в конструкторе", widget: string, required: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: вводный абзац, «## Формулы», разделы, «## Ключевые числа», «## Источники» (документ | название | где | ссылка)", widget: text }
   - name: glossary
     label: "Глоссарий"
     label_singular: "Термин"

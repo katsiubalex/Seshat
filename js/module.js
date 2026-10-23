@@ -38,8 +38,8 @@
   function renderOverview() {
     if (m.stub) return renderStub();
     const i = PATH.indexOf(m.id), prev = MOD[PATH[i - 1]], next = MOD[PATH[i + 1]];
-    const kb = (m.ready ? [['kb-units', 'Сооружения очистки'], ['kb-proc', 'Физика и химия процессов'], ['kb-ind', 'Показатели качества воды']] : []).concat([['kb-books', 'Учебники модуля']]).map(([h, t]) => `<li><a href="#${h}">${t}</a></li>`).join('')
-      + (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
+    const kb = (m.ready ? [['kb-units', 'Сооружения очистки'], ['kb-proc', 'Физика и химия процессов'], ['kb-ind', 'Показатели качества воды']] : m.id === 'anahita' ? [['kb-dwu', 'Сооружения водоподготовки'], ['kb-dwk', 'Процессы и показатели']] : []).concat([['kb-books', 'Учебники модуля']]).map(([h, t]) => `<li><a href="#${h}">${t}</a></li>`).join('')
+      + (m.kb || []).map(h => { const p = SeshatKB.PROCESSES.find(x => 'kb-p-' + x.id === h) || (SeshatKB.DRINKING || []).find(x => 'kb-w-' + x.id === h); return p ? `<li><a href="#${h}">${esc(p.t)}</a></li>` : ''; }).join('');
     document.getElementById('overview-root').innerHTML = `
       <article class="mod-page kind-${m.kind}">
         <header class="mod-head">${glyph(m.id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p></div></header>

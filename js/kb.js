@@ -118,6 +118,8 @@
 
   /* ---------- общие разделы: гуманитарные аспекты водопользования ---------- */
   const HUMANITIES = CT.humanities || [];
+  // водоподготовка («Очистка природных вод»): процессы и показатели — content/kb/drinking/<id>.md
+  const DRINKING = CT.drinking || [];
 
   /* ---------- научные журналы ---------- */
   const JOURNALS = [
@@ -158,6 +160,6 @@
       ['SSWM', 'Открытый набор материалов по устойчивой санитарии и водному хозяйству.', 'https://sswm.info/']] }
   ];
 
-  root.SeshatKB = { PROCESSES, INDICATORS, UNIT_PROC, AUX, BOOKS, MODULE_BOOKS, FUNDAMENTALS, HUMANITIES, JOURNALS, COMMUNITIES };
+  root.SeshatKB = { PROCESSES, INDICATORS, UNIT_PROC, AUX, BOOKS, MODULE_BOOKS, FUNDAMENTALS, HUMANITIES, DRINKING, JOURNALS, COMMUNITIES };
   if (typeof module !== 'undefined') module.exports = root.SeshatKB;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

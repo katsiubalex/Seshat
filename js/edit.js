@@ -12,16 +12,17 @@
   // где лежат данные материала: файл и как найти в нём запись
   const BY_TYPE = {
     u: id => ({ files: ['js/plan.js', 'js/data.js'], find: new RegExp(`^\\s+${reEsc(id)}: \\{`, 'm'), type: 'Сооружение' }),
-    p: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Процесс' }),
-    i: id => ({ files: ['js/kb.js', 'js/methods.js'], find: idPat(id), type: 'Показатель' }),
-    a: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Здание' }),
-    f: id => ({ files: ['js/kb.js', 'js/books.js'], find: idPat(id), type: 'Дисциплина' }),
-    h: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Человек и вода' }),
+    // статьи базы знаний — отдельные Markdown-файлы (content/…): их можно править прямо на GitHub или в редакторе Сешат
+    p: id => ({ files: [`content/kb/processes/${id}.md`], type: 'Процесс', md: ['processes', id] }),
+    i: id => ({ files: [`content/kb/indicators/${id}.md`, 'js/methods.js'], type: 'Показатель', md: ['indicators', id] }),
+    a: id => ({ files: [`content/kb/aux/${id}.md`], type: 'Здание', md: ['aux', id] }),
+    f: id => ({ files: [`content/kb/fundamentals/${id}.md`, 'js/books.js'], type: 'Дисциплина', md: ['fundamentals', id] }),
+    h: id => ({ files: [`content/kb/humanities/${id}.md`], type: 'Человек и вода', md: ['humanities', id] }),
     d: id => ({ files: ['js/docs.js'], find: idPat(id), type: 'Документ', key: 'doc-' + id }),
     g: id => ({ files: ['js/glossary.js'], find: idPat(id), type: 'Термин' })
   };
-  const BY_SECTION = { units: 'js/data.js', proc: 'js/kb.js', ind: 'js/kb.js', books: 'js/books.js', docs: 'js/docs.js', fund: 'js/kb.js', hum: 'js/kb.js',
-    myth: 'js/myths.js', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'js/glossary.js' };
+  const BY_SECTION = { units: 'js/data.js', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
+    myth: 'content/myths', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'js/glossary.js' };
 
   // материал, открытый сейчас: ключ (адрес без «#»), тип, файлы данных
   function material() {
@@ -33,7 +34,7 @@
       return null;
     }
     if (view === 'courses' && param) return { key: 'course-' + param, files: ['js/courses.js'], find: idPat(param), type: 'Курс' };
-    if (view === 'lore' && param) return { key: 'lore-' + param, files: ['js/myths.js'], find: new RegExp(`^\\s+${reEsc(param)}: \\{\\s*$`, 'm'), type: 'Миф о воде' };
+    if (view === 'lore' && param) return { key: 'lore-' + param, files: [`content/myths/${param}.md`], type: 'Миф о воде', md: ['myths', param] };
     if (view === 'overview' && PAGE !== 'hub' && MOD[PAGE]) return { key: 'm-' + PAGE, files: ['js/modules.js'], find: idPat(PAGE), type: PAGE === 'humanities' ? 'Раздел' : 'Модуль' };
     return null;
   }

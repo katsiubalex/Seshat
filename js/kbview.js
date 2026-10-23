@@ -173,6 +173,8 @@ function article(head, main, side) {
   return `<article class="kb-article">${head}<div class="kb-layout"><div class="kb-main">${main}</div><aside class="kb-side">${side}</aside></div></article>`;
 }
 function sections(list) { return list.map(([h, t]) => `<section class="panel"><h2>${esc(h)}</h2><p>${esc(t)}</p></section>`).join(''); }
+// раздел «Источники» из файла статьи: ссылки — как есть, остальное — текстом
+const srcPanel = x => x.src && x.src.length ? `<section class="panel"><h2>Источники</h2><ul class="kb-links">${x.src.map(s => { const m = /^(.*?)(https?:\/\/\S+)\s*$/.exec(s); return `<li>${m ? `${esc(m[1].replace(/[\s—–-]+$/, '') || m[2])} <a href="${esc(m[2])}" target="_blank" rel="noopener">↗</a>` : esc(s)}</li>`; }).join('')}</ul></section>` : '';
 function numbers(n) { return n && n.length ? `<section class="panel kb-nums"><h2>Ключевые числа</h2><ul>${n.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''; }
 function seq(list, i, href, title) {
   const prev = list[i - 1], next = list[i + 1];
@@ -203,7 +205,7 @@ function kbProc(id) {
   const head = `${crumbs(['Физика и химия процессов', '#kb-proc'], [p.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(p.g)}</span><h1>${esc(p.t)}</h1><p class="kb-lead">${esc(p.lead)}</p></div></header>`;
   const main = `${p.f ? `<section class="panel"><h2>Уравнения</h2><div class="kb-f">${p.f.map(x => `<code>${esc(x)}</code>`).join('')}</div></section>` : ''}
     ${sections(p.s)}${seq(KB.PROCESSES, i, x => '#kb-p-' + x.id, x => x.t)}`;
-  const side = `${numbers(p.n)}${units.length ? `<section class="panel"><h2>Где идёт</h2><div class="kb-units kb-units-col">${units.map(unitLink).join('')}</div></section>` : ''}`;
+  const side = `${numbers(p.n)}${srcPanel(p)}${units.length ? `<section class="panel"><h2>Где идёт</h2><div class="kb-units kb-units-col">${units.map(unitLink).join('')}</div></section>` : ''}`;
   kbRoot().innerHTML = article(head, main, side);
 }
 // методики измерений показателя: обозначение, метод, для каких вод, где подтверждено
@@ -222,13 +224,13 @@ function kbInd(id) {
   const main = `${sections([['Что это', p.what], ['Почему важно', p.why], ['Как снижают', p.how]])}${methodsHTML(p.id)}${seq(KB.INDICATORS, i, x => '#kb-i-' + x.id, x => x.t)}`;
   const side = `<section class="panel"><h2>Значения</h2><dl class="gp-dl"><dt>Городские стоки</dt><dd>${esc(p.typ)}</dd>${par ? `<dt>Ваши стоки</dt><dd>${fmt(iv)} ${esc(par.u)}</dd><dt>Ваш норматив</dt><dd>${nv == null || nv === '' ? 'не задан' : fmt(nv) + ' ' + esc(par.u)}</dd>` : ''}</dl>
       <p class="hint">Нормативы сброса — в документах <a href="#doc-pp1430">ПП № 1430</a> (НДТ) и <a href="#doc-pr296">приказе № 296</a> (рыбохозяйственные).</p></section>
-    ${par ? '<section class="panel"><h2>В конструкторе</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;
+    ${srcPanel(p)}${par ? '<section class="panel"><h2>В конструкторе</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;
   kbRoot().innerHTML = article(head, main, side);
 }
 function kbAux(id) {
   const a = AUX_BY[id];
   const head = `${crumbs(['Сооружения очистки', '#kb-units'], [a.t])}<header class="kb-ahead"><div><span class="gp-stage">Вспомогательное здание</span><h1>${esc(a.t)}</h1><p class="kb-lead">${esc(a.lead)}</p></div></header>`;
-  kbRoot().innerHTML = article(head, sections(a.s), numbers(a.n) + (a.proc ? `<section class="panel"><h2>Процессы</h2><p class="kb-tags">${a.proc.map(procLink).join('')}</p></section>` : ''));
+  kbRoot().innerHTML = article(head, sections(a.s), numbers(a.n) + srcPanel(a) + (a.proc ? `<section class="panel"><h2>Процессы</h2><p class="kb-tags">${a.proc.map(procLink).join('')}</p></section>` : ''));
 }
 
 function kbFund(id, hum) {
@@ -237,7 +239,7 @@ function kbFund(id, hum) {
   const head = `${crumbs([S.t, '#kb-' + S.id], [x.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(S.t)}</span><h1>${esc(x.t)}</h1><p class="kb-lead">${esc(x.lead)}</p></div></header>`;
   const main = `${x.f ? `<section class="panel"><h2>Ключевые формулы</h2><div class="kb-f">${x.f.map(v => `<code>${esc(v)}</code>`).join('')}</div></section>` : ''}${sections(x.s)}${seq(list, i, v => `#kb-${pre}-${v.id}`, v => v.t)}`;
   const fb = hum ? [] : BK.FUND[x.id] || [];
-  const side = `${x.books.length ? `<section class="panel"><h2>${hum ? 'Почитать' : 'Учебники'}</h2>${bookList(x.books)}</section>` : ''}${fb.length ? `<section class="panel"><h2>Современные учебные издания</h2>${bookList(fb)}</section>` : ''}${x.mods ? `<section class="panel"><h2>Где пригодится</h2><p class="kb-tags">${x.mods.map(modLink).join('')}</p></section>` : ''}`;
+  const side = `${srcPanel(x)}${x.books.length ? `<section class="panel"><h2>${hum ? 'Почитать' : 'Учебники'}</h2>${bookList(x.books)}</section>` : ''}${fb.length ? `<section class="panel"><h2>Современные учебные издания</h2>${bookList(fb)}</section>` : ''}${x.mods ? `<section class="panel"><h2>Где пригодится</h2><p class="kb-tags">${x.mods.map(modLink).join('')}</p></section>` : ''}`;
   kbRoot().innerHTML = article(head, main, side);
 }
 

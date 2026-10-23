@@ -33,11 +33,11 @@ test('форма на GitHub принимает все поля, которые 
   assert.ok(fs.existsSync(path.join(root, '.github/ISSUE_TEMPLATE/kurator.yml')));
 });
 
-test('запись материала находится в файле данных — ссылка ведёт на нужную строку', () => {
-  const kb = read('js/kb.js'), docs = read('js/docs.js'), courses = read('js/courses.js'), myths = read('js/myths.js');
-  const KB = require('../js/kb.js');
-  for (const x of [...KB.PROCESSES, ...KB.INDICATORS, ...KB.FUNDAMENTALS, ...KB.HUMANITIES]) assert.match(kb, new RegExp(`id: '${x.id}'`), x.id);
+test('запись материала находится в файле данных — ссылка ведёт на нужный файл или строку', () => {
+  const docs = read('js/docs.js'), courses = read('js/courses.js');
+  const KB = require('../js/kb.js'), dirs = [['processes', KB.PROCESSES], ['indicators', KB.INDICATORS], ['aux', KB.AUX], ['fundamentals', KB.FUNDAMENTALS], ['humanities', KB.HUMANITIES]];
+  for (const [d, list] of dirs) for (const x of list) assert.ok(fs.existsSync(path.join(root, `content/kb/${d}/${x.id}.md`)), d + '/' + x.id);
+  for (const g of require('../js/myths.js').GODS) assert.ok(fs.existsSync(path.join(root, `content/myths/${g.id}.md`)), g.id);
   for (const d of require('../js/docs.js').DOCS) assert.match(docs, new RegExp(`id: '${d.id}'`), d.id);
   for (const c of require('../js/courses.js').C) assert.match(courses, new RegExp(`id: '${c.id}'`), c.id);
-  for (const g of require('../js/myths.js').GODS) assert.match(myths, new RegExp(`^\\s+${g.id}: \\{\\s*$`, 'm'), g.id);
 });

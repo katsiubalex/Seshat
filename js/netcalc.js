@@ -249,15 +249,15 @@
   // Пример: квартал из двух колец, насосная станция второго подъёма слева, застройка 5 этажей
   const example = () => ({
   nodes: [
-    { id: 'НС', x: 0, y: 200, z: 50, source: true, H: 95 },
+    { id: 'НС', x: 0, y: 200, z: 50, source: true, H: 93 },
     { id: '1', x: 200, y: 200, z: 52, q: 10, floors: 5 }, { id: '2', x: 200, y: 0, z: 55, q: 15, floors: 5 }, { id: '3', x: 500, y: 0, z: 56, q: 20, floors: 5 },
     { id: '4', x: 500, y: 200, z: 54, q: 15, floors: 5 }, { id: '5', x: 800, y: 0, z: 57, q: 15, floors: 5 }, { id: '6', x: 800, y: 200, z: 55, q: 10, floors: 5 }
   ],
   pipes: [
-    { id: 'в', a: 'НС', b: '1', L: 400, d: 400, mat: 'used', transit: true },
-    { id: 'a', a: '1', b: '2', L: 400, d: 300, mat: 'used' }, { id: 'b', a: '2', b: '3', L: 600, d: 250, mat: 'used' }, { id: 'c', a: '1', b: '4', L: 600, d: 300, mat: 'used' },
-    { id: 'd', a: '3', b: '4', L: 400, d: 150, mat: 'used' }, { id: 'e', a: '3', b: '5', L: 600, d: 200, mat: 'used' }, { id: 'f', a: '4', b: '6', L: 600, d: 250, mat: 'used' },
-    { id: 'g', a: '5', b: '6', L: 400, d: 150, mat: 'used' }
+    { id: 'в', a: 'НС', b: '1', L: 400, d: 300, mat: 'used', transit: true },
+    { id: 'a', a: '1', b: '2', L: 400, d: 250, mat: 'used' }, { id: 'b', a: '2', b: '3', L: 600, d: 200, mat: 'used' }, { id: 'c', a: '1', b: '4', L: 600, d: 250, mat: 'used' },
+    { id: 'd', a: '3', b: '4', L: 400, d: 125, mat: 'used' }, { id: 'e', a: '3', b: '5', L: 600, d: 150, mat: 'used' }, { id: 'f', a: '4', b: '6', L: 600, d: 200, mat: 'used' },
+    { id: 'g', a: '5', b: '6', L: 400, d: 125, mat: 'used' }
   ]
 });
 

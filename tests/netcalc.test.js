@@ -78,12 +78,15 @@ test('пожарный расход по СП 8.13130.2020, таблица 1', (
   assert.deepEqual([N.fireDemand(30, 5).fires, N.fireDemand(30, 5).q], [2, 25]);
   assert.deepEqual([N.fireDemand(150, 9).fires, N.fireDemand(150, 9).q], [3, 40]);
   assert.equal(N.fireDemand(1500, 16).fires, 5);
-  // пожарный режим: отборы + пожар в узле 5, напор при пожаре не меньше 10 м
-  const net = city(), d = Object.fromEntries(net.nodes.map(n => [n.id, n.q || 0])); d['5'] += 25;
+  // пожарный режим: город на 20 тыс. жителей, 5 этажей — 2 пожара по 15 л/с в узлах 3 и 5; напор при пожаре не меньше 10 м
+  const fd = N.fireDemand(20, 5); assert.deepEqual([fd.fires, fd.q], [2, 15]);
+  const net = city(), d = Object.fromEntries(net.nodes.map(n => [n.id, n.q || 0])); d['3'] += fd.q; d['5'] += fd.q;
   const r = N.solve(net, { demands: d, tol: 0.001 });
-  assert.ok(r.ok); near(r.total, 110, 1e-9, 'общий расход при пожаре');
-  const c = N.check(net, r, 'fire');
-  assert.equal(c[0].level, 'ok', c[0].text);
+  assert.ok(r.ok); near(r.total, 115, 1e-9, 'общий расход при пожаре');
+  assert.equal(N.check(net, r, 'fire')[0].level, 'ok');
+  // оба пожара в конце сети — напора не хватает
+  d['3'] -= fd.q; d['5'] += fd.q * 2;
+  assert.equal(N.check(net, N.solve(net, { demands: d }), 'fire')[0].level, 'bad');
 });
 
 test('коэффициенты неравномерности и расчётный расход по СП 31.13330.2021 (п. 5.2, табл. 2)', () => {

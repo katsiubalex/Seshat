@@ -17,10 +17,11 @@
     a: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Здание' }),
     f: id => ({ files: ['js/kb.js', 'js/books.js'], find: idPat(id), type: 'Дисциплина' }),
     h: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Человек и вода' }),
+    n: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Расчёт сети' }),
     d: id => ({ files: ['js/docs.js'], find: idPat(id), type: 'Документ', key: 'doc-' + id }),
     g: id => ({ files: ['js/glossary.js'], find: idPat(id), type: 'Термин' })
   };
-  const BY_SECTION = { units: 'js/data.js', proc: 'js/kb.js', ind: 'js/kb.js', books: 'js/books.js', docs: 'js/docs.js', fund: 'js/kb.js', hum: 'js/kb.js',
+  const BY_SECTION = { net: 'js/kb.js', units: 'js/data.js', proc: 'js/kb.js', ind: 'js/kb.js', books: 'js/books.js', docs: 'js/docs.js', fund: 'js/kb.js', hum: 'js/kb.js',
     myth: 'js/myths.js', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'js/glossary.js' };
 
   // материал, открытый сейчас: ключ (адрес без «#»), тип, файлы данных

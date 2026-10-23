@@ -103,6 +103,10 @@
   const HUM_KEYS = [['anthropology', ['антрополог']], ['philosophy', ['философ', 'фалес', 'гераклит', 'башляр', 'иллич']],
     ['history', ['истори водо', 'истории водо', 'истории санитар', 'холер', 'джон сноу', 'акведук', 'фронтин']],
     ['commons', ['общее благо', 'остром', 'хардин', 'трагедия общин', 'право на воду']], ['ethics', ['этик']]];
+  // Расчёт водопроводной сети — статьи модуля «Сети водоснабжения»
+  const NET_KEYS = [['loops', ['увяз', 'кросс', 'лобачев', 'невязк']], ['headloss', ['шевелев', 'потери напора', 'гидравлический уклон', '1000i']],
+    ['heads', ['свободный напор', 'свободного напора', 'пьезометр']], ['fire', ['пожар', 'гидрант']], ['nodal', ['узловой расход', 'узловые расходы', 'удельный расход', 'путевой расход']],
+    ['demand', ['неравномерност', 'расчетный расход', 'расчётный расход']], ['ring', ['кольцевая сеть', 'кольцевые сети', 'тупиков']]];
   const IND_KEYS = [['bod', ['бпк']], ['cod', ['хпк']], ['ss', ['взвешен']], ['do', ['растворенный кислород', 'растворённый кислород']], ['ph', [' ph', 'кислотност']],
     ['alk', ['щелочност']], ['coli', ['колиформ', 'кишечная палочк', 'микробиологическ']], ['svi', ['иловый индекс', 'доза ила']], ['tds', ['солесодерж', 'сухой остаток']]];
   const SEC_KEYS = [['books', ['учебник', 'что почитать', 'литератур', 'книг']], ['journals', ['журнал', 'статьи учен', 'публикац']],
@@ -243,9 +247,9 @@
       options: [{ id: 'f:hydraulics', label: 'Расскажи про гидравлику' }, { id: 'h:philosophy', label: 'Что такое философия воды?' }, back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний' } };
   }
   function article(kind, id) {
-    const x = (kind === 'f' ? KB.FUNDAMENTALS : kind === 'h' ? KB.HUMANITIES : KB.INDICATORS).find(v => v.id === id);
+    const x = (kind === 'f' ? KB.FUNDAMENTALS : kind === 'h' ? KB.HUMANITIES : kind === 'n' ? KB.NETWORK : KB.INDICATORS).find(v => v.id === id);
     const text = kind === 'i' ? `${x.t}. ${x.what} ${x.why} В городских стоках обычно ${x.typ}.` : `${x.t}. ${x.lead} ${x.s[0][1]}`;
-    const page = kind === 'i' ? 'tlazolteotl' : kind === 'h' ? 'humanities' : 'hub';
+    const page = kind === 'i' ? 'tlazolteotl' : kind === 'h' ? 'humanities' : kind === 'n' ? 'juturna' : 'hub';
     return { text, options: [{ id: 'kbhelp', label: 'Что ещё есть в базе знаний?' }, back], action: open(page, `kb-${kind}-${id}`, 'Читать статью целиком') };
   }
   function section(id, ctx) {
@@ -319,7 +323,7 @@
       if (k === 'lore' && MY.BY[v]) return lore(v);
       if (k === 'books' && MOD[v]) return books(v);
       if (k === 'cycle' && MOD[v]) return cycle(v);
-      if ((k === 'f' || k === 'h' || k === 'i') && v) return article(k, v);
+      if ((k === 'f' || k === 'h' || k === 'i' || k === 'n') && v) return article(k, v);
       return ({ who: () => who(ctx), ndt, how: howMenu, review: () => review(ctx), recommend: () => recommend(ctx), bye: () => bye(ctx), cost: () => topic('cost', ctx),
         eco, start: () => start(ctx), modules: () => modules(ctx), kbhelp: () => kbHelp(ctx), names }[id] || (() => unknown(ctx)))();
     }
@@ -334,6 +338,7 @@
     // 4. фундаментальные дисциплины и гуманитарные статьи
     for (const [fid, keys] of FUND_KEYS) if (keyHit(keys)) return article('f', fid);
     for (const [hid, keys] of HUM_KEYS) if (keyHit(keys)) return article('h', hid);
+    for (const [nid, keys] of NET_KEYS) if (keyHit(keys)) return article('n', nid);
     // 5. сооружения очистки
     for (const [tid, keys] of KEYS) if (keyHit(keys)) return tech(tid);
     // 6. модуль по теме: гидрология, водозабор, канализация…

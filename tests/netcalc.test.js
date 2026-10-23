@@ -122,3 +122,12 @@ test('ошибки сети: нет источника, узел не соеди
   const n2 = city(); n2.nodes.push({ id: '8', x: 0, y: 0, q: 1 });
   const r = N.solve(n2); assert.equal(r.ok, false); assert.match(r.errors[0], /Не соединены/);
 });
+
+test('статьи о расчёте сети: у каждой есть источники; где источника нет — пометка «уточняется»', () => {
+  const KB = require('../js/kb.js'), DOCS = new Set(require('../js/docs.js').DOCS.map(d => d.id));
+  for (const p of KB.NETWORK) {
+    assert.ok(p.t && p.lead && p.s.length >= 2 && p.src.length >= 1, p.id);
+    for (const [doc, t, , url] of p.src) { assert.ok(!doc || DOCS.has(doc), p.id + ' → ' + doc); assert.ok(t); if (url) assert.match(url, /^https:\/\//); }
+    if (p.src.every(([doc, , , url]) => !doc && !url)) assert.ok(p.need, p.id + ': источник без ссылки — нужна пометка');
+  }
+});

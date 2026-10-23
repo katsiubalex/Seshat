@@ -5,7 +5,7 @@
 
 const WL = (() => {
   const MODS = SeshatModules.MODULES, KIND_OF = Object.fromEntries(MODS.map(m => [m.id, m.kind]));
-  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', y: 'Миф о воде', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
+  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', y: 'Миф о воде', n: 'Расчёт сети', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
   // тип статьи — значком (цвет занят принадлежностью)
   const ICON = {
     u: '<path d="M2 5h12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8.5c2-1 4 1 6 0s4-1 6 0"/>',
@@ -14,6 +14,7 @@ const WL = (() => {
     d: '<path d="M4 1.5h5.5L12.5 4.5v10h-8.5z"/><path d="M9.5 1.5v3h3M6.5 8.5h4M6.5 11h4"/>',
     f: '<path d="M2 3c2-1 4-1 6 .5 2-1.5 4-1.5 6-.5v10c-2-1-4-1-6 .5-2-1.5-4-1.5-6-.5z"/><path d="M8 3.5v10"/>',
     h: '<circle cx="8" cy="4.5" r="2.5"/><path d="M3 14c0-3 2.2-5 5-5s5 2 5 5"/>',
+    n: '<circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="3" cy="12" r="1.6"/><circle cx="13" cy="12" r="1.6"/><path d="M4.6 4h6.8M4.6 12h6.8M3 5.6v4.8M13 5.6v4.8"/>',
     y: '<path d="M8 1.5l1.8 4 4.2.4-3.2 2.8 1 4.3L8 10.8 4.2 13l1-4.3L2 5.9l4.2-.4z"/>',
     m: '<path d="M8 1.5c2.5 3.5 4.5 6 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2.5 2-5 4.5-8.5z"/>',
     a: '<path d="M2 14.5h12M3.5 14.5V6l4.5-3.5L12.5 6v8.5"/><path d="M6.5 14.5v-4h3v4"/>',
@@ -79,6 +80,10 @@ const WL = (() => {
   // общие дисциплины и гуманитарные статьи
   const F_SYN = { hydraulics: ['гидравлика', 'гидравлический расчёт'], math: ['математическая статистика'], chemistry: ['химия воды'], microbiology: ['микробиология'], geotech: ['инженерная геология', 'механика грунтов'], pumps: ['насосные станции'] };
   SeshatKB.FUNDAMENTALS.forEach(f => add(F_SYN[f.id] || [f.t], ROOT + '#kb-f-' + f.id, 'f', 'common', f.t));
+  // расчёт водопроводной сети (база знаний «Сетей водоснабжения»)
+  const N_SYN = { ring: ['кольцевая сеть', 'кольцевые сети', 'тупиковая сеть'], demand: ['расчётный расход', 'коэффициент часовой неравномерности'], nodal: ['удельный расход', 'узловой расход', 'путевой расход'],
+    headloss: ['гидравлический уклон', 'формулы Шевелёва', 'таблицы Шевелёва'], loops: ['увязка колец', 'увязку колец', 'невязка'], heads: ['свободный напор', 'пьезометрическая линия'], fire: ['пожарный расход', 'наружное пожаротушение'] };
+  SeshatKB.NETWORK.forEach(p => add(N_SYN[p.id] || [p.t], ROOT + 'juturna/#kb-n-' + p.id, 'n', 'kind-supply', p.t));
   SeshatKB.HUMANITIES.forEach(h => add({ anthropology: ['антропология воды'], philosophy: ['философия воды'], history: ['история санитарии'], commons: ['общее благо'], ethics: ['этика инженера'] }[h.id] || [h.t], ROOT + '#kb-h-' + h.id, 'h', 'common', h.t));
   // термины глоссария (определения из нормативных документов)
   const GL = (window.SeshatGlossary || { G: [] }).G, DOC_BY = Object.fromEntries(SeshatDocs.DOCS.map(d => [d.id, d]));
@@ -144,6 +149,7 @@ const WL = (() => {
   }
   GL.forEach(g => ART.push({ href: ROOT + '#kb-g-' + g.id, type: 'g', belong: glBelong(g), t: g.t, text: g.def }));
   SeshatKB.HUMANITIES.forEach(h => ART.push({ href: ROOT + '#kb-h-' + h.id, type: 'h', belong: 'common', t: h.t, text: [h.lead, ...h.s.map(x => x[1])].join(' ') }));
+  SeshatKB.NETWORK.forEach(p => ART.push({ href: ROOT + 'juturna/#kb-n-' + p.id, type: 'n', belong: 'kind-supply', t: p.t, text: [p.lead, ...p.s.map(x => x[1]), ...(p.n || [])].join(' ') }));
   MY.forEach(g => ART.push({ href: ROOT + 'humanities/#lore-' + g.id, type: 'y', belong: 'common', t: g.name, text: [g.legend, g.lead, ...g.chapters.flatMap(c => c.p)].join(' ') }));
   const termsFor = href => T.filter(t => norm(t.href) === norm(href));
   const backlinks = href => { const ts = termsFor(href); return ts.length ? ART.filter(a => norm(a.href) !== norm(href) && ts.some(t => t.re.test(a.text))) : []; };
@@ -151,7 +157,7 @@ const WL = (() => {
   const linkItem = a => `<li>${chip(a.type, a.belong)}<a href="${a.href}">${esc(a.t)}</a></li>`;
   function backPanel(href) {
     const list = backlinks(href); if (!list.length) return '';
-    const order = ['u', 'p', 'i', 'd', 'g', 'k', 'f', 'h', 'y', 'a'];
+    const order = ['u', 'p', 'i', 'n', 'd', 'g', 'k', 'f', 'h', 'y', 'a'];
     list.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.t.localeCompare(b.t, 'ru'));
     return `<section class="panel wl-back"><h2>Где упоминается</h2><ul class="wl-list">${list.slice(0, 18).map(linkItem).join('')}</ul>${list.length > 18 ? `<p class="hint">и ещё ${list.length - 18}</p>` : ''}</section>`;
   }
@@ -199,7 +205,7 @@ const WL = (() => {
 
   const LEGEND = `<div class="wl-legend"><b>Как читать ссылки</b>
     <span><i class="wb-cluster"></i>весь кластер «Водная инфраструктура»</span><span><i class="wb-kind-nature"></i>природная вода</span><span><i class="wb-kind-supply"></i>водоснабжение</span><span><i class="wb-kind-waste"></i>водоотведение</span><span><i class="wb-multi"></i>несколько видов воды</span><span><i class="wb-common"></i>общие разделы Сешат</span>
-    <small>Цвет — к чему относится статья. Тип — значком: ${['u', 'p', 'i', 'd', 'g', 'k', 'f'].map(k => `<span class="wl-ti">${icon(k)}${TYPES[k].toLowerCase()}</span>`).join(' ')}.</small></div>`;
+    <small>Цвет — к чему относится статья. Тип — значком: ${['u', 'p', 'i', 'n', 'd', 'g', 'k', 'f'].map(k => `<span class="wl-ti">${icon(k)}${TYPES[k].toLowerCase()}</span>`).join(' ')}.</small></div>`;
 
   return { wikify, backPanel, coursePanel, indexHTML, searchHTML, glossaryHTML, LEGEND, T, ART, GL, backlinks, icon };
 })();

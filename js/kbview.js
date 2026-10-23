@@ -22,6 +22,7 @@ const KB_SECTIONS = [
   { id: 'units', t: 'Сооружения очистки', d: 'Как устроено и работает каждое из 40 сооружений, что оно удаляет и сколько стоит.', n: () => UNITS.length + KB.AUX.length },
   { id: 'proc', t: 'Физика и химия процессов', d: 'Осаждение, флотация, нитрификация, денитрификация, мембраны, обеззараживание — с уравнениями и ключевыми числами.', n: () => KB.PROCESSES.length },
   { id: 'ind', t: 'Показатели качества воды', d: 'Что означают БПК, ХПК, азот, фосфор и другие показатели, как их измеряют и почему они важны.', n: () => KB.INDICATORS.length },
+  { id: 'net', t: 'Расчёт водопроводной сети', d: 'Кольцевые сети, расчётные и узловые расходы, потери напора по Шевелёву, увязка колец, свободные напоры и пожаротушение — с пунктами норм.', n: () => KB.NETWORK.length },
   { id: 'books', t: 'Учебники', d: 'Учебники и справочники по дисциплинам модуля — российские и зарубежные.', n: () => nBooks(PAGE), unit: 'учебников' },
   { id: 'docs', t: 'Нормативные документы', d: 'Законы, правила, своды правил, санитарные нормы и справочники НДТ, которые относятся к модулю. Белые — общие для всего кластера «Водная инфраструктура».', n: () => docsOf(PAGE).length, unit: 'документов' },
   { id: 'fund', t: 'Основы', d: 'Фундаментальные дисциплины (математика, химия, микробиология, геология) и основы водоснабжения и водоотведения (гидравлика, насосы) — опора всех модулей.', n: () => KB.FUNDAMENTALS.length },
@@ -35,7 +36,7 @@ const KB_SECTIONS = [
 const SEC = Object.fromEntries(KB_SECTIONS.map(s => [s.id, s]));
 const UNIVERSAL = ['glossary', 'index', 'fund', 'hum', 'myth', 'journals', 'comm'];
 // разделы модулей: учебники есть у всех, у «Очистки сточных вод» — ещё сооружения, процессы и показатели
-const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : m.id === 'humanities' ? ['hum', 'myth', 'books'] : m.group === 'base' ? ['fund', 'books'] : ['books', 'docs']]));
+const MODULE_KB = Object.fromEntries(KB_MODS.map(m => [m.id, m.id === 'tlazolteotl' ? ['units', 'proc', 'ind', 'books', 'docs'] : m.id === 'humanities' ? ['hum', 'myth', 'books'] : m.id === 'juturna' ? ['net', 'books', 'docs'] : m.group === 'base' ? ['fund', 'books'] : ['books', 'docs']]));
 // раздел «Основы» внутри модуля «Основ» — его статьи
 const secOf = id => id === 'fund' && KB_MOD && KB_MOD.group === 'base' ? { id: 'fund', t: 'Статьи', d: 'Статьи по дисциплинам модуля: ключевые понятия, формулы и учебники.', n: () => fundOf(PAGE).length } : SEC[id];
 const fundOf = id => KB.FUNDAMENTALS.filter(f => f.home === id);
@@ -45,6 +46,7 @@ const IND_BY = Object.fromEntries(KB.INDICATORS.map(p => [p.id, p]));
 const AUX_BY = Object.fromEntries(KB.AUX.map(p => [p.id, p]));
 const FUND_BY = Object.fromEntries(KB.FUNDAMENTALS.map(p => [p.id, p]));
 const HUM_BY = Object.fromEntries(KB.HUMANITIES.map(p => [p.id, p]));
+const NET_BY = Object.fromEntries(KB.NETWORK.map(p => [p.id, p]));
 const EFF_IND = { ss: 'ss', bod: 'bod', cod: 'cod', nh4: 'nh4', no2: 'no2', no3: 'no3', p: 'p', oil: 'oil', fat: 'fat', nit: 'nh4', den: 'no3', bioP: 'p' };
 const EFF_NAME = { nit: 'нитрификация', den: 'денитрификация', bioP: 'биоудаление P' };
 const norm = s => String(s).toLowerCase().replace(/ё/g, 'е');
@@ -115,6 +117,7 @@ function kbResults() {
   }
   if (KB_MOD) docsOf(PAGE).forEach(d => { if (hit(d.short + ' ' + d.title + ' ' + d.about)) res.push(['Документ', d.short + ' — ' + d.title, '#doc-' + d.id]); });
   if (all || own.includes('proc')) KB.PROCESSES.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Процесс', p.t, '#kb-p-' + p.id]); });
+  if (all || own.includes('net')) KB.NETWORK.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Расчёт сети', p.t, (KB_MOD && KB_MOD.id === 'juturna' ? '' : ROOT + 'juturna/') + '#kb-n-' + p.id]); });
   if (all || own.includes('ind')) KB.INDICATORS.forEach(p => { if (hit([p.t, p.what, p.why, p.how].join(' '))) res.push(['Показатель', p.t, '#kb-i-' + p.id]); });
   (all ? KB_MODS.map(m => m.id) : [PAGE]).forEach(mid => booksOf(mid).forEach(b => b.list.forEach(([a, t]) => {
     if (hit(a + ' ' + t + ' ' + b.d)) res.push(['Учебник', `${a} ${t}`, mid === PAGE ? '#kb-books' : ROOT + KB_MODS.find(m => m.id === mid).path + '#kb-books']);
@@ -155,6 +158,9 @@ function kbSection(id) {
       <p class="hint">Статьи общие для всех модулей и открываются в базе знаний Сешат. Новые статьи по дисциплинам модуля появятся по мере работы над курсами.</p>`;
   } else if (id === 'fund') {
     body = ['fundamentals', 'basics'].map(h => { const m = KB_MODS.find(x => x.id === h); return `<section class="kb-group"><h2><a href="${ROOT + m.path}">${esc(m.n)}</a></h2><div class="kb-grid kb-grid-sm">${fundOf(h).map(x => `<a class="kb-card" href="#kb-f-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div></section>`; }).join('');
+  } else if (id === 'net') {
+    body = `<div class="kb-grid kb-grid-sm">${KB.NETWORK.map(p => `<a class="kb-card" href="#kb-n-${p.id}"><b>${esc(p.t)}</b><span>${esc(p.lead)}</span></a>`).join('')}</div>
+      <p class="hint">Всё, о чём здесь написано, можно попробовать в <a href="#constructor" data-go="constructor">конструкторе сети</a>.</p>`;
   } else if (id === 'myth') {
     body = window.SeshatMyths ? `<div class="kb-grid kb-grid-sm">${SeshatMyths.GODS.map(g => `<a class="kb-card" href="#lore-${g.id}"><b>${esc(g.name)}</b><span>${esc(g.epithet)} · ${esc(g.culture)}</span><small>Созвучно: ${g.mods.map(([m]) => esc((KB_MODS.find(x => x.id === m) || {}).n || m)).join(', ')}</small></a>`).join('')}</div>` : '';
   } else if (id === 'hum') {
@@ -241,6 +247,17 @@ function kbFund(id, hum) {
   kbRoot().innerHTML = article(head, main, side);
 }
 
+// статья о расчёте сети: формулы, разделы, ключевые числа, источники (пункт и страница) и связь с конструктором
+function kbNet(id) {
+  const p = NET_BY[id], i = KB.NETWORK.indexOf(p);
+  const head = `${crumbs([SEC.net.t, '#kb-net'], [p.t])}<header class="kb-ahead"><div><span class="gp-stage">Расчёт водопроводной сети</span><h1>${esc(p.t)}</h1><p class="kb-lead">${esc(p.lead)}</p></div></header>`;
+  const main = `${p.f ? `<section class="panel"><h2>Формулы</h2><div class="kb-f">${p.f.map(x => `<code>${esc(x)}</code>`).join('')}</div></section>` : ''}${sections(p.s)}${seq(KB.NETWORK, i, x => '#kb-n-' + x.id, x => x.t)}`;
+  const src = p.src.map(([doc, t, where, url]) => `<li>${doc && DOCS_BY_ID[doc] ? `<a href="#doc-${doc}">${esc(t)}</a>` : url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(t)} ↗</a>` : esc(t)}${where ? ` <span class="hint">— ${esc(where)}</span>` : ''}</li>`).join('');
+  const side = `${numbers(p.n)}<section class="panel"><h2>Источники</h2><ul class="kb-links">${src}</ul>${p.need ? `<p class="hint net-need">Источник уточняется: ${esc(p.need[0].toLowerCase() + p.need.slice(1))}</p>` : ''}</section>
+    ${p.tool ? `<section class="panel"><h2>В конструкторе</h2><p>${esc(p.tool)}</p><a class="btn" href="#constructor" data-go="constructor">Открыть конструктор сети</a></section>` : ''}`;
+  kbRoot().innerHTML = article(head, main, side);
+}
+
 /* ---------- нормативные документы модуля ---------- */
 function kbDoc(id) {
   const d = DOCS_BY_ID[id];
@@ -259,6 +276,7 @@ function renderKB(param) {
   if (a === 'a' && AUX_BY[b]) return kbAux(b);
   if (a === 'f' && FUND_BY[b]) return kbFund(b);
   if (a === 'h' && HUM_BY[b]) return kbFund(b, true);
+  if (a === 'n' && NET_BY[b]) return kbNet(b);
   if (a === 'd' && b && DOCS_BY_ID[b]) return kbDoc(b);
   if (!b && SEC[a]) return kbSection(a);
   kbHome();

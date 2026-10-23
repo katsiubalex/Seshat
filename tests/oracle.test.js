@@ -104,3 +104,11 @@ test('вопросы о платформе, модулях, мифах и баз
   const mods = O.local({ id: 'modules' }, h);
   assert.equal(mods.options.length, 9);
 });
+
+test('вопросы о расчёте сети ведут к статьям «Сетей водоснабжения»', () => {
+  const h = ctx({ page: 'juturna' });
+  for (const [q, id] of [['как увязать кольца?', 'loops'], ['что такое свободный напор', 'heads'], ['формула Шевелёва', 'headloss'], ['сколько воды нужно на пожар', 'fire']]) {
+    const r = O.local({ text: q }, h);
+    assert.equal(r.action.page, 'juturna', q); assert.equal(r.action.hash, 'kb-n-' + id, q);
+  }
+});

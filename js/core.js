@@ -80,6 +80,7 @@ function parseView(h) {
     const owner = /^d-/.test(x) ? docOwner(x.slice(2)) : x === 'docs' ? (PAGE !== 'hub' ? PAGE : docOwner())
       : /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
       : /^h-/.test(x) || ['hum', 'myth'].includes(x) ? 'humanities' // гуманитарные статьи и мифы — в «Гуманитарных аспектах»
+      : /^n-/.test(x) || x === 'net' ? 'juturna' // расчёт водопроводной сети — в «Сетях водоснабжения»
       : (x === 'books' && PAGE !== 'hub') || (x === 'fund' && ['fundamentals', 'basics'].includes(PAGE)) ? PAGE // учебники — у каждого модуля свои; статьи «Основ» — у своих модулей
       : 'hub';
     return [owner, 'kb', m[1]];

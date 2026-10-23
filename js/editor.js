@@ -1,6 +1,6 @@
 // Редактор статей на сайте: открыть статью базы знаний или миф, править Markdown и сразу видеть, как она будет выглядеть.
-// Правки не публикуются сами: готовый файл отправляют на проверку — на GitHub (изменение файла или новый файл), письмом
-// или файлом. Черновик сохраняется в этом браузере. Адреса: #editor — список, #editor-<коллекция>-<id> — статья,
+// Правки не публикуются сами: готовый файл отправляют на проверку — запросом на слияние на GitHub (js/ghsubmit.js: ветка,
+// файл и запрос создаются сами по ключу доступа), вручную через GitHub, письмом или файлом. Черновик сохраняется в этом браузере. Адреса: #editor — список, #editor-<коллекция>-<id> — статья,
 // #editor-<коллекция>-new — новая статья. Подключается на главной после kbview.js и kblinks.js.
 (function () {
   const root = document.getElementById('editor-root'); if (!root || !window.SeshatMD) return;
@@ -20,6 +20,7 @@
     aux: '---\nid: new-building\ntitle: Название здания\n---\n\nВводный абзац.\n\n## Назначение\nТекст.\n\n## Источники\n- Источник\n',
     fundamentals: '---\nid: new-discipline\ntitle: Название дисциплины\nhome: fundamentals\nmods:\n  - tlazolteotl\n---\n\nВводный абзац.\n\n## Ключевые формулы\n- `формула — пояснение`\n\n## Раздел\nТекст.\n\n## Учебники\n- Автор И. О. | Название | Город: Издательство, год\n\n## Источники\n- Источник\n',
     humanities: '---\nid: new-article\ntitle: Название статьи\n---\n\nВводный абзац.\n\n## Раздел\nТекст.\n\n## Почитать\n- Автор И. О. | Название | Город: Издательство, год\n\n## Источники\n- Источник\n',
+    glossary: '---\nid: new-term\ntitle: Термин\nsource: sp31\nref: п. 3.1, с. 5\nquote: false\n---\n\nОпределение термина: дословно из документа (quote: true) или кратким изложением (quote: false).\n',
     myths: '---\nid: new-myth\nname: Имя\nnative: Имя в оригинале\nepithet: Кто это\nculture: Культура\nabout: о боге\nlegend: Одно-два предложения о главном.\nmods:\n  - module: tlaloc\n    why: чем созвучен модулю\nsources:\n  - title: Название источника\n    url: https://…\n---\n\nВводный абзац.\n\n## Имя: Заголовок главы\n> Цитата или главная мысль главы (необязательно).\n\nТекст главы.\n'
   };
   // в ветке без статей о расчёте сети коллекция пустая — её не показываем
@@ -45,6 +46,9 @@
   /* ---------- предпросмотр: те же блоки, что на сайте ---------- */
   const H = s => esc(s == null ? '' : s);
   function preview(coll, x) {
+    if (coll === 'glossary') { const D = (window.SeshatDocs ? SeshatDocs.DOCS : []).find(d => d.id === x.src);
+      return `<article class="panel ed-term"><span class="gp-stage">Глоссарий</span><h1>${H(x.t)}</h1><p class="kb-lead">${x.q ? '«' + H(x.def) + '»' : H(x.def)}</p>
+        <p class="hint">${x.q ? 'Дословная цитата' : 'Краткое изложение'} · ${D ? H(D.short) : `<b class="ed-bad">нет документа «${H(x.src)}» в списке нормативных документов</b>`}${x.ref ? ', ' + H(x.ref) : ''}</p></article>`; }
     if (coll === 'myths') return `<article class="ed-myth">
         <p class="lore-kicker">${H(x.epithet)}${x.culture ? ' · ' + H(x.culture) : ''}</p><h1>${H(x.name)}</h1><p class="lore-native">${H(x.native)}</p><p class="lore-lead">${H(x.lead)}</p>
         ${x.chapters.map((c, i) => `<section class="ed-ch"><p class="lore-k">${i + 1}. ${H(c.k)}</p><h2>${H(c.t)}</h2>${c.q ? `<blockquote>${H(c.q)}</blockquote>` : ''}${c.p.map(p => `<p>${H(p)}</p>`).join('')}</section>`).join('')}
@@ -77,7 +81,7 @@
       <div class="ed-bar">
         <code class="ed-file">${isNew ? esc(COLL[coll].dir) + '/<i>id</i>.md' : esc(fileOf(coll, id))}</code>
         ${draft ? '<span class="ed-dr">восстановлен черновик из этого браузера</span>' : ''}
-        <span class="ed-acts"><button type="button" class="primary" data-ed="github">Предложить на GitHub</button><button type="button" data-ed="mail">Письмом</button><button type="button" data-ed="download">Скачать .md</button><button type="button" data-ed="copy">Скопировать</button><button type="button" data-ed="reset"${draft ? '' : ' disabled'}>Вернуть исходный текст</button></span>
+        <span class="ed-acts"><button type="button" class="primary" data-ed="send">Отправить на проверку</button><button type="button" data-ed="mail">Письмом</button><button type="button" data-ed="download">Скачать .md</button><button type="button" data-ed="copy">Скопировать</button><button type="button" data-ed="reset"${draft ? '' : ' disabled'}>Вернуть исходный текст</button></span>
       </div>
       <div class="ed-split">
         <div class="ed-src"><label class="visually-hidden" for="ed-text">Текст статьи в формате Markdown</label><textarea id="ed-text" spellcheck="true">${esc(cur.text)}</textarea>
@@ -117,14 +121,85 @@
       if (body.length > 6000) toast('Статья длинная: письмо может обрезаться. Надёжнее скачать файл и приложить его к письму.');
       location.href = `mailto:${R.MAIL}?subject=${encodeURIComponent('Сешат: правка статьи ' + file)}&body=${encodeURIComponent(body.slice(0, 6000))}`; return;
     }
-    if (a === 'github') {
-      if (cur.isNew) { // новый файл: GitHub подставит имя и текст, сохранить можно в виде предложения изменений
-        const u = `https://github.com/${R.REPO}/new/main/${COLL[cur.coll].dir}?filename=${encodeURIComponent(id + '.md')}&value=${encodeURIComponent(cur.text)}`;
-        if (u.length < 7500) { window.open(u, '_blank', 'noopener'); toast('Откроется GitHub с готовым файлом: нажмите «Commit changes» и выберите «Propose changes».'); return; }
-      }
+    if (a === 'send') {
+      if (GH) return openSend();
+      window.open(`https://github.com/${R.REPO}/edit/main/${file}`, '_blank', 'noopener');
+    }
+  });
+
+  /* ---------- отправка на проверку ---------- */
+  const GH = window.SeshatGH, TOKEN = 'seshat-gh-token';
+  let token = null; // ключ доступа живёт в памяти страницы; по желанию — до закрытия вкладки
+  try { token = sessionStorage.getItem(TOKEN); } catch (e) { /* хранилище недоступно */ }
+  document.body.insertAdjacentHTML('beforeend', `<dialog id="ed-send" class="edit-dlg" aria-labelledby="ed-send-h">
+    <form id="ed-send-f" method="dialog" novalidate>
+      <header class="edit-head"><h2 id="ed-send-h">Отправить на проверку</h2><button type="submit" value="cancel" class="edit-x" aria-label="Закрыть">✕</button></header>
+      <p class="edit-where" id="ed-send-where"></p>
+      <label>Что изменено <small>обязательно — это увидит проверяющий</small><textarea name="what" rows="2"></textarea></label>
+      <label>Источник правки <small>пункт нормы, страница учебника, ссылка; не нужен только для опечаток</small><input name="source" type="text" autocomplete="off"></label>
+      <label class="edit-check"><input type="checkbox" name="coi"> Я связан(а) с производителем или организацией, о которой идёт речь</label>
+      <label class="edit-coi" hidden>Кого вы представляете<input name="coiwho" type="text" autocomplete="organization"></label>
+      <label>Как указать вас <small>необязательно</small><input name="who" type="text" autocomplete="name"></label>
+      <fieldset class="ed-gh"><legend>Через GitHub — ветка и запрос на слияние создадутся сами</legend>
+        <label>Ключ доступа GitHub <small><a href="${GH ? GH.tokenUrl() : '#'}" target="_blank" rel="noopener">создать ключ ↗</a> — классический, с областью public_repo</small><input name="token" type="password" autocomplete="off" spellcheck="false"></label>
+        <label class="edit-check"><input type="checkbox" name="keep"> Помнить ключ до закрытия вкладки</label>
+        <p class="hint">Ключ уходит только на api.github.com и не сохраняется на сайте. Если у вас нет прав на запись в репозиторий, GitHub создаст вашу копию (форк), и правка придёт оттуда.</p></fieldset>
+      <p class="edit-err" id="ed-send-err" role="alert" hidden></p>
+      <p class="ed-steps" id="ed-send-log" aria-live="polite"></p>
+      <div class="edit-send"><button type="button" class="btn primary" data-send="api">Отправить через GitHub</button><button type="button" class="btn" data-send="manual">Без ключа: открыть GitHub</button></div>
+      <p class="hint">Без ключа откроется страница файла на GitHub, а текст статьи окажется в буфере обмена: вставьте его вместо старого и нажмите «Propose changes». Ещё можно отправить статью письмом или скачать файл — кнопки над текстом.</p>
+    </form></dialog>`);
+  const dlg = document.getElementById('ed-send'), fm = document.getElementById('ed-send-f'), err = document.getElementById('ed-send-err'), log = document.getElementById('ed-send-log');
+  const F = n => fm.elements[n];
+  fm.addEventListener('submit', ev => { if (!ev.submitter || ev.submitter.value !== 'cancel') ev.preventDefault(); });
+  F('coi').addEventListener('change', () => { fm.querySelector('.edit-coi').hidden = !F('coi').checked; });
+  // адрес статьи на сайте — для описания правки
+  const pageUrl = (coll, id) => { const C = COLL[coll]; return new URL(ROOT + (C.page === 'hub' ? '' : C.page + '/') + C.href(id), location.href).href; };
+  function openSend() {
+    const id = cur.isNew ? cur.newId : cur.id, file = `${COLL[cur.coll].dir}/${id}.md`;
+    const name = (MD.parse(cur.text).meta || {})[cur.coll === 'myths' ? 'name' : 'title'] || id;
+    cur.send = { id, file, name };
+    err.hidden = true; log.textContent = '';
+    document.getElementById('ed-send-where').innerHTML = `<b>${cur.isNew ? 'Новая статья' : 'Правка статьи'}:</b> ${esc(name)} <code class="ed-file">${esc(file)}</code>`;
+    F('token').value = token || ''; F('keep').checked = !!token;
+    fm.querySelectorAll('button').forEach(b => { b.disabled = false; });
+    dlg.showModal(); F('what').focus();
+  }
+  function problem() {
+    if (!F('what').value.trim()) return 'Опишите, что изменено.';
+    if (F('coi').checked && !F('coiwho').value.trim()) return 'Укажите, кого вы представляете: это увидит проверяющий.';
+    return '';
+  }
+  function prText() {
+    const s = cur.send, v = n => F(n).value.trim();
+    const title = `${cur.isNew ? 'Новая статья' : 'Правка статьи'} «${s.name}»`.slice(0, 120);
+    const body = [`**${cur.isNew ? 'Новая статья' : 'Правка статьи'}:** \`${s.file}\``, cur.isNew ? '' : `**Страница:** ${pageUrl(cur.coll, cur.id)}`, '',
+      `**Что изменено:** ${v('what')}`, `**Источник:** ${v('source') || '—'}`, `**Конфликт интересов:** ${F('coi').checked ? 'да — ' + v('coiwho') : 'нет'}`, v('who') ? `**Автор:** ${v('who')}` : '', '',
+      '_Отправлено из редактора статей Сешат. Перед слиянием — автоматические тесты и проверка куратором модуля; автор правки и проверяющий — разные люди._'].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n');
+    return { title, body };
+  }
+  fm.addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-send]'); if (!b) return;
+    const p = problem(); err.textContent = p; err.hidden = !p; if (p) return;
+    const s = cur.send;
+    if (b.dataset.send === 'manual') {
       try { await navigator.clipboard.writeText(cur.text); } catch (e) { /* без буфера — пользователь скопирует сам */ }
-      window.open(`https://github.com/${R.REPO}/${cur.isNew ? 'new/main/' + COLL[cur.coll].dir + '?filename=' + encodeURIComponent(id + '.md') : 'edit/main/' + file}`, '_blank', 'noopener');
-      toast('Текст скопирован. На GitHub замените им содержимое файла и нажмите «Propose changes» — правка уйдёт на проверку.');
+      window.open(`https://github.com/${R.REPO}/${cur.isNew ? 'new/main/' + COLL[cur.coll].dir + '?filename=' + encodeURIComponent(s.id + '.md') : 'edit/main/' + s.file}`, '_blank', 'noopener');
+      dlg.close(); toast('Текст статьи скопирован. На GitHub вставьте его вместо старого и нажмите «Propose changes», а в описание — что изменено и источник.'); return;
+    }
+    const t = F('token').value.trim();
+    if (!t) { err.textContent = 'Вставьте ключ доступа GitHub или отправьте без ключа.'; err.hidden = false; F('token').focus(); return; }
+    token = t; try { if (F('keep').checked) sessionStorage.setItem(TOKEN, t); else sessionStorage.removeItem(TOKEN); } catch (e) { /* без хранилища */ }
+    fm.querySelectorAll('button').forEach(x => { x.disabled = true; });
+    const { title, body } = prText();
+    try {
+      const r = await GH.submit({ token: t, repo: R.REPO, path: s.file, content: cur.text, title, body, step: m => { log.textContent = m; } });
+      log.innerHTML = `Готово: <a href="${esc(r.url)}" target="_blank" rel="noopener">запрос на слияние №${r.number} ↗</a>. Правку проверят тесты и куратор модуля; после слияния она появится на сайте.`;
+      draftSet(cur.key, null);
+      fm.querySelector('.edit-x').disabled = false; // отправлено: повторно не отправляем, только закрыть
+    } catch (e) {
+      err.textContent = e.message || String(e); err.hidden = false; log.textContent = '';
+      fm.querySelectorAll('button').forEach(x => { x.disabled = false; });
     }
   });
 

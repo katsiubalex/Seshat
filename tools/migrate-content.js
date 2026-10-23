@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Перенос статей из старых JS-файлов (js/kb.js, js/myths.js) в Markdown-файлы content/… — по одному файлу на статью.
+// Перенос статей из старых JS-файлов (js/kb.js, js/myths.js, js/glossary.js) в Markdown-файлы content/… — по одному файлу на статью.
 // Запускается один раз для каждой коллекции; существующие файлы не перезаписываются (ключ --force — перезаписать).
 // Пример: node tools/migrate-content.js processes indicators   ·   без аргументов — все коллекции, у которых есть данные.
 const fs = require('node:fs'), path = require('node:path');
@@ -11,6 +11,7 @@ const want = process.argv.slice(2).filter(a => !a.startsWith('--'));
 // данные берём из старых файлов, если в них ещё есть массивы статей (до перехода на content.js)
 function legacy(coll) {
   const C = MD.COLLECTIONS[coll];
+  if (coll === 'glossary') { const src = path.join(root, 'js/glossary.js'); delete require.cache[src]; require(src); const G = (globalThis.SeshatGlossary || {}).G; return G && G.length && !G.fromContent ? G : null; }
   if (coll === 'myths') { const src = path.join(root, 'js/myths.js'); delete require.cache[src]; const M = require(src); return M.GODS && M.GODS.length ? M.GODS : null; }
   const src = path.join(root, 'js/kb.js'); delete require.cache[src]; const K = require(src);
   return K[C.kbKey] && K[C.kbKey].length ? K[C.kbKey] : null;

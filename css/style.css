@@ -1302,3 +1302,9 @@ body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-i
 .ed-ch h2{font-family:var(--f-display);font-weight:500;font-size:22px;text-transform:none;letter-spacing:0;margin:2px 0 8px}
 .ed-ch blockquote{margin:6px 0;padding-left:14px;border-left:3px solid var(--gold);font-style:italic}
 @media (max-width:980px){.ed-split{grid-template-columns:minmax(0,1fr)}.ed-src{position:static}#ed-text{min-height:46vh}}
+/* редактор: предпросмотр в одну колонку, диалог отправки на проверку */
+.ed-prev .kb-layout{grid-template-columns:minmax(0,1fr)}
+.ed-gh{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;margin:0}
+.ed-gh legend{font-size:13px;font-weight:600;padding:0 4px}
+.ed-steps{margin:0;font-size:13.5px;line-height:1.5}.ed-steps a{color:var(--accent);font-weight:600}
+.ed-term h1{margin:4px 0}.ed-bad{color:var(--bad)}

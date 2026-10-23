@@ -1,14 +1,20 @@
-# Decap CMS — визуальный редактор статей Сешат без Git: правит те же Markdown-файлы в папке content/.
-# Режим «editorial_workflow»: каждая правка становится предложением изменений (pull request) и попадает на проверку.
+# Sveltia CMS — визуальный редактор статей Сешат без Git: правит те же Markdown-файлы в папке content/.
+# Sveltia CMS совместима с настройками Decap CMS и умеет входить на GitHub по ключу доступа (personal access token),
+# поэтому работает прямо на GitHub Pages — без отдельного OAuth-сервера.
 #
-# Работа на своём компьютере (без входа на GitHub): в папке репозитория выполнить  npx decap-server
-# и открыть http://localhost:8000/admin/ (сайт запустить любым локальным сервером на порту 8000).
-# Работа на сайте: нужен OAuth-посредник для входа через GitHub (GitHub Pages его не даёт) — адрес указать в base_url.
+# Вход: откройте https://katsiubalex.github.io/Seshat/admin/ → «Sign In with Token» → вставьте ключ.
+#   Классический ключ с областью public_repo или fine-grained с правами Contents и Pull requests (чтение и запись).
+# publish_mode: editorial_workflow — каждая правка становится запросом на слияние (pull request) и проходит проверку.
+# open_authoring — у кого нет прав на запись, правит в своей копии репозитория (форке), правка приходит запросом на слияние.
+# Работа на своём компьютере: запустите сайт локальным сервером, откройте /admin/ в Chrome или Edge и выберите
+#   «Work with Local Repository» — редактор будет менять файлы в папке репозитория напрямую, коммит делаете сами.
+# Текст статьи (поле body) — обычное многострочное поле, а не визуальный редактор Markdown: так разделы «## …»
+# и пункты «- …» сохраняются ровно в том виде, который понимает сборка (js/mdcontent.js).
 backend:
   name: github
   repo: katsiubalex/Seshat
   branch: main
-  # base_url: https://<ваш-oauth-посредник>   ← после настройки входа через GitHub
+  open_authoring: true
 local_backend: true
 publish_mode: editorial_workflow
 locale: ru
@@ -33,7 +39,7 @@ collections:
       - { name: title, label: "Название", widget: string }
       - { name: group, label: "Группа процессов", widget: string }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
-      - { name: body, label: "Текст: вводный абзац, разделы «## …», «## Уравнения», «## Ключевые числа», «## Источники»", widget: markdown }
+      - { name: body, label: "Текст: вводный абзац, разделы «## …», «## Уравнения», «## Ключевые числа», «## Источники»", widget: text }
   - name: indicators
     label: "Показатели качества воды"
     label_singular: "Показатель"
@@ -49,7 +55,7 @@ collections:
       - { name: unit, label: "Единицы", widget: string }
       - { name: typical, label: "Типичные значения в городских стоках", widget: string }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
-      - { name: body, label: "Разделы «## Что это», «## Почему важно», «## Как снижают», «## Источники»", widget: markdown }
+      - { name: body, label: "Разделы «## Что это», «## Почему важно», «## Как снижают», «## Источники»", widget: text }
   - name: aux
     label: "Вспомогательные здания"
     label_singular: "Здание"
@@ -63,7 +69,7 @@ collections:
       - { name: title, label: "Название", widget: string }
       - { name: proc, label: "Процессы (адреса статей)", widget: list, required: false }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
-      - { name: body, label: "Текст", widget: markdown }
+      - { name: body, label: "Текст", widget: text }
   - name: fundamentals
     label: "Основы: дисциплины"
     label_singular: "Дисциплина"
@@ -78,7 +84,7 @@ collections:
       - { name: home, label: "Модуль «Основ»", widget: select, options: [fundamentals, basics] }
       - { name: mods, label: "Где пригодится (модули)", widget: list }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
-      - { name: body, label: "Текст: «## Ключевые формулы», разделы, «## Учебники» (Автор | Название | Издательство), «## Источники»", widget: markdown }
+      - { name: body, label: "Текст: «## Ключевые формулы», разделы, «## Учебники» (Автор | Название | Издательство), «## Источники»", widget: text }
   - name: humanities
     label: "Человек и вода"
     label_singular: "Статья"
@@ -91,7 +97,23 @@ collections:
       - { name: id, label: "Адрес статьи (латиница)", widget: string }
       - { name: title, label: "Название", widget: string }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
-      - { name: body, label: "Текст: разделы, «## Почитать», «## Источники»", widget: markdown }
+      - { name: body, label: "Текст: разделы, «## Почитать», «## Источники»", widget: text }
+  - name: glossary
+    label: "Глоссарий"
+    label_singular: "Термин"
+    folder: content/glossary
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес термина (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Термин", widget: string }
+      - { name: source, label: "Документ (id: vk74, fz416, sp31, sp32, sp58, its10…)", widget: string }
+      - { name: ref, label: "Статья, пункт и страница", widget: string }
+      - { name: quote, label: "Дословная цитата (иначе — изложение)", widget: boolean, default: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Определение — один абзац", widget: text }
   - name: myths
     label: "Мифы о воде"
     label_singular: "Миф"
@@ -121,4 +143,4 @@ collections:
           - { name: title, label: "Название", widget: string }
           - { name: url, label: "Ссылка", widget: string, required: false }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
-      - { name: body, label: "Вводный абзац и главы «## Тема: Заголовок»", widget: markdown }
+      - { name: body, label: "Вводный абзац и главы «## Тема: Заголовок»", widget: text }

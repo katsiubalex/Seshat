@@ -66,8 +66,9 @@
     }
     return out;
   }
-  const needsQuote = s => s === '' || /^[\s\-?:,\[\]{}#&*!|>'"%@`]|: |\s#|\s$|^(true|false|null|yes|no|~)$/i.test(s);
-  const q = s => (typeof s === 'number' ? String(s) : needsQuote(String(s)) ? JSON.stringify(String(s)) : String(s));
+  // true и false пишем без кавычек: это логические поля (quote); остальные «опасные» для YAML слова — в кавычках
+  const needsQuote = s => s === '' || /^[\s\-?:,\[\]{}#&*!|>'"%@`]|: |\s#|\s$|^(null|yes|no|~)$/i.test(s);
+  const q = s => (typeof s === 'number' || typeof s === 'boolean' ? String(s) : needsQuote(String(s)) ? JSON.stringify(String(s)) : String(s));
   function dumpYaml(meta) {
     const out = [];
     for (const [k, v] of Object.entries(meta)) {
@@ -159,6 +160,12 @@
         opt(o, 'need', d.meta.need); return opt(o, 'tool', d.meta.tool); },
       fromData: x => ({ meta: { id: x.id, title: x.t, need: x.need, tool: x.tool }, lead: x.lead, sections: [...items('Формулы', x.f, true), ...x.s.map(([h, t]) => sec(h, t)), ...items('Ключевые числа', x.n),
         ...items('Источники', x.src.map(([doc, t, where, url]) => [doc || '—', t, where || ''].concat(url ? [url] : []).join(' | ')))] }) },
+    // глоссарий: одно определение — один файл; текст файла — само определение (цитата или изложение)
+    glossary: { label: 'Глоссарий', dir: 'content/glossary', href: id => '#kb-g-' + id, page: 'hub',
+      fields: { id: 'адрес термина (латиница)', title: 'термин', source: 'документ (id из нормативных документов: vk74, fz416, sp31, sp32, sp58, its10…)', ref: 'статья, пункт и страница документа', quote: 'true — дословная цитата, false — краткое изложение' },
+      special: [],
+      toData: d => ({ id: d.meta.id, t: d.meta.title, src: d.meta.source, ref: d.meta.ref, q: String(d.meta.quote) === 'true', def: d.lead }),
+      fromData: x => ({ meta: { id: x.id, title: x.t, source: x.src, ref: x.ref, quote: !!x.q }, lead: x.def, sections: [] }) },
     myths: { label: 'Мифы о воде', dir: 'content/myths', href: id => '#lore-' + id, page: 'humanities',
       fields: { id: 'адрес статьи', name: 'имя', native: 'имя в оригинале', epithet: 'кто это (эпитет)', culture: 'культура', about: '«о боге», «о богине» или «о легенде»', legend: 'кратко, 1–2 предложения', mods: 'созвучные модули: module и why', sources: 'источники: title и url' },
       special: [],
@@ -181,8 +188,14 @@
     const nameKey = coll === 'myths' ? 'name' : 'title';
     if (typeof doc.meta[nameKey] !== 'string' || !doc.meta[nameKey].trim()) err.push(`Нет поля ${nameKey} — названия статьи.`);
     if (coll === 'indicators') ['Что это', 'Почему важно', 'Как снижают'].forEach(h => { if (!doc.sections.some(s => s.h === h && s.paras.length)) err.push(`Нет раздела «## ${h}».`); });
-    else if (coll !== 'myths' && !doc.lead) err.push('Нет вводного абзаца перед первым разделом.');
+    else if (coll !== 'myths' && !doc.lead) err.push(coll === 'glossary' ? 'Нет определения: напишите его текстом под заголовком файла.' : 'Нет вводного абзаца перед первым разделом.');
     const body = doc.sections.filter(s => !(C.special || []).includes(s.h));
+    if (coll === 'glossary') {
+      if (!doc.meta.source || !doc.meta.ref) err.push('Укажите документ (source) и пункт (ref), откуда взято определение.');
+      if (!['true', 'false'].includes(String(doc.meta.quote))) err.push('Поле quote: true — дословная цитата, false — изложение.');
+      if (doc.sections.length) warn.push('У термина не бывает разделов «## …»: определение — один абзац.');
+      return { err, warn };
+    }
     if (coll !== 'indicators' && !body.length) err.push('Нет ни одного раздела «## …» с текстом.');
     body.forEach(s => { if (!s.paras.length && !s.items.length && !s.quote) warn.push(`Раздел «${s.h}» пустой.`); });
     if (coll === 'myths') {

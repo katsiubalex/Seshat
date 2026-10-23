@@ -19,10 +19,10 @@
     f: id => ({ files: [`content/kb/fundamentals/${id}.md`, 'js/books.js'], type: 'Дисциплина', md: ['fundamentals', id] }),
     h: id => ({ files: [`content/kb/humanities/${id}.md`], type: 'Человек и вода', md: ['humanities', id] }),
     d: id => ({ files: ['js/docs.js'], find: idPat(id), type: 'Документ', key: 'doc-' + id }),
-    g: id => ({ files: ['js/glossary.js'], find: idPat(id), type: 'Термин' })
+    g: id => ({ files: [`content/glossary/${id}.md`], type: 'Термин', md: ['glossary', id] })
   };
   const BY_SECTION = { units: 'js/data.js', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
-    myth: 'content/myths', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'js/glossary.js' };
+    myth: 'content/myths', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'content/glossary' };
 
   // материал, открытый сейчас: ключ (адрес без «#»), тип, файлы данных
   function material() {
@@ -47,7 +47,7 @@
     const file = mat.files && mat.files[0];
     return `<aside class="edit-bar" aria-label="Качество и правки">
       <div class="eb-status"><span class="rv rv-${st.s}" title="${esc(S.d)}">${esc(S.t)}</span>${st.by ? `<span class="eb-by">${esc(st.by)}${st.date ? ', ' + esc(st.date) : ''}</span>` : ''}<a href="${ROOT}#contribute">Как устроена проверка</a></div>
-      <div class="eb-acts"><button type="button" class="btn" data-edit="fix">Предложить правку</button><button type="button" class="btn" data-edit="bug">Нашли ошибку?</button>${file ? `<a href="${R.urls.history(file)}" target="_blank" rel="noopener">История правок ↗</a>` : ''}</div>
+      <div class="eb-acts">${mat.md ? `<a class="btn" href="${ROOT}#editor-${mat.md[0]}-${mat.md[1]}" title="Открыть текст статьи в редакторе с предпросмотром">Править статью</a>` : ''}<button type="button" class="btn" data-edit="fix">${mat.md ? 'Сообщить о правке' : 'Предложить правку'}</button><button type="button" class="btn" data-edit="bug">Нашли ошибку?</button>${file ? `<a href="${R.urls.history(file)}" target="_blank" rel="noopener">История правок ↗</a>` : ''}</div>
     </aside>`;
   }
   let current = null;

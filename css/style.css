@@ -1375,3 +1375,65 @@ body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-i
 .ed-gh legend{font-size:13px;font-weight:600;padding:0 4px}
 .ed-steps{margin:0;font-size:13.5px;line-height:1.5}.ed-steps a{color:var(--accent);font-weight:600}
 .ed-term h1{margin:4px 0}.ed-bad{color:var(--bad)}
+/* конструкторы модулей в разработке (общие стили; такие же — в ветке «Сети водоснабжения») */
+.net-tool{display:flex;flex-direction:column;gap:14px}
+.net-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding-right:72px}
+.net-head h1{margin:2px 0 0}
+.net-tools button[aria-pressed=true],.net-tool .seg button[aria-pressed=true]{background:var(--k);color:var(--on-k,#fff)}
+.net-body{display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:14px;align-items:start}
+.net-left,.net-right{display:flex;flex-direction:column;gap:12px}
+.net-left .panel,.net-right .panel{padding:12px;gap:8px}
+.net-left h2,.net-right h2{margin:0}
+.net-f{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.net-f input[type=text]{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface2);color:var(--ink)}
+.net-c{display:flex;gap:6px;align-items:center;font-size:13px}
+.net-dl{font-size:12.5px}
+.net-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.45}
+.net-checks li{padding:6px 8px 6px 26px;border-radius:6px;position:relative;background:var(--surface2)}
+.net-checks li::before{position:absolute;left:8px;top:6px;font-weight:700}
+.net-checks .nc-ok{background:var(--ok-bg)}.net-checks .nc-ok::before{content:"✓";color:var(--ok)}
+.net-checks .nc-bad{background:var(--bad-bg)}.net-checks .nc-bad::before{content:"!";color:var(--bad)}
+.net-checks .nc-warn{background:var(--warn-bg)}.net-checks .nc-warn::before{content:"!";color:var(--warn)}
+.net-ref{display:block;margin-top:2px;font-size:11.5px;color:var(--k)}
+.net-help{margin:0;padding-left:18px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:4px}
+.net-tw{overflow-x:auto}
+.net-t td,.net-t th{text-align:right}
+.net-t td:first-child,.net-t th:first-child,.net-t .l{text-align:left}
+.net-t tbody tr{cursor:pointer}.net-t tbody tr:hover td{background:var(--surface2)}
+.net-t tr.bad td{color:var(--bad)}.net-t tr.cur td{background:var(--accent-soft)}
+.net-note{margin:0}
+@media (max-width:1180px){.net-body{grid-template-columns:240px minmax(0,1fr)}.net-right{grid-column:1 / -1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}}
+@media (max-width:760px){.net-body{grid-template-columns:minmax(0,1fr)}.net-plan{order:1}.net-right{order:2}.net-left{order:3}.net-head{padding-right:0}}
+/* «Очистка природных вод»: конструктор схемы водоподготовки */
+.dw-body{grid-template-columns:280px minmax(0,1fr) 320px}
+.dw-center{display:flex;flex-direction:column;gap:12px;min-width:0}
+.dw-src{display:flex}.dw-src button{flex:1 1 auto}
+.dw-grid{display:flex;flex-direction:column;gap:4px}
+.dw-grid .net-f{flex-direction:row;align-items:center;justify-content:space-between;gap:8px}
+.dw-grid .net-f span{flex:1 1 auto;line-height:1.3}.dw-grid .net-f input{width:84px;flex:none;text-align:right}
+.dw-class{display:flex;flex-direction:row;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between}
+.dw-class>div{flex:1 1 360px;min-width:0}.dw-class h2{margin:2px 0 4px;text-transform:none;letter-spacing:0;font-size:17px}
+.dw-class p{margin:4px 0;font-size:13.5px;line-height:1.5}
+.dw-ref{font-size:12px;color:var(--k,var(--accent));white-space:normal}
+.dw-chain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;counter-reset:dw}
+.dw-end{font-size:12px;color:var(--muted);padding:2px 4px}
+.dw-unit{display:flex;align-items:stretch;border:1px solid var(--line);border-left:4px solid var(--dwc,var(--k));border-radius:8px;background:var(--surface);counter-increment:dw}
+.dw-unit.sel{outline:2px solid var(--k);outline-offset:1px}.dw-unit.bad{border-color:var(--bad);border-left-color:var(--bad);background:var(--bad-bg)}
+.dw-u-main{flex:1 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 10px;border:0;background:none;text-align:left;color:var(--ink);cursor:pointer;font:inherit;min-width:0}
+.dw-u-main small{font-size:11px;color:var(--muted)}.dw-u-main b{font-size:13.5px;font-weight:600;line-height:1.3}
+.dw-u-acts{display:flex;align-items:center;border-left:1px solid var(--line)}.dw-u-acts button{border:0;border-radius:0;background:none;padding:0 10px;height:100%;font-size:13px;color:var(--muted)}
+.dw-u-acts button:hover:not(:disabled){color:var(--ink);background:var(--surface2)}
+.st-pre{--dwc:#7A8B99}.st-reag{--dwc:#B07D2B}.st-clar{--dwc:#5B9AC4}.st-filt{--dwc:#2E7FB0}.st-spec{--dwc:#7B5EA7}.st-dis{--dwc:#2A7A4B}
+.dw-add{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.dw-add select{flex:1 1 220px;min-width:0}
+.dw-t th{font-size:11.5px;white-space:nowrap}.dw-t th small{display:block;font-weight:400;color:var(--muted)}.dw-t th.cur{color:var(--k)}
+.dw-t td small{margin-left:6px;font-size:11px;color:var(--muted)}
+.dw-t td,.dw-t th{padding:5px 8px}
+.dw-t td.chg{font-weight:600}.dw-t td.ok{background:var(--ok-bg)}.dw-t td.bad{background:var(--bad-bg);color:var(--bad)}.dw-t td.nrm{color:var(--muted);white-space:nowrap}
+.dw-t tr.dw-micro td{border-top:2px solid var(--line)}
+.net-checks .nc-info{background:var(--surface2)}.net-checks .nc-info::before{content:"i";color:var(--muted)}
+.dw-sel ul{margin:6px 0;padding-left:18px;font-size:13px;line-height:1.5}.dw-sel p{font-size:13.5px}
+.dw-size-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px 20px}
+.dw-size h3{margin:6px 0 4px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dw-size dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:4px 10px;font-size:13px}.dw-size dt{color:var(--muted)}.dw-size dd{margin:0}.dw-size dd.bad{color:var(--bad)}
+@media (max-width:1180px){.dw-body{grid-template-columns:260px minmax(0,1fr)}}
+@media (max-width:760px){.dw-body{grid-template-columns:minmax(0,1fr)}.dw-center{order:1}.dw-body .net-left{order:2}.dw-body .net-right{order:3}}

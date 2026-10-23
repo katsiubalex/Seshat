@@ -58,8 +58,8 @@ test('курсы: ссылки уроков ведут на существующ
   const { C } = require('../js/courses.js');
   const D = require('../js/data.js');
   const ok = new Set([...D.UNITS.map(u => '#kb-u-' + u.id), ...KB.AUX.map(a => '#kb-a-' + a.id), ...KB.PROCESSES.map(p => '#kb-p-' + p.id),
-    ...KB.INDICATORS.map(p => '#kb-i-' + p.id), ...KB.FUNDAMENTALS.map(p => '#kb-f-' + p.id), ...KB.HUMANITIES.map(p => '#kb-h-' + p.id),
-    ...KB.NETWORK.map(p => '#kb-n-' + p.id), ...DOCS.map(d => '#doc-' + d.id), ...G.map(g => '#kb-g-' + g.id)]);
+    ...KB.INDICATORS.map(p => '#kb-i-' + p.id), ...KB.FUNDAMENTALS.map(p => '#kb-f-' + p.id), ...KB.HUMANITIES.map(p => '#kb-h-' + p.id), ...KB.NETWORK.map(p => '#kb-n-' + p.id), ...KB.DRINKING.map(p => '#kb-w-' + p.id), ...require('../js/dwcalc.js').UNITS.map(u => '#kb-v-' + u.id),
+    ...DOCS.map(d => '#doc-' + d.id), ...G.map(g => '#kb-g-' + g.id)]);
   const ids = new Set(C.map(c => c.id));
   assert.equal(ids.size, C.length, 'id уникальны');
   for (const m of MODS.slice(0, 11)) assert.ok(C.some(c => c.mods.includes(m)), 'у модуля есть курсы: ' + m); // кластер и «Основы»; у смежных областей курсы появятся позже

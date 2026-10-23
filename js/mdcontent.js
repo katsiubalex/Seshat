@@ -160,6 +160,14 @@
         opt(o, 'need', d.meta.need); return opt(o, 'tool', d.meta.tool); },
       fromData: x => ({ meta: { id: x.id, title: x.t, need: x.need, tool: x.tool }, lead: x.lead, sections: [...items('Формулы', x.f, true), ...x.s.map(([h, t]) => sec(h, t)), ...items('Ключевые числа', x.n),
         ...items('Источники', x.src.map(([doc, t, where, url]) => [doc || '—', t, where || ''].concat(url ? [url] : []).join(' | ')))] }) },
+    // водоподготовка («Очистка природных вод»): процессы и показатели; источники — «документ | название | где | ссылка»
+    drinking: { label: 'Водоподготовка: процессы и показатели', dir: 'content/kb/drinking', href: id => '#kb-w-' + id, page: 'anahita', kbKey: 'DRINKING',
+      fields: { id: 'адрес статьи', title: 'название', group: 'группа: Выбор технологии, Процессы или Показатели', need: 'что ещё не подтверждено источником', tool: 'как попробовать в конструкторе' }, special: ['Формулы', 'Ключевые числа', 'Источники'],
+      toData: d => { const o = { id: d.meta.id, t: d.meta.title, g: d.meta.group, lead: d.lead }; opt(o, 'f', list(d, 'Формулы')); o.s = rest(d, ['Формулы', 'Ключевые числа', 'Источники']); opt(o, 'n', list(d, 'Ключевые числа'));
+        o.src = (list(d, 'Источники') || []).map(x => { const [doc, t, where, url] = x.split(/\s*\|\s*/); const r = [doc && doc !== '—' ? doc : null, t || '', where || '']; if (url) r.push(url); return r; });
+        opt(o, 'need', d.meta.need); return opt(o, 'tool', d.meta.tool); },
+      fromData: x => ({ meta: { id: x.id, title: x.t, group: x.g, need: x.need, tool: x.tool }, lead: x.lead, sections: [...items('Формулы', x.f, true), ...x.s.map(([h, t]) => sec(h, t)), ...items('Ключевые числа', x.n),
+        ...items('Источники', x.src.map(([doc, t, where, url]) => [doc || '—', t, where || ''].concat(url ? [url] : []).join(' | ')))] }) },
     // глоссарий: одно определение — один файл; текст файла — само определение (цитата или изложение)
     glossary: { label: 'Глоссарий', dir: 'content/glossary', href: id => '#kb-g-' + id, page: 'hub',
       fields: { id: 'адрес термина (латиница)', title: 'термин', source: 'документ (id из нормативных документов: vk74, fz416, sp31, sp32, sp58, its10…)', ref: 'статья, пункт и страница документа', quote: 'true — дословная цитата, false — краткое изложение' },

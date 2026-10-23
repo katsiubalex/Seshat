@@ -5,9 +5,11 @@
 
 const WL = (() => {
   const MODS = SeshatModules.MODULES, KIND_OF = Object.fromEntries(MODS.map(m => [m.id, m.kind]));
-  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', y: 'Миф о воде', n: 'Расчёт сети', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
+  const TYPES = { u: 'Сооружение', p: 'Процесс', i: 'Показатель', d: 'Документ', f: 'Дисциплина', h: 'Человек и вода', y: 'Миф о воде', n: 'Расчёт сети', w: 'Водоподготовка', v: 'Сооружение водоподготовки', m: 'Модуль', a: 'Здание', g: 'Термин', k: 'Курс' };
   // тип статьи — значком (цвет занят принадлежностью)
   const ICON = {
+    w: '<path d="M8 1.5S3.5 7 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7 8 1.5 8 1.5z"/>',
+    v: '<path d="M2 5h12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M8 7.5s-1.6 1.8-1.6 2.8a1.6 1.6 0 0 0 3.2 0C9.6 9.3 8 7.5 8 7.5z"/>',
     u: '<path d="M2 5h12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8.5c2-1 4 1 6 0s4-1 6 0"/>',
     p: '<path d="M13 6a5 5 0 0 0-9.3-1.5M3 10a5 5 0 0 0 9.3 1.5"/><path d="M13 2.5V6H9.5M3 13.5V10h3.5"/>',
     i: '<path d="M6 2h4M6.5 2v4.5L3 13a1 1 0 0 0 .9 1.5h8.2A1 1 0 0 0 13 13L9.5 6.5V2"/>',
@@ -84,6 +86,11 @@ const WL = (() => {
   const N_SYN = { ring: ['кольцевая сеть', 'кольцевые сети', 'тупиковая сеть'], demand: ['расчётный расход', 'коэффициент часовой неравномерности'], nodal: ['удельный расход', 'узловой расход', 'путевой расход'],
     headloss: ['гидравлический уклон', 'формулы Шевелёва', 'таблицы Шевелёва'], loops: ['увязка колец', 'увязку колец', 'невязка'], heads: ['свободный напор', 'пьезометрическая линия'], fire: ['пожарный расход', 'наружное пожаротушение'] };
   SeshatKB.NETWORK.forEach(p => add(N_SYN[p.id] || [p.t], ROOT + 'juturna/#kb-n-' + p.id, 'n', 'kind-supply', p.t));
+  // водоподготовка («Очистка природных вод»): термины, характерные только для неё
+  const W_SYN = { 'dw-iron': ['обезжелезивание', 'обезжелезивания', 'деманганация', 'деманганации'], 'dw-fluoride': ['обесфторивание', 'обесфторивания'], 'dw-classes': ['классы поверхностных вод', 'класс воды источника'],
+    'dw-micro': ['обобщённые колиформные бактерии'], 'dw-oxidation': ['тригалометаны', 'тригалометанов'] };
+  (SeshatKB.DRINKING || []).forEach(p => W_SYN[p.id] && add(W_SYN[p.id], ROOT + 'anahita/#kb-w-' + p.id, 'w', 'kind-supply', p.t));
+  if (window.SeshatDW) add(['контактные осветлители', 'контактных осветлителях', 'осветлители со взвешенным осадком', 'осветлителях со взвешенным осадком'], ROOT + 'anahita/#kb-v-cclar', 'v', 'kind-supply', 'Контактные осветлители');
   SeshatKB.HUMANITIES.forEach(h => add({ anthropology: ['антропология воды'], philosophy: ['философия воды'], history: ['история санитарии'], commons: ['общее благо'], ethics: ['этика инженера'] }[h.id] || [h.t], ROOT + '#kb-h-' + h.id, 'h', 'common', h.t));
   // термины глоссария (определения из нормативных документов)
   const GL = (window.SeshatGlossary || { G: [] }).G, DOC_BY = Object.fromEntries(SeshatDocs.DOCS.map(d => [d.id, d]));
@@ -148,6 +155,8 @@ const WL = (() => {
       return `<li>${chip('k', kindBelong(c.mods))}<a href="${ROOT + MODS.find(m => m.id === c.mods[0]).path}#course-${c.id}">${esc(c.t)}</a> <small class="hint">урок ${ls.join(', ')}</small></li>`; }).join('')}</ul></section>`;
   }
   GL.forEach(g => ART.push({ href: ROOT + '#kb-g-' + g.id, type: 'g', belong: glBelong(g), t: g.t, text: g.def }));
+  (SeshatKB.DRINKING || []).forEach(p => ART.push({ href: ROOT + 'anahita/#kb-w-' + p.id, type: 'w', belong: 'kind-supply', t: p.t, text: [p.lead, ...p.s.map(x => x[1]), ...(p.n || [])].join(' ') }));
+  if (window.SeshatDW) SeshatDW.UNITS.forEach(u => ART.push({ href: ROOT + 'anahita/#kb-v-' + u.id, type: 'v', belong: 'kind-supply', t: u.n, text: [u.d, u.how, ...u.params].join(' ') }));
   SeshatKB.HUMANITIES.forEach(h => ART.push({ href: ROOT + '#kb-h-' + h.id, type: 'h', belong: 'common', t: h.t, text: [h.lead, ...h.s.map(x => x[1])].join(' ') }));
   SeshatKB.NETWORK.forEach(p => ART.push({ href: ROOT + 'juturna/#kb-n-' + p.id, type: 'n', belong: 'kind-supply', t: p.t, text: [p.lead, ...p.s.map(x => x[1]), ...(p.n || [])].join(' ') }));
   MY.forEach(g => ART.push({ href: ROOT + 'humanities/#lore-' + g.id, type: 'y', belong: 'common', t: g.name, text: [g.legend, g.lead, ...g.chapters.flatMap(c => c.p)].join(' ') }));
@@ -157,7 +166,7 @@ const WL = (() => {
   const linkItem = a => `<li>${chip(a.type, a.belong)}<a href="${a.href}">${esc(a.t)}</a></li>`;
   function backPanel(href) {
     const list = backlinks(href); if (!list.length) return '';
-    const order = ['u', 'p', 'i', 'n', 'd', 'g', 'k', 'f', 'h', 'y', 'a'];
+    const order = ['u', 'p', 'i', 'n', 'v', 'w', 'd', 'g', 'k', 'f', 'h', 'y', 'a'];
     list.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.t.localeCompare(b.t, 'ru'));
     return `<section class="panel wl-back"><h2>Где упоминается</h2><ul class="wl-list">${list.slice(0, 18).map(linkItem).join('')}</ul>${list.length > 18 ? `<p class="hint">и ещё ${list.length - 18}</p>` : ''}</section>`;
   }

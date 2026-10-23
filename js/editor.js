@@ -20,6 +20,7 @@
     aux: '---\nid: new-building\ntitle: Название здания\n---\n\nВводный абзац.\n\n## Назначение\nТекст.\n\n## Источники\n- Источник\n',
     fundamentals: '---\nid: new-discipline\ntitle: Название дисциплины\nhome: fundamentals\nmods:\n  - tlazolteotl\n---\n\nВводный абзац.\n\n## Ключевые формулы\n- `формула — пояснение`\n\n## Раздел\nТекст.\n\n## Учебники\n- Автор И. О. | Название | Город: Издательство, год\n\n## Источники\n- Источник\n',
     humanities: '---\nid: new-article\ntitle: Название статьи\n---\n\nВводный абзац.\n\n## Раздел\nТекст.\n\n## Почитать\n- Автор И. О. | Название | Город: Издательство, год\n\n## Источники\n- Источник\n',
+    drinking: '---\nid: dw-new\ntitle: Название статьи\ngroup: Процессы\n---\n\nВводный абзац: что это и зачем — в двух-трёх предложениях.\n\n## Формулы\n- `формула — пояснение`\n\n## Раздел\nТекст раздела с пунктом нормы в скобках (п. 9.16).\n\n## Ключевые числа\n- число с единицами\n\n## Источники\n- sp31 | СП 31.13330.2021 | п. 9.16, с. 35\n',
     glossary: '---\nid: new-term\ntitle: Термин\nsource: sp31\nref: п. 3.1, с. 5\nquote: false\n---\n\nОпределение термина: дословно из документа (quote: true) или кратким изложением (quote: false).\n',
     myths: '---\nid: new-myth\nname: Имя\nnative: Имя в оригинале\nepithet: Кто это\nculture: Культура\nabout: о боге\nlegend: Одно-два предложения о главном.\nmods:\n  - module: tlaloc\n    why: чем созвучен модулю\nsources:\n  - title: Название источника\n    url: https://…\n---\n\nВводный абзац.\n\n## Имя: Заголовок главы\n> Цитата или главная мысль главы (необязательно).\n\nТекст главы.\n'
   };
@@ -54,11 +55,11 @@
         ${x.chapters.map((c, i) => `<section class="ed-ch"><p class="lore-k">${i + 1}. ${H(c.k)}</p><h2>${H(c.t)}</h2>${c.q ? `<blockquote>${H(c.q)}</blockquote>` : ''}${c.p.map(p => `<p>${H(p)}</p>`).join('')}</section>`).join('')}
         <section class="panel"><h2>Созвучные модули</h2><ul class="kb-links">${x.mods.map(([m, w]) => `<li><b>${H((SeshatModules.MODULES.find(z => z.id === m) || { n: m + ' — нет такого модуля' }).n)}</b> — ${H(w)}</li>`).join('')}</ul></section>
         <section class="panel"><h2>Источники</h2><ul class="kb-links">${x.sources.map(([t, u]) => `<li>${u ? `<a href="${H(u)}" target="_blank" rel="noopener">${H(t)} ↗</a>` : H(t)}</li>`).join('')}</ul></section></article>`;
-    const head = `<header class="kb-ahead"><div><span class="gp-stage">${H(coll === 'processes' ? x.g : coll === 'indicators' ? x.u : COLL[coll].label)}</span><h1>${H(x.t)}</h1>${x.lead ? `<p class="kb-lead">${H(x.lead)}</p>` : ''}</div></header>`;
+    const head = `<header class="kb-ahead"><div><span class="gp-stage">${H(coll === 'processes' || coll === 'drinking' ? x.g : coll === 'indicators' ? x.u : COLL[coll].label)}</span><h1>${H(x.t)}</h1>${x.lead ? `<p class="kb-lead">${H(x.lead)}</p>` : ''}</div></header>`;
     const f = x.f && x.f.length ? `<section class="panel"><h2>${coll === 'processes' ? 'Уравнения' : 'Ключевые формулы'}</h2><div class="kb-f">${x.f.map(v => `<code>${H(v)}</code>`).join('')}</div></section>` : '';
     const s = coll === 'indicators' ? sections([['Что это', x.what], ['Почему важно', x.why], ['Как снижают', x.how]]) : sections(x.s || []);
     const books = x.books && x.books.length ? `<section class="panel"><h2>${coll === 'humanities' ? 'Почитать' : 'Учебники'}</h2>${bookList(x.books)}</section>` : '';
-    const src = coll === 'network' ? `<section class="panel"><h2>Источники</h2><ul class="kb-links">${x.src.map(([d, t, w, u]) => `<li>${u ? `<a href="${H(u)}" target="_blank" rel="noopener">${H(t)} ↗</a>` : H(t)}${d ? ` <span class="hint">[${H(d)}]</span>` : ''}${w ? ` <span class="hint">— ${H(w)}</span>` : ''}</li>`).join('')}</ul></section>` : srcPanel(x);
+    const src = coll === 'network' || coll === 'drinking' ? `<section class="panel"><h2>Источники</h2><ul class="kb-links">${x.src.map(([d, t, w, u]) => `<li>${u ? `<a href="${H(u)}" target="_blank" rel="noopener">${H(t)} ↗</a>` : H(t)}${d ? ` <span class="hint">[${H(d)}]</span>` : ''}${w ? ` <span class="hint">— ${H(w)}</span>` : ''}</li>`).join('')}</ul></section>` : srcPanel(x);
     return article(head, f + s, numbers(x.n) + src + books);
   }
 

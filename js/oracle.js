@@ -100,6 +100,12 @@
   const FUND_KEYS = [['hydraulics', ['гидравлик', 'бернулли', 'дарси', 'рейнольдс', 'шези', 'потери напор']], ['math', ['математик', 'статистик', 'дифференциальн']],
     ['chemistry', ['химия вод', 'химии вод', 'карбонатн', 'растворимост']], ['microbiology', ['микробиолог', 'биохими']],
     ['geotech', ['грунт', 'инженерная геолог']], ['pumps', ['насос', 'автоматизац']]];
+  // Водоподготовка — статьи модуля «Очистка природных вод»; общие слова (фильтры, отстойники) — только на его странице
+  const W_KEYS = [['dw-iron', ['обезжелез', 'деманган', 'железо в вод', 'железа в вод', 'марганец в вод']], ['dw-softening', ['умягч', 'обессол', 'обратный осмос', 'жёсткост', 'жесткост']],
+    ['dw-fluoride', ['фтор']], ['dw-classes', ['класс вод', 'классы вод', 'выбор технологи', 'водоподготов']], ['dw-micro', ['колиформ', 'микробиолог']],
+    ['dw-disinfection', ['обеззараж питьев', 'остаточный хлор', 'хлорамин', 'диоксид хлора']], ['dw-organoleptic', ['мутност', 'цветност']]];
+  const W_LOCAL = [['dw-disinfection', ['обеззараж', 'хлорирован', 'ультрафиолет']], ['dw-coagulation', ['коагуля', 'коагулянт', 'подщелач']], ['dw-clarification', ['отстойник', 'осветлител', 'отстаиван']],
+    ['dw-filtration', ['фильтр']], ['dw-oxidation', ['озон', 'уголь', 'запах', 'привкус', 'окислител']], ['dw-general', ['окисляемост', 'щёлочност', 'щелочност']]];
   const HUM_KEYS = [['anthropology', ['антрополог']], ['philosophy', ['философ', 'фалес', 'гераклит', 'башляр', 'иллич']],
     ['history', ['истори водо', 'истории водо', 'истории санитар', 'холер', 'джон сноу', 'акведук', 'фронтин']],
     ['commons', ['общее благо', 'остром', 'хардин', 'трагедия общин', 'право на воду']], ['ethics', ['этик']]];
@@ -247,9 +253,9 @@
       options: [{ id: 'f:hydraulics', label: 'Расскажи про гидравлику' }, { id: 'h:philosophy', label: 'Что такое философия воды?' }, back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний' } };
   }
   function article(kind, id) {
-    const x = (kind === 'f' ? KB.FUNDAMENTALS : kind === 'h' ? KB.HUMANITIES : kind === 'n' ? KB.NETWORK : KB.INDICATORS).find(v => v.id === id);
+    const x = (kind === 'f' ? KB.FUNDAMENTALS : kind === 'h' ? KB.HUMANITIES : kind === 'w' ? KB.DRINKING : kind === 'n' ? KB.NETWORK : KB.INDICATORS).find(v => v.id === id);
     const text = kind === 'i' ? `${x.t}. ${x.what} ${x.why} В городских стоках обычно ${x.typ}.` : `${x.t}. ${x.lead} ${x.s[0][1]}`;
-    const page = kind === 'i' ? 'tlazolteotl' : kind === 'h' ? 'humanities' : kind === 'n' ? 'juturna' : 'hub';
+    const page = kind === 'i' ? 'tlazolteotl' : kind === 'h' ? 'humanities' : kind === 'w' ? 'anahita' : kind === 'n' ? 'juturna' : 'hub';
     return { text, options: [{ id: 'kbhelp', label: 'Что ещё есть в базе знаний?' }, back], action: open(page, `kb-${kind}-${id}`, 'Читать статью целиком') };
   }
   function section(id, ctx) {
@@ -323,7 +329,7 @@
       if (k === 'lore' && MY.BY[v]) return lore(v);
       if (k === 'books' && MOD[v]) return books(v);
       if (k === 'cycle' && MOD[v]) return cycle(v);
-      if ((k === 'f' || k === 'h' || k === 'i' || k === 'n') && v) return article(k, v);
+      if ((k === 'f' || k === 'h' || k === 'i' || k === 'w' || k === 'n') && v) return article(k, v);
       return ({ who: () => who(ctx), ndt, how: howMenu, review: () => review(ctx), recommend: () => recommend(ctx), bye: () => bye(ctx), cost: () => topic('cost', ctx),
         eco, start: () => start(ctx), modules: () => modules(ctx), kbhelp: () => kbHelp(ctx), names }[id] || (() => unknown(ctx)))();
     }
@@ -339,6 +345,10 @@
     for (const [fid, keys] of FUND_KEYS) if (keyHit(keys)) return article('f', fid);
     for (const [hid, keys] of HUM_KEYS) if (keyHit(keys)) return article('h', hid);
     for (const [nid, keys] of NET_KEYS) if (keyHit(keys)) return article('n', nid);
+    if (KB.DRINKING && KB.DRINKING.length) {
+      for (const [wid, keys] of W_KEYS) if (keyHit(keys)) return article('w', wid);
+      if (pageOf(ctx) === 'anahita') for (const [wid, keys] of W_LOCAL) if (keyHit(keys)) return article('w', wid);
+    }
     // 5. сооружения очистки
     for (const [tid, keys] of KEYS) if (keyHit(keys)) return tech(tid);
     // 6. модуль по теме: гидрология, водозабор, канализация…

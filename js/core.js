@@ -83,6 +83,7 @@ function parseView(h) {
       : /^(u|p|a|i)-/.test(x) || ['units', 'proc', 'ind'].includes(x) ? 'tlazolteotl'
       : /^h-/.test(x) || ['hum', 'myth'].includes(x) ? 'humanities' // гуманитарные статьи и мифы — в «Гуманитарных аспектах»
       : /^n-/.test(x) || x === 'net' ? 'juturna' // расчёт водопроводной сети — в «Сетях водоснабжения»
+      : /^[vw]-/.test(x) || ['dwu', 'dwk'].includes(x) ? 'anahita' // сооружения и статьи водоподготовки — в «Очистке природных вод»
       : (x === 'books' && PAGE !== 'hub') || (x === 'fund' && ['fundamentals', 'basics'].includes(PAGE)) ? PAGE // учебники — у каждого модуля свои; статьи «Основ» — у своих модулей
       : 'hub';
     return [owner, 'kb', m[1]];

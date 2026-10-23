@@ -118,6 +118,8 @@
 
   /* ---------- общие разделы: гуманитарные аспекты водопользования ---------- */
   const HUMANITIES = CT.humanities || [];
+  // водоподготовка («Очистка природных вод»): процессы и показатели — content/kb/drinking/<id>.md
+  const DRINKING = CT.drinking || [];
 
   /* ---------- научные журналы ---------- */
   const JOURNALS = [
@@ -161,6 +163,6 @@
   /* ---------- модуль «Сети водоснабжения»: расчёт кольцевой сети ---------- */
   // статьи — content/kb/network/<id>.md; src: [документ (id в docs.js) или null, название, где, ссылка]; need — что ещё не подтверждено источником
   const NETWORK = CT.network || [];
-  root.SeshatKB = { PROCESSES, INDICATORS, UNIT_PROC, AUX, BOOKS, MODULE_BOOKS, FUNDAMENTALS, HUMANITIES, NETWORK, JOURNALS, COMMUNITIES };
+  root.SeshatKB = { PROCESSES, INDICATORS, UNIT_PROC, AUX, BOOKS, MODULE_BOOKS, FUNDAMENTALS, HUMANITIES, NETWORK, DRINKING, JOURNALS, COMMUNITIES };
   if (typeof module !== 'undefined') module.exports = root.SeshatKB;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -100,7 +100,8 @@
     document.getElementById('edit-h').textContent = kind === 'bug' ? 'Сообщить об ошибке' : 'Предложить правку';
     document.getElementById('edit-where').innerHTML = `<b>${esc(current.mat.type)}:</b> ${esc(current.title)} <span class="hint">· ${esc(modName())}</span>`;
     const files = current.mat.files || [], dev = document.getElementById('edit-dev');
-    dev.innerHTML = files.length ? `Данные материала — в файле${files.length > 1 ? 'ах' : ''} ${files.map(f => `<code>${esc(f)}</code>`).join(' и ')}. <span id="edit-line"></span><a href="${R.urls.edit(files[0])}" target="_blank" rel="noopener">Редактировать файл на GitHub ↗</a> — GitHub сам предложит сделать копию и отправить изменения на проверку. Правила — в <a href="${R.urls.guide()}" target="_blank" rel="noopener">CONTRIBUTING.md ↗</a>.` : '';
+    const md = current.mat.md;
+    dev.innerHTML = files.length ? `${md ? `<a class="btn" href="${ROOT}#editor-${md[0]}-${md[1]}">Открыть в редакторе статей</a> — правка с предпросмотром и проверкой. ` : ''}Данные материала — в файле${files.length > 1 ? 'ах' : ''} ${files.map(f => `<code>${esc(f)}</code>`).join(' и ')}. <span id="edit-line"></span><a href="${R.urls.edit(files[0])}" target="_blank" rel="noopener">Редактировать файл на GitHub ↗</a> — GitHub сам предложит сделать копию и отправить изменения на проверку. Правила — в <a href="${R.urls.guide()}" target="_blank" rel="noopener">CONTRIBUTING.md ↗</a>.` : '';
     dlg.showModal();
     (sel ? F('proposal') : F(kind === 'bug' ? 'fragment' : 'proposal')).focus();
     const line = await lineOf(files[0], current.mat.find);

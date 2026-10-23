@@ -62,7 +62,7 @@
           arr.push(obj);
         } else arr.push(scalar(item, base + 2));
       }
-      out[key] = arr;
+      out[key] = arr.length ? arr : ''; // «ключ:» без списка — пустое значение
     }
     return out;
   }
@@ -179,7 +179,7 @@
     if (!C) return { err: ['Неизвестная коллекция: ' + coll], warn };
     if (!doc.meta.id || !/^[a-z0-9-]+$/.test(doc.meta.id)) err.push('Поле id: только латинские строчные буквы, цифры и дефис — это адрес статьи.');
     const nameKey = coll === 'myths' ? 'name' : 'title';
-    if (!doc.meta[nameKey]) err.push(`Нет поля ${nameKey} — названия статьи.`);
+    if (typeof doc.meta[nameKey] !== 'string' || !doc.meta[nameKey].trim()) err.push(`Нет поля ${nameKey} — названия статьи.`);
     if (coll === 'indicators') ['Что это', 'Почему важно', 'Как снижают'].forEach(h => { if (!doc.sections.some(s => s.h === h && s.paras.length)) err.push(`Нет раздела «## ${h}».`); });
     else if (coll !== 'myths' && !doc.lead) err.push('Нет вводного абзаца перед первым разделом.');
     const body = doc.sections.filter(s => !(C.special || []).includes(s.h));

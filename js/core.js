@@ -51,7 +51,7 @@ const DEV_MODULES = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloa
 const STUB_MODULES = ['interior', 'fundamentals', 'basics', 'economics', 'decentral', 'safety', 'digital', 'construction', 'environment'];
 const PAGE_PATH = { hub: '', tlazolteotl: 'tlazolteotl/' };
 const PAGE_VIEWS = {
-  hub: ['home', 'seshat', 'kb', 'contribute', 'about'],
+  hub: ['home', 'seshat', 'kb', 'editor', 'contribute', 'about'],
   tlazolteotl: ['overview', 'constructor', 'projects', 'courses', 'kb'],
   // «Гуманитарные аспекты»: обзор, мифы о воде (#lore — список, #lore-<id> — статья), курсы и база знаний
   humanities: ['overview', 'lore', 'courses', 'kb']
@@ -64,9 +64,11 @@ const VIEWS = PAGE_VIEWS[PAGE];
 const VIEW_RENDER = Object.create(null); // разделы, которые перерисовываются при открытии
 // адрес #… → [страница, раздел, параметр]
 function parseView(h) {
+  let m0;
   if (!h) return [PAGE, DEFAULT_VIEW[PAGE], null];
   if (h === 'genplan') h = 'constructor';                       // генплан теперь часть конструктора
   if (VIEWS.includes(h)) return [PAGE, h, null];                 // свои разделы страницы
+  if ((m0 = /^editor-([a-z]+-[a-z0-9-]+)$/.exec(h))) return ['hub', 'editor', m0[1]]; // редактор статей: #editor-<коллекция>-<id>
   let m;
   // нормативные документы живут в базах знаний модулей: документ открывается в текущем модуле, если относится к нему
   if ((m = /^doc-([a-z0-9]+)$/.exec(h))) return [docOwner(m[1]), 'kb', 'd-' + m[1]];

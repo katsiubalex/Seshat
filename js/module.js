@@ -45,6 +45,7 @@
         <header class="mod-head">${glyph(m.id, 64)}<div><span class="gp-stage">${esc(KIND[m.kind])}</span><h1>${esc(m.n)}</h1><p class="mod-domain">${esc(m.d)}</p></div></header>
         ${m.ready
           ? `<div class="mod-status mod-ready"><span>Модуль готов: соберите схему очистки на плане станции, сравните варианты и посмотрите, как меняются вода и затраты.</span><span class="mod-acts"><a class="btn primary" href="#constructor" data-go="constructor">Открыть конструктор</a><a class="btn" href="#projects" data-go="projects">Проекты</a></span></div>`
+          : m.tool ? `<div class="mod-status mod-ready"><span>Конструктор работает: ${esc(m.tool)}. Остальное наполнение модуля в разработке.</span><span class="mod-acts"><a class="btn primary" href="#constructor" data-go="constructor">Открыть конструктор</a></span></div>`
           : `<div class="mod-status"><span>Модуль в разработке. Здесь появится свой конструктор — так же, как конструктор в модуле <a href="${href(MOD.tlazolteotl)}">«${esc(MOD.tlazolteotl.n)}»</a>.</span><span class="mod-acts"><a class="btn" href="#constructor" data-go="constructor">Эскиз конструктора</a></span></div>`}
         <div class="kb-layout">
           <div class="kb-main">
@@ -81,6 +82,6 @@
         <section class="panel"><h2>Что будет в конструкторе</h2><ul>${k[2].map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
       </article>`;
   }
-  if (!m.ready && !m.stub) VIEW_RENDER.constructor = renderConstructor;
+  if (!m.ready && !m.stub && !VIEW_RENDER.constructor) VIEW_RENDER.constructor = renderConstructor; // у модулей с рабочим конструктором (netview.js, dwview.js) — свой
   if (DEV_MODULES.includes(PAGE) || STUB_MODULES.includes(PAGE)) startPage(); // у «Очистки сточных вод» страницу запускает main.js
 })();

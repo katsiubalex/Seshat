@@ -56,7 +56,7 @@ test('кольца — ячейки плана; если участки пере
   const r = N.solve(city());
   const ids = r.loops.map(l => l.map(([id]) => id).sort().join(''));
   assert.deepEqual(ids.sort(), ['abcd', 'defg']);
-  const crossed = city(); crossed.nodes.find(n => n.id === '3').x = 900; // участки b и f пересекаются
+  const crossed = city(); crossed.nodes.find(n => n.id === '3').x = 1800; // участки b и f пересекаются
   const r2 = N.solve(crossed, { tol: 0.001 });
   assert.ok(r2.ok); assert.equal(r2.loops.length, 2);
 });
@@ -112,7 +112,7 @@ test('аварийный режим по СП 31 п. 11.6: участок вык
   const worst = all.reduce((a, b) => (b.minFree < a.minFree ? b : a));
   assert.ok(isFinite(worst.minFree));
   // тупиковый узел при выключении своего участка теряет воду
-  net.nodes.push({ id: '7', x: 900, y: 300, z: 55, q: 2, floors: 2 }); net.pipes.push({ id: 'т', a: '6', b: '7', L: 200, d: 100, mat: 'used' });
+  net.nodes.push({ id: '7', x: 1800, y: 600, z: 55, q: 2, floors: 2 }); net.pipes.push({ id: 'т', a: '6', b: '7', L: 200, d: 100, mat: 'used' });
   assert.ok(N.emergency(net, 'т').lost);
 });
 

@@ -1,0 +1,146 @@
+# Sveltia CMS — визуальный редактор статей Сешат без Git: правит те же Markdown-файлы в папке content/.
+# Sveltia CMS совместима с настройками Decap CMS и умеет входить на GitHub по ключу доступа (personal access token),
+# поэтому работает прямо на GitHub Pages — без отдельного OAuth-сервера.
+#
+# Вход: откройте https://katsiubalex.github.io/Seshat/admin/ → «Sign In with Token» → вставьте ключ.
+#   Классический ключ с областью public_repo или fine-grained с правами Contents и Pull requests (чтение и запись).
+# publish_mode: editorial_workflow — каждая правка становится запросом на слияние (pull request) и проходит проверку.
+# open_authoring — у кого нет прав на запись, правит в своей копии репозитория (форке), правка приходит запросом на слияние.
+# Работа на своём компьютере: запустите сайт локальным сервером, откройте /admin/ в Chrome или Edge и выберите
+#   «Work with Local Repository» — редактор будет менять файлы в папке репозитория напрямую, коммит делаете сами.
+# Текст статьи (поле body) — обычное многострочное поле, а не визуальный редактор Markdown: так разделы «## …»
+# и пункты «- …» сохраняются ровно в том виде, который понимает сборка (js/mdcontent.js).
+backend:
+  name: github
+  repo: katsiubalex/Seshat
+  branch: main
+  open_authoring: true
+local_backend: true
+publish_mode: editorial_workflow
+locale: ru
+site_url: https://katsiubalex.github.io/Seshat/
+media_folder: assets/uploads
+public_folder: /Seshat/assets/uploads
+slug:
+  encoding: ascii
+  clean_accents: true
+
+collections:
+  - name: processes
+    label: "Физика и химия процессов"
+    label_singular: "Процесс"
+    folder: content/kb/processes
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Название", widget: string }
+      - { name: group, label: "Группа процессов", widget: string }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: вводный абзац, разделы «## …», «## Уравнения», «## Ключевые числа», «## Источники»", widget: text }
+  - name: indicators
+    label: "Показатели качества воды"
+    label_singular: "Показатель"
+    folder: content/kb/indicators
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: key, label: "Показатель в расчёте конструктора", widget: string, required: false }
+      - { name: title, label: "Название", widget: string }
+      - { name: unit, label: "Единицы", widget: string }
+      - { name: typical, label: "Типичные значения в городских стоках", widget: string }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Разделы «## Что это», «## Почему важно», «## Как снижают», «## Источники»", widget: text }
+  - name: aux
+    label: "Вспомогательные здания"
+    label_singular: "Здание"
+    folder: content/kb/aux
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string }
+      - { name: title, label: "Название", widget: string }
+      - { name: proc, label: "Процессы (адреса статей)", widget: list, required: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст", widget: text }
+  - name: fundamentals
+    label: "Основы: дисциплины"
+    label_singular: "Дисциплина"
+    folder: content/kb/fundamentals
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string }
+      - { name: title, label: "Название", widget: string }
+      - { name: home, label: "Модуль «Основ»", widget: select, options: [fundamentals, basics] }
+      - { name: mods, label: "Где пригодится (модули)", widget: list }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: «## Ключевые формулы», разделы, «## Учебники» (Автор | Название | Издательство), «## Источники»", widget: text }
+  - name: humanities
+    label: "Человек и вода"
+    label_singular: "Статья"
+    folder: content/kb/humanities
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string }
+      - { name: title, label: "Название", widget: string }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: разделы, «## Почитать», «## Источники»", widget: text }
+  - name: glossary
+    label: "Глоссарий"
+    label_singular: "Термин"
+    folder: content/glossary
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес термина (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Термин", widget: string }
+      - { name: source, label: "Документ (id: vk74, fz416, sp31, sp32, sp58, its10…)", widget: string }
+      - { name: ref, label: "Статья, пункт и страница", widget: string }
+      - { name: quote, label: "Дословная цитата (иначе — изложение)", widget: boolean, default: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Определение — один абзац", widget: text }
+  - name: myths
+    label: "Мифы о воде"
+    label_singular: "Миф"
+    folder: content/myths
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{name}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string }
+      - { name: name, label: "Имя", widget: string }
+      - { name: native, label: "Имя в оригинале", widget: string }
+      - { name: epithet, label: "Кто это", widget: string }
+      - { name: culture, label: "Культура", widget: string }
+      - { name: about, label: "Подпись ссылки", widget: select, options: ["о боге", "о богине", "о легенде"] }
+      - { name: legend, label: "Кратко (1–2 предложения)", widget: text }
+      - name: mods
+        label: "Созвучные модули"
+        widget: list
+        fields:
+          - { name: module, label: "Модуль (id)", widget: string }
+          - { name: why, label: "Чем созвучен", widget: string }
+      - name: sources
+        label: "Источники"
+        widget: list
+        fields:
+          - { name: title, label: "Название", widget: string }
+          - { name: url, label: "Ссылка", widget: string, required: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Вводный абзац и главы «## Тема: Заголовок»", widget: text }

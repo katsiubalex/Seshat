@@ -12,17 +12,18 @@
   // где лежат данные материала: файл и как найти в нём запись
   const BY_TYPE = {
     u: id => ({ files: ['js/plan.js', 'js/data.js'], find: new RegExp(`^\\s+${reEsc(id)}: \\{`, 'm'), type: 'Сооружение' }),
-    p: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Процесс' }),
-    i: id => ({ files: ['js/kb.js', 'js/methods.js'], find: idPat(id), type: 'Показатель' }),
-    a: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Здание' }),
-    f: id => ({ files: ['js/kb.js', 'js/books.js'], find: idPat(id), type: 'Дисциплина' }),
-    h: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Человек и вода' }),
-    n: id => ({ files: ['js/kb.js'], find: idPat(id), type: 'Расчёт сети' }),
+    // статьи базы знаний — отдельные Markdown-файлы (content/…): их можно править прямо на GitHub или в редакторе Сешат
+    p: id => ({ files: [`content/kb/processes/${id}.md`], type: 'Процесс', md: ['processes', id] }),
+    i: id => ({ files: [`content/kb/indicators/${id}.md`, 'js/methods.js'], type: 'Показатель', md: ['indicators', id] }),
+    a: id => ({ files: [`content/kb/aux/${id}.md`], type: 'Здание', md: ['aux', id] }),
+    f: id => ({ files: [`content/kb/fundamentals/${id}.md`, 'js/books.js'], type: 'Дисциплина', md: ['fundamentals', id] }),
+    h: id => ({ files: [`content/kb/humanities/${id}.md`], type: 'Человек и вода', md: ['humanities', id] }),
+    n: id => ({ files: [`content/kb/network/${id}.md`], type: 'Расчёт сети', md: ['network', id] }),
     d: id => ({ files: ['js/docs.js'], find: idPat(id), type: 'Документ', key: 'doc-' + id }),
-    g: id => ({ files: ['js/glossary.js'], find: idPat(id), type: 'Термин' })
+    g: id => ({ files: [`content/glossary/${id}.md`], type: 'Термин', md: ['glossary', id] })
   };
-  const BY_SECTION = { net: 'js/kb.js', units: 'js/data.js', proc: 'js/kb.js', ind: 'js/kb.js', books: 'js/books.js', docs: 'js/docs.js', fund: 'js/kb.js', hum: 'js/kb.js',
-    myth: 'js/myths.js', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'js/glossary.js' };
+  const BY_SECTION = { net: 'content/kb/network', units: 'js/data.js', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
+    myth: 'content/myths', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'content/glossary' };
 
   // материал, открытый сейчас: ключ (адрес без «#»), тип, файлы данных
   function material() {
@@ -34,7 +35,7 @@
       return null;
     }
     if (view === 'courses' && param) return { key: 'course-' + param, files: ['js/courses.js'], find: idPat(param), type: 'Курс' };
-    if (view === 'lore' && param) return { key: 'lore-' + param, files: ['js/myths.js'], find: new RegExp(`^\\s+${reEsc(param)}: \\{\\s*$`, 'm'), type: 'Миф о воде' };
+    if (view === 'lore' && param) return { key: 'lore-' + param, files: [`content/myths/${param}.md`], type: 'Миф о воде', md: ['myths', param] };
     if (view === 'overview' && PAGE !== 'hub' && MOD[PAGE]) return { key: 'm-' + PAGE, files: ['js/modules.js'], find: idPat(PAGE), type: PAGE === 'humanities' ? 'Раздел' : 'Модуль' };
     return null;
   }
@@ -47,7 +48,7 @@
     const file = mat.files && mat.files[0];
     return `<aside class="edit-bar" aria-label="Качество и правки">
       <div class="eb-status"><span class="rv rv-${st.s}" title="${esc(S.d)}">${esc(S.t)}</span>${st.by ? `<span class="eb-by">${esc(st.by)}${st.date ? ', ' + esc(st.date) : ''}</span>` : ''}<a href="${ROOT}#contribute">Как устроена проверка</a></div>
-      <div class="eb-acts"><button type="button" class="btn" data-edit="fix">Предложить правку</button><button type="button" class="btn" data-edit="bug">Нашли ошибку?</button>${file ? `<a href="${R.urls.history(file)}" target="_blank" rel="noopener">История правок ↗</a>` : ''}</div>
+      <div class="eb-acts">${mat.md ? `<a class="btn" href="${ROOT}#editor-${mat.md[0]}-${mat.md[1]}" title="Открыть текст статьи в редакторе с предпросмотром">Править статью</a>` : ''}<button type="button" class="btn" data-edit="fix">${mat.md ? 'Сообщить о правке' : 'Предложить правку'}</button><button type="button" class="btn" data-edit="bug">Нашли ошибку?</button>${file ? `<a href="${R.urls.history(file)}" target="_blank" rel="noopener">История правок ↗</a>` : ''}</div>
     </aside>`;
   }
   let current = null;
@@ -100,7 +101,8 @@
     document.getElementById('edit-h').textContent = kind === 'bug' ? 'Сообщить об ошибке' : 'Предложить правку';
     document.getElementById('edit-where').innerHTML = `<b>${esc(current.mat.type)}:</b> ${esc(current.title)} <span class="hint">· ${esc(modName())}</span>`;
     const files = current.mat.files || [], dev = document.getElementById('edit-dev');
-    dev.innerHTML = files.length ? `Данные материала — в файле${files.length > 1 ? 'ах' : ''} ${files.map(f => `<code>${esc(f)}</code>`).join(' и ')}. <span id="edit-line"></span><a href="${R.urls.edit(files[0])}" target="_blank" rel="noopener">Редактировать файл на GitHub ↗</a> — GitHub сам предложит сделать копию и отправить изменения на проверку. Правила — в <a href="${R.urls.guide()}" target="_blank" rel="noopener">CONTRIBUTING.md ↗</a>.` : '';
+    const md = current.mat.md;
+    dev.innerHTML = files.length ? `${md ? `<a class="btn" href="${ROOT}#editor-${md[0]}-${md[1]}">Открыть в редакторе статей</a> — правка с предпросмотром и проверкой. ` : ''}Данные материала — в файле${files.length > 1 ? 'ах' : ''} ${files.map(f => `<code>${esc(f)}</code>`).join(' и ')}. <span id="edit-line"></span><a href="${R.urls.edit(files[0])}" target="_blank" rel="noopener">Редактировать файл на GitHub ↗</a> — GitHub сам предложит сделать копию и отправить изменения на проверку. Правила — в <a href="${R.urls.guide()}" target="_blank" rel="noopener">CONTRIBUTING.md ↗</a>.` : '';
     dlg.showModal();
     (sel ? F('proposal') : F(kind === 'bug' ? 'fragment' : 'proposal')).focus();
     const line = await lineOf(files[0], current.mat.find);

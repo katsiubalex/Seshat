@@ -92,8 +92,9 @@
     const fm = /^---\n([\s\S]*?)\n---\n?/.exec(text);
     if (fm) { meta = parseYaml(fm[1]); body = text.slice(fm[0].length); }
     const parts = body.split(/^## /m), lead = blocks(parts[0]);
-    const sections = parts.slice(1).map(p => { const nl = p.indexOf('\n'); const h = (nl < 0 ? p : p.slice(0, nl)).trim(); return { h, ...blocks(nl < 0 ? '' : p.slice(nl + 1)) }; });
-    return { meta, lead: lead.paras.join('\n\n'), sections };
+    // raw — текст раздела как есть: для статей с разметкой (формулы, таблицы, схемы, сноски), см. js/richtext.js
+    const sections = parts.slice(1).map(p => { const nl = p.indexOf('\n'); const h = (nl < 0 ? p : p.slice(0, nl)).trim(), raw = nl < 0 ? '' : p.slice(nl + 1); return { h, raw: raw.trim(), ...blocks(raw) }; });
+    return { meta, lead: lead.paras.join('\n\n'), leadRaw: parts[0].trim(), sections };
   }
   // абзацы, пункты списка и цитата раздела
   function blocks(text) {
@@ -115,6 +116,7 @@
     if (doc.lead) out.push(doc.lead, '');
     doc.sections.forEach(s => {
       out.push(`## ${s.h}`);
+      if (s.raw != null) { out.push(s.raw, ''); return; }
       if (s.quote) out.push(`> ${s.quote}`, '');
       (s.paras || []).forEach(p => out.push(p, ''));
       if (s.items && s.items.length) { s.items.forEach(x => out.push(`- ${s.code ? '`' + x + '`' : x}`)); out.push(''); }

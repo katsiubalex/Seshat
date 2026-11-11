@@ -18,8 +18,8 @@ test('статьи о сооружениях: есть на каждое соо�
   const ids = new Set(KB.UNITS_KB.map(u => u.id));
   for (const u of D.UNITS) assert.ok(ids.has(u.id), 'нет статьи о сооружении ' + u.id);
   for (const x of KB.UNITS_KB) {
-    assert.ok(['unit', 'element', 'option'].includes(x.role), x.id + ': роль');
-    if (x.role === 'unit') assert.ok(D.UNITS.some(u => u.id === x.id), x.id + ': сооружения нет в каталоге');
+    assert.ok(['сооружение', 'элемент', 'опция'].includes(x.role), x.id + ': роль');
+    if (x.role === 'сооружение') assert.ok(D.UNITS.some(u => u.id === x.id), x.id + ': сооружения нет в каталоге');
     for (const h of [...(x.part_of || []), ...(x.parts || [])]) assert.ok(ids.has(h), `${x.id} → ${h}`);
     for (const i of x.inds || []) assert.ok(KB.INDICATORS.some(k => k.id === i), `${x.id} → показатель ${i}`);
   }
@@ -31,7 +31,7 @@ test('статьи очистки сточных вод: у каждого аб�
   assert.ok(all.length > 80);
   const problems = [];
   for (const x of all) {
-    const raw = [x.lead, ...x.s.map(([h, t]) => t)].join('\n\n');
+    const raw = [x.lead, ...x.s.map(([h, t]) => t), ...(x.n || []).map(t => '- ' + t)].join('\n\n');
     const a = RT.audit(raw, x.src.length);
     if (a.uncited.length) problems.push(`${x.id}: без сноски — «${a.uncited[0].slice(0, 70)}…»`);
     if (a.bad.length) problems.push(`${x.id}: нет источника № ${a.bad.join(', ')}`);

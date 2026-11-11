@@ -247,7 +247,7 @@
   function richAudit(doc) {
     const R = RT(); if (!R) return [];
     const nSrc = (list(doc, 'Источники') || []).length, out = [], used = new Set();
-    const parts = [['вводная часть', doc.leadRaw || ''], ...doc.sections.filter(s => s.h !== 'Источники').map(s => [s.h, s.raw || ''])];
+    const parts = [['вводная часть', doc.leadRaw || ''], ...doc.sections.filter(s => s.h !== 'Источники' && s.h !== 'См. также').map(s => [s.h, s.raw || ''])];
     parts.forEach(([h, raw]) => {
       const a = R.audit(raw, nSrc);
       a.used.forEach(k => used.add(k));

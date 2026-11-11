@@ -10,7 +10,7 @@
 
   /* ---------- состояние ---------- */
   const fresh = () => ({ net: N.example(), scen: 'max', people: 20, floors: 5, mat: 'used', Hfire: null, sel: null, tool: 'select', show: 'free', off: null, tab: 'pipes',
-    calc: { people: 20000, qzh: 160, ksut: 1.2, amax: 1.3 } });
+    calc: { people: 20000, qzh: 160, ksut: 1.2, amax: 1.3 }, cost: { mat: 'ВЧШГ', wet: 0, fix: 0, grp: '1-3', h: 2.5 } });
   let S;
   try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { S = fresh(); }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ ...S, sel: null, pick: null })); } catch (e) { /* хранилище недоступно — работаем без сохранения */ } };
@@ -155,8 +155,32 @@
       <li><b>Участок</b> — нажмите на два узла подряд. Длина считается по плану, её можно исправить.</li>
       <li>Расчёт идёт сразу: стрелки — направление воды, цвет — скорость, римские цифры — кольца.</li></ul></section>`;
   }
+  // стоимость строительства сети по НЦС 81-02-14-2026 (js/ncs.js)
+  function costHTML() {
+    const C = window.SeshatNCS; if (!C) return '<p class="hint">Данные НЦС не загружены.</p>';
+    const k = S.cost = Object.assign({ mat: 'ВЧШГ', wet: 0, fix: 0, grp: '1-3', h: 2.5 }, S.cost || {}), region = typeof ncsRegion === 'function' ? ncsRegion() : 'Московская область';
+    const mats = [...new Set(C.nets('vod').map(t => t.mat))];
+    const e = C.netEstimate(S.net.pipes.map(p => ({ id: p.id, L: p.L, d: p.d })), { sys: 'vod', ...k, region });
+    const t = e.id && C.T14[e.id], sel = (f, opts, cur) => `<select data-f="k.${f}">${opts.map(([v, tt]) => `<option value="${esc(String(v))}"${String(v) === String(cur) ? ' selected' : ''}>${esc(tt)}</option>`).join('')}</select>`;
+    const mln = v => (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+    const howShort = r => r.how === 'big' ? 'диаметр больше, чем в таблице' : r.r && r.r.perKm == null ? C.NETHOW[r.r.how] : r.dN !== r.d ? `взят Ø ${r.dN}` : '';
+    return `<p class="hint">Укрупнённая стоимость по сборнику НЦС 81-02-14-2026 «Наружные сети водоснабжения и канализации»: цены на ${C.DATE}, без НДС, с коэффициентом перехода к региону. Сборник не интерполирует между диаметрами, поэтому Сешат берёт наименьший диаметр таблицы не меньше расчётного; у полиэтиленовых труб в сборнике — наружный диаметр.</p>
+      <div class="net-cost-f">
+        <label class="net-f"><span>Трубы</span>${sel('mat', mats.map(m => [m, m[0].toUpperCase() + m.slice(1)]), k.mat)}</label>
+        <label class="net-f"><span>Грунт</span>${sel('wet', [[0, 'сухой'], [1, 'мокрый']], k.wet)}</label>
+        <label class="net-f"><span>Траншея</span>${sel('fix', [[0, 'без креплений'], [1, 'с креплением']], k.fix)}</label>
+        <label class="net-f"><span>Группа грунтов</span>${sel('grp', [['1-3', '1–3'], ['4', '4']], k.grp)}</label>
+        <label class="net-f"><span>Глубина, м</span><input ${NUM_ATTRS} data-f="k.h" value="${esc(showNum(k.h))}"></label>
+        <label class="net-f"><span>Регион</span>${typeof ncsRegionSelect === 'function' ? ncsRegionSelect('net-reg', region).replace('<select ', '<select data-f="k.region" ') : esc(region)}</label>
+      </div>
+      ${e.id ? `<div class="net-tw"><table class="net-t"><thead><tr><th>Участок</th><th>L, м</th><th>d, мм</th><th>Ø по НЦС</th><th>тыс. ₽ за 1 км</th><th>Стоимость, млн ₽</th><th class="l">Примечание</th></tr></thead><tbody>
+        ${e.rows.map(r => `<tr><td>${esc(r.id)}</td><td>${num(r.L, 0)}</td><td>${r.d}</td><td>${r.dN || '—'}</td><td>${r.r && r.r.perKm != null ? num(r.r.perKm, 2) : '—'}</td><td>${r.r && r.r.total != null ? mln(r.r.total) : '—'}</td><td class="l">${esc(howShort(r))}</td></tr>`).join('')}
+        <tr class="tot"><td><b>Итого</b></td><td>${num(e.km * 1000, 0)}</td><td></td><td></td><td></td><td><b>${mln(e.total)}</b></td><td class="l">${e.missing ? `${e.missing} уч. не посчитано` : ''}</td></tr></tbody></table></div>
+        <p class="hint">Таблица ${e.id}, с. ${t[5][0]} сборника; Кпер ${num(C.kperOf(region, 2), 2)} (${esc(region)}). Не учтены вывоз грунта дальше 1 км, прокладка в несколько ниток, футляры, стеснённые условия, НДС и индекс к году строительства. <a href="#doc-ncs14">Калькулятор и правила сборника</a>.</p>`
+        : '<p class="hint">Для такого сочетания условий в сборнике нет таблицы.</p>'}`;
+  }
   function tablesHTML() {
-    const res = R.res, tabs = [['pipes', 'Участки'], ['nodes', 'Узлы'], ['loops', 'Увязка колец'], ['profile', 'Пьезометрия']].concat(S.scen === 'emerg' ? [['emerg', 'Аварии']] : []);
+    const res = R.res, tabs = [['pipes', 'Участки'], ['nodes', 'Узлы'], ['loops', 'Увязка колец'], ['profile', 'Пьезометрия'], ['cost', 'Стоимость (НЦС)']].concat(S.scen === 'emerg' ? [['emerg', 'Аварии']] : []);
     let body = '';
     if (!res.pipes) body = '<p class="hint">Нет результатов: проверьте, что у сети есть источник и все узлы с ним соединены.</p>';
     else if (S.tab === 'pipes') body = `<div class="net-tw"><table class="net-t"><thead><tr><th>Участок</th><th class="l">Узлы</th><th>L, м</th><th>d, мм</th><th class="l">Материал</th><th>q, л/с</th><th>V, м/с</th><th>1000i</th><th>h, м</th></tr></thead><tbody>
@@ -170,6 +194,7 @@
         <div class="net-tw"><table class="net-t"><thead><tr><th>Итерация</th>${res.loops.map((l, i) => `<th>Δh ${ROMAN[i] || i + 1}, м</th><th>Δq ${ROMAN[i] || i + 1}, л/с</th>`).join('')}</tr></thead><tbody>
         ${res.iters.map(it => `<tr><td>${it.k + 1}</td>${it.dh.map((x, i) => `<td>${num(x, 3)}</td><td>${num(it.dq[i], 3)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     else if (S.tab === 'profile') body = profileHTML();
+    else if (S.tab === 'cost') body = costHTML();
     else if (S.tab === 'emerg' && R.emerg) body = `<p class="hint">Выключенный участок — пунктиром на плане. Нажмите на строку, чтобы посмотреть режим. Участки, примыкающие к источнику, — это водоводы: их не выключают здесь, число линий водоводов и переключения между ними проверяют отдельно (п. 11.1–11.2 СП 31.13330.2021). Требование к худшей точке (не меньше 25 % расхода) в этой упрощённой проверке не считается отдельно.</p><div class="net-tw"><table class="net-t"><thead><tr><th>Выключен участок</th><th>Наименьший Hсв, м</th><th class="l">Узлы ниже 10 м</th><th class="l">Итог</th></tr></thead><tbody>
       ${R.emerg.map(e => `<tr data-off="${esc(e.pipe)}" class="${e.ok ? '' : 'bad'}${S.off === e.pipe ? ' cur' : ''}"><td>${esc(e.pipe)}</td><td>${e.lost ? '—' : num(e.minFree, 1)}</td><td class="l">${e.lost ? 'узлы без воды' : esc(e.low.join(', ') || '—')}</td><td class="l">${e.ok ? 'обеспечено' : 'не обеспечено'}</td></tr>`).join('')}</tbody></table></div>`;
     return `<section class="panel net-tabs"><div class="seg seg-sm" role="tablist">${tabs.map(([k, t]) => `<button type="button" data-tab="${k}" aria-pressed="${S.tab === k}">${t}</button>`).join('')}</div>${body}</section>`;
@@ -311,6 +336,8 @@
     else if (f === 'floors') S.floors = Math.max(1, Math.round(n || 1));
     else if (f === 'mat') S.mat = v;
     else if (f.startsWith('c.')) S.calc[f.slice(2)] = n || 0;
+    else if (f === 'k.region') { if (typeof ncsSetRegion === 'function') ncsSetRegion(v); }
+    else if (f.startsWith('k.')) { const kk = f.slice(2); S.cost[kk] = kk === 'h' ? (n > 0 ? n : S.cost.h) : kk === 'wet' || kk === 'fix' ? +v : v; }
     else if (f.startsWith('n.') && t === 'n') {
       const x = node(id), k = f.slice(2);
       if (k === 'id') { const nid = String(v).trim(); if (!nid || node(nid)) { toast('Такой узел уже есть.'); return rerender(); } S.net.pipes.forEach(p => { if (p.a === id) p.a = nid; if (p.b === id) p.b = nid; }); x.id = nid; S.sel = 'n:' + nid; }

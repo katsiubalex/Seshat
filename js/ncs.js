@@ -277,6 +277,28 @@
     deep: 'глубина больше учтённой в таблице: по п. 16 стоимость определяют по объектам-аналогам или по сметным нормативам'
   };
 
+  /** Таблица сборника 14 по условиям прокладки. */
+  const netTable = (sys, mat, wet, fix, grp) => { const t = nets(sys).find(x => x.mat === mat && x.wet === +wet && x.fix === +fix && x.grp === grp); return t ? t.id : null; };
+  /**
+   * Оценка стоимости сети по участкам: для каждого участка берётся наименьший диаметр таблицы не меньше расчётного
+   * (это допущение Сешат: сборник не интерполирует между диаметрами и не говорит, какой диаметр брать).
+   * @param {{id:string, L:number, d:number}[]} pipes — длина, м; диаметр, мм
+   * @param {{sys:string, mat:string, wet:number, fix:number, grp:string, h:number, region?:string}} o
+   * @returns {{id:string|null, rows:Object[], total:number, base:number, km:number, missing:number}} — тыс. руб.
+   */
+  function netEstimate(pipes, o) {
+    const id = netTable(o.sys, o.mat, o.wet, o.fix, o.grp);
+    if (!id) return { id: null, rows: [], total: 0, base: 0, km: 0, missing: pipes.length };
+    const ds = diameters(id);
+    const rows = pipes.map(p => {
+      const dN = ds.find(x => x >= p.d);
+      const r = dN ? net(id, dN, o.h, p.L / 1000, o) : null;
+      return { id: p.id, d: p.d, dN: dN || null, L: p.L, r, how: dN ? r.how : 'big' };
+    });
+    const ok = rows.filter(x => x.r && x.r.total != null);
+    return { id, rows, base: r2(ok.reduce((a, x) => a + x.r.base, 0)), total: r2(ok.reduce((a, x) => a + x.r.total, 0)), km: ok.reduce((a, x) => a + x.L, 0) / 1000, missing: rows.length - ok.length };
+  }
+
   // Сооружения конструктора, для которых в сборнике 19 есть показатель: id технологии → группа G19
   const UNIT_MAP = { coarse: 'screens', screens: 'screens', drum: 'screens', sand: 'sand', sandv: 'sand', at: 'aer', mle: 'aer', a2o: 'aer', bardenpho: 'aer', oxid: 'aer', uv: 'uv' };
   /** Сверка схемы конструктора со сборником 19 по расходу через каждую ступень. */
@@ -284,6 +306,6 @@
     return steps.map(s => { const gid = UNIT_MAP[s.u]; return { u: s.u, q: s.q, gid, c: gid && s.q > 0 ? cost19(gid, s.q, k) : null }; });
   }
 
-  root.SeshatNCS = { BOOKS, DATE, G19, FO, KPER, T14, HOW, NETHOW, UNIT_MAP, interp, cost19, net, nets, diameters, scheme, kperOf };
+  root.SeshatNCS = { BOOKS, DATE, G19, FO, KPER, T14, HOW, NETHOW, UNIT_MAP, interp, cost19, net, nets, diameters, scheme, kperOf, netTable, netEstimate };
   if (typeof module !== 'undefined') module.exports = root.SeshatNCS;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

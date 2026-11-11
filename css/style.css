@@ -1455,3 +1455,6 @@ body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-i
 .dw-size dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:4px 10px;font-size:13px}.dw-size dt{color:var(--muted)}.dw-size dd{margin:0}.dw-size dd.bad{color:var(--bad)}
 @media (max-width:1180px){.dw-body{grid-template-columns:260px minmax(0,1fr)}}
 @media (max-width:760px){.dw-body{grid-template-columns:minmax(0,1fr)}.dw-center{order:1}.dw-body .net-left{order:2}.dw-body .net-right{order:3}}
+.net-cost-f{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 14px;margin:.4rem 0 .8rem}
+.net-cost-f select{width:100%;min-width:0}
+.net-t tr.tot td{font-weight:600;border-top:1px solid var(--line)}

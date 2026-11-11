@@ -77,3 +77,13 @@ test('каждой технологии конструктора из UNIT_MAP �
     assert.ok(N.G19.some(x => x.id === g), g);
   }
 });
+
+test('оценка сети по участкам: ближайший больший диаметр таблицы, сумма по участкам', () => {
+  const o = { sys: 'vod', mat: 'ВЧШГ', wet: 0, fix: 0, grp: '1-3', h: 3, region: 'Московская область' };
+  const e = N.netEstimate([{ id: 'у1', L: 500, d: 300 }, { id: 'у2', L: 1000, d: 140 }, { id: 'у3', L: 10, d: 5000 }], o);
+  assert.equal(e.id, '14-01-001');
+  assert.equal(e.rows[0].dN, 300); assert.equal(e.rows[0].r.base, 11871.73); // 23 743,45 × 0,5 км
+  assert.equal(e.rows[1].dN, 150);
+  assert.equal(e.rows[2].dN, null); assert.equal(e.missing, 1);
+  assert.equal(e.km, 1.5);
+});

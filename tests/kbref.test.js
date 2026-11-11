@@ -40,7 +40,7 @@ test('редакции, структура и «Где искать» в док�
   for (const d of DOCS) {
     for (const c of d.changes || []) assert.equal(c.length, 3, d.id + ': редакция — [что, акт, когда]');
     if (d.checked) assert.match(d.checked[0], /^(\d{2}\.)?\d{2}\.\d{4}$/, d.id + ': дата проверки');
-    if (d.toc) for (let i = 1; i < d.toc.length; i++) assert.ok(d.toc[i][2] >= d.toc[i - 1][2], d.id + ': страницы по возрастанию');
+    if (d.toc) { const pg = d.toc.map(r => r[2]).filter(p => p != null); for (let i = 1; i < pg.length; i++) assert.ok(pg[i] >= pg[i - 1], d.id + ': страницы по возрастанию'); } // у новых разделов (изменения) страницы издания нет
     for (const f of d.find || []) {
       assert.ok(MODS.includes(f[0]), `${d.id}: модуль ${f[0]}`);
       assert.ok(f[3] === null || (Number.isInteger(f[3]) && f[3] >= 0), `${d.id}: страница`);

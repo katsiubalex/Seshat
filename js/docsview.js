@@ -18,7 +18,7 @@ function docTone(d) {
 const docModChips = d => d.mods === 'all'
   ? '<span class="doc-cluster">все модули кластера «Водная инфраструктура»</span>'
   : docMods(d).map(id => { const m = DOC_MODS.find(x => x.id === id); return `<a class="kb-tag kind-${m.kind}" href="${m.id === PAGE ? '#kb' : ROOT + m.path + '#kb-docs'}">${SeshatModules.glyph(m.id, 14)} ${esc(m.n)}</a>`; }).join('');
-const DOC_GROUPS = ['Законы', 'Правила и порядок', 'Наилучшие доступные технологии', 'Проектирование и строительство', 'Нормативы качества воды и сбросов', 'Санитарная охрана'];
+const DOC_GROUPS = ['Законы', 'Правила и порядок', 'Наилучшие доступные технологии', 'Проектирование и строительство', 'Нормативы качества воды и сбросов', 'Осадок сточных вод', 'Санитарная охрана', 'Стоимость строительства'];
 function docCard(d) {
   const t = docTone(d);
   return `<a class="doc-card ${t.cls}" style="${t.style}" href="#doc-${d.id}">
@@ -26,7 +26,7 @@ function docCard(d) {
       <span class="doc-card-type">${esc(d.type)} · ${esc(d.date)}</span>
       <b>${esc(d.title)}</b>
       <span class="doc-card-about">${esc(d.about.split('. ')[0])}.</span>
-      <span class="doc-card-go">${d.mods === 'all' ? 'Общий для кластера' : docKinds(d).length > 1 || docMods(d).length > 1 ? `${docMods(d).length} ${docMods(d).length < 5 ? 'модуля' : 'модулей'}` : 'Только этот модуль'}${d.interactive ? ' · есть интерактивная таблица' : ''}</span>
+      <span class="doc-card-go">${d.mods === 'all' ? 'Общий для кластера' : docKinds(d).length > 1 || docMods(d).length > 1 ? `${docMods(d).length} ${docMods(d).length < 5 ? 'модуля' : 'модулей'}` : 'Только этот модуль'}${d.interactive ? ' · ' + (d.interactive === 'toc' ? 'структура со страницами' : /^ncs/.test(d.interactive) ? 'калькулятор стоимости' : 'есть интерактивная таблица') : ''}</span>
     </a>`;
 }
 // список документов модуля, по смысловым группам
@@ -55,7 +55,7 @@ function docFindHTML(d) {
     <p class="hint">${pg ? 'Страницы — по официальному изданию' : 'Ориентир — номера пунктов, таблиц и приложений'}${d.pagesNote ? ' ' + esc(d.pagesNote) : ''}.</p></section>`;
 }
 function docTocHTML(d) {
-  if (!d.toc || !d.toc.length) return '';
+  if (!d.toc || !d.toc.length || d.interactive === 'toc') return ''; // развёрнутая структура — в основной колонке
   return `<section class="panel"><h2>Структура</h2><ol class="doc-toc">${d.toc.map(([n, tt, pg]) => `<li><span class="n">${esc(n)}</span><span>${esc(tt)}</span><span class="pg">${pg}</span></li>`).join('')}</ol></section>`;
 }
 function docStatusHTML(d) {
@@ -84,7 +84,7 @@ function docPageHTML(id, crumbsHtml) {
       <div class="doc-main">
         <section class="panel"><h2>Что важно</h2><ul class="doc-points">${d.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>
         ${docFindHTML(d)}
-        ${d.interactive ? `<section class="panel doc-interactive" id="doc-int"></section>` : ''}
+        ${d.interactive ? `<section class="panel doc-interactive" id="doc-int" data-doc="${d.id}"></section>` : ''}
         <section class="panel doc-seshat"><h2>В Сешат</h2><p>${esc(d.seshat)}</p>${d.go ? `<p><a class="btn" ${goHref(d.go[0])}>${esc(d.go[1])}</a></p>` : ''}</section>
       </div>
       <aside class="doc-side">
@@ -103,6 +103,28 @@ function mountDocWidget(id) { const d = DOCS_BY_ID[id], box = document.getElemen
 
 /* ---------- интерактивные блоки ---------- */
 const DOC_WIDGETS = {
+  // Структура документа: разделы и подразделы со страницами издания; у сводов правил — какие изменения затронули раздел
+  toc(box) {
+    const d = DOCS_BY_ID[box.dataset.doc];
+    if (!d || !d.toc) return;
+    const rows = d.toc, hasAm = rows.some(r => Array.isArray(r[3]) && r[3].length);
+    const ams = hasAm ? [...new Set(rows.flatMap(r => r[3] || []))].sort((a, b) => a - b) : [];
+    const lvl = (n, l) => l || (/^(Прил|Разд|Отд)/.test(n) ? 1 : String(n).split('.').length);
+    const hasPg = rows.some(r => r[2] != null);
+    const ST = { 'нов': ['новый', 'its-ndt'], 'искл': ['исключён', 'its-old'] };
+    const pgCell = pg => pg == null ? '<span class="hint">—</span>' : d.pdfPage ? `<a href="${esc(d.pdfPage(pg))}" target="_blank" rel="noopener">с. ${pg}</a>` : `с. ${pg}`;
+    let only = 0;
+    const draw = () => {
+      const list = only ? rows.filter(r => (r[3] || []).includes(only)) : rows;
+      box.innerHTML = `<h2>Структура документа</h2>
+        ${hasAm ? `<div class="toc-filter" role="group" aria-label="Изменения"><button type="button" class="chip-btn${only ? '' : ' on'}" data-am="0">Все разделы</button>${ams.map(a => `<button type="button" class="chip-btn${only === a ? ' on' : ''}" data-am="${a}">Изм. № ${a}</button>`).join('')}</div>
+          <p class="hint">${only ? `Изменение № ${only} затронуло ${list.length} из ${rows.length} разделов, подразделов и приложений.` : 'Цифры справа — изменения, которые затронули раздел: новая редакция пунктов, новые или исключённые пункты.'}</p>` : ''}
+        <ol class="doc-toc doc-toc-full${hasPg ? '' : ' nopg'}">${list.map(([n, t, pg, am, st, l]) => `<li class="lv${lvl(n, l)}${st === 'искл' ? ' gone' : ''}"><span class="n">${esc(n)}</span><span class="t">${esc(t)}${st && ST[st] ? ` <span class="its-badge ${ST[st][1]}">${ST[st][0]}</span>` : ''}</span><span class="am">${(am || []).map(a => `<span class="chip${a === only ? ' on' : ''}" title="Изменение № ${a}">${a}</span>`).join('')}</span>${hasPg ? `<span class="pg">${pgCell(pg)}</span>` : ''}</li>`).join('')}</ol>
+        ${d.tocNote ? `<p class="hint">${esc(d.tocNote)}</p>` : ''}`;
+    };
+    box.addEventListener('click', ev => { const b = ev.target.closest('[data-am]'); if (b) { only = +b.dataset.am; draw(); } });
+    draw();
+  },
   // как измеряют показатели питьевой воды — по области аккредитации лаборатории водопроводной станции
   drinkmethods(box) {
     const S = window.SeshatMethods; if (!S || !S.DRINK) return;

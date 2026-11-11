@@ -169,7 +169,7 @@ function kbSection(id) {
   } else if (id === 'docs' && KB_MOD) {
     body = `${DOC_LEGEND}<input id="docs-search" type="search" class="lib-search kb-search" placeholder="Найти: «НДТ», «ЗСО», «гидротехнические», «1430»…" aria-label="Поиск по документам модуля" value="${esc(kbUI.dq || '')}">
       <div id="docs-list">${docsListHTML(PAGE, kbUI.dq)}</div>
-      <p class="hint docs-note">Перед использованием документа в работе проверьте его действующую редакцию: нормативные акты регулярно изменяются. Сроки действия и редакции проверены 22.10.2026.</p>`;
+      <p class="hint docs-note">Перед использованием документа в работе проверьте его действующую редакцию: нормативные акты регулярно изменяются. Сроки действия и редакции проверены 22–24.10.2026; дата проверки — на странице каждого документа.</p>`;
   } else if (id === 'fund' && KB_MOD) { // в «Основах»: статьи своих дисциплин
     body = `<div class="kb-grid kb-grid-sm">${fundOf(PAGE).map(x => `<a class="kb-card" href="${ROOT}#kb-f-${x.id}"><b>${esc(x.t)}</b><span>${esc(x.lead)}</span></a>`).join('')}</div>
       <p class="hint">Статьи общие для всех модулей и открываются в базе знаний Сешат. Новые статьи по дисциплинам модуля появятся по мере работы над курсами.</p>`;

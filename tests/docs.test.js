@@ -23,7 +23,7 @@ test('приказ № 552 помечен как утративший силу, 
 
 test('каждый документ привязан к модулям кластера, и у каждого модуля есть свои документы', () => {
   const MODS = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'cloacina', 'tlazolteotl', 'interior', 'fundamentals', 'basics', 'economics', 'decentral', 'safety', 'digital', 'construction', 'environment'];
-  const GROUPS = ['Законы', 'Правила и порядок', 'Наилучшие доступные технологии', 'Проектирование и строительство', 'Нормативы качества воды и сбросов', 'Санитарная охрана'];
+  const GROUPS = ['Законы', 'Правила и порядок', 'Наилучшие доступные технологии', 'Проектирование и строительство', 'Нормативы качества воды и сбросов', 'Осадок сточных вод', 'Санитарная охрана', 'Стоимость строительства'];
   for (const d of DOCS) {
     assert.ok(d.mods === 'all' || (Array.isArray(d.mods) && d.mods.length && d.mods.every(m => MODS.includes(m))), d.id + ': модули');
     assert.ok(GROUPS.includes(d.group), d.id + ': смысловая группа');
@@ -33,4 +33,27 @@ test('каждый документ привязан к модулям клас�
     assert.ok(own.length >= 1, m + ': есть документы только для модуля или группы модулей');
   }
   assert.ok(DOCS.filter(d => d.mods === 'all').length >= 2, 'есть общие для кластера документы');
+});
+
+test('структура документа: строки оглавления корректны, страницы — числа, изменения — № 1–5', () => {
+  for (const d of DOCS.filter(x => x.toc)) {
+    for (const r of d.toc) {
+      assert.ok(typeof r[0] === 'string' && r[0] && typeof r[1] === 'string' && r[1], d.id + ': номер и название');
+      assert.ok(r[2] == null || (Number.isInteger(r[2]) && r[2] > 0), `${d.id} ${r[0]}: страница`);
+      if (r[3] !== undefined) assert.ok(Array.isArray(r[3]) && r[3].every(a => a >= 1 && a <= 5), `${d.id} ${r[0]}: изменения`);
+    }
+  }
+  const sp = DOCS.find(d => d.id === 'sp32');
+  assert.equal(sp.interactive, 'toc');
+  assert.ok(sp.toc.length > 70);
+  const row = n => sp.toc.find(r => r[0] === n);
+  assert.deepEqual(row('5.4').slice(2, 4), [13, [5]], '5.4 — с. 13, изменён изм. № 5');
+  assert.equal(row('7.8')[4], 'искл');
+  assert.equal(row('Прил. И')[4], 'нов');
+  assert.equal(row('Прил. И')[2], null, 'новых приложений в издании 2018 г. нет');
+  for (const f of sp.find) assert.ok(Number.isInteger(f[3]), 'sp32: у каждой темы страница или 0 («в тексте изменения»)');
+});
+
+test('документы с калькулятором НЦС подключены к виджетам', () => {
+  for (const id of ['ncs19', 'ncs14']) assert.equal(DOCS.find(d => d.id === id).interactive, id);
 });

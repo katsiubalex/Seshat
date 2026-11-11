@@ -13,6 +13,41 @@
   const unitIds = () => new Set(D.UNITS.map(u => u.id));
   const paramKeys = () => D.PARAMS.map(p => p.k);
 
+  /**
+   * Перевод схем, сохранённых до версии 0.50, на новый каталог (ИТС 10-2019, табл. 2.1: подпроцессы):
+   * «Реагентная дефосфатация» (chemP) была отдельной ступенью — теперь это ввод коагулянта в сооружение-хозяина (dose);
+   * вторичный отстойник был спрятан в аэротенке — теперь это отдельное сооружение sec после биореактора с илом.
+   */
+  function migrateSteps(input) {
+    if (!Array.isArray(input)) return input;
+    const U = Object.fromEntries(D.UNITS.map(u => [u.id, u]));
+    let steps = G.norm(input.map(s => ({ ...s, eff: { ...(s && s.eff || {}) } })));
+    for (let k = steps.findIndex(s => s.u === 'chemP'); k >= 0; k = steps.findIndex(s => s.u === 'chemP')) {
+      const preds = G.preds(steps), seen = new Set([k]);
+      let queue = [...preds[k]], host = -1;
+      while (queue.length && host < 0) { const j = queue.shift(); if (seen.has(j)) continue; seen.add(j); if (U[steps[j].u] && U[steps[j].u].doseAt) host = j; else queue.push(...preds[j]); }
+      if (host < 0) { queue = [...steps[k].to]; while (queue.length && host < 0) { const j = queue.shift(); if (seen.has(j)) continue; seen.add(j); if (U[steps[j].u] && U[steps[j].u].doseAt) host = j; else queue.push(...steps[j].to); } }
+      if (host >= 0 && !steps[host].dose) steps[host] = { ...steps[host], dose: 'fe' };
+      steps = G.remove(steps, k);
+    }
+    for (let i = 0; i < steps.length; i++) {
+      const u = U[steps[i].u]; if (!u || !u.mlss || steps[i].idle) continue;
+      const down = new Set(), q = [...steps[i].to];
+      while (q.length) { const j = q.shift(); if (down.has(j)) continue; down.add(j); q.push(...steps[j].to); }
+      if ([...down].some(j => U[steps[j].u] && U[steps[j].u].sep)) continue;
+      steps = G.insertAfter(steps, i, { u: 'sec', eff: {} });
+      const pos = G.lastPos(); i = pos[i];
+    }
+    return steps;
+  }
+
+  /** Линия осадка схемы: стабилизация и очистка фугата (data.SLUDGE); null — по умолчанию (без стабилизации и очистки) */
+  function sludgeLine(v) {
+    if (!v || typeof v !== 'object' || !D.SLUDGE) return null;
+    const stab = D.SLUDGE.stab[v.stab] ? v.stab : 'none', reject = D.SLUDGE.reject[v.reject] ? v.reject : 'none';
+    return stab === 'none' && reject === 'none' ? null : { stab, reject };
+  }
+
   // Проверка и очистка данных: возвращает нормализованную копию или null, если данные негодны.
   const validate = {
     influent(d) {
@@ -25,14 +60,16 @@
       if (!d || !Array.isArray(d.steps)) return null;
       const ids = unitIds();
       const steps = [];
-      for (const s of d.steps) {
+      for (const s of migrateSteps(d.steps.filter(Boolean))) {
         if (!s || !ids.has(s.u)) return null;
         const eff = {};
         for (const [k, v] of Object.entries(s.eff || {})) if (typeof v === 'number' && isFinite(v)) eff[k] = Math.min(100, Math.max(0, v));
         steps.push({ ...s, eff });
       }
-      // трубы между ступенями и места на генплане (см. graph.js)
-      return { steps: G.norm(steps) };
+      // трубы между ступенями и места на генплане (см. graph.js); линия осадка — если задана
+      const out = { steps: G.norm(steps) }, sl = sludgeLine(d.sludge);
+      if (sl) out.sludge = sl;
+      return out;
     },
     norm(d) {
       if (!d || !d.v || typeof d.v !== 'object') return null;
@@ -51,7 +88,7 @@
       for (const v of d.variants.slice(0, MAX_VARIANTS)) {
         const sc = v && validate.scheme(v);
         if (!sc || !v.id || !String(v.name || '').trim()) return null;
-        variants.push({ id: String(v.id), name: String(v.name).trim().slice(0, 80), steps: sc.steps });
+        variants.push({ id: String(v.id), name: String(v.name).trim().slice(0, 80), steps: sc.steps, ...(sc.sludge ? { sludge: sc.sludge } : {}) });
       }
       const label = (o, def) => String((o && o.name) || def).trim().slice(0, 120) || def;
       return {
@@ -127,6 +164,6 @@
   }
   function memoryAdapter(init) { let v = init || null; return { read: () => v, write: o => { v = JSON.parse(JSON.stringify(o)); } }; }
 
-  root.SeshatStore = { createStore, localAdapter, memoryAdapter, validate, KINDS, MAX_VARIANTS, newId };
+  root.SeshatStore = { createStore, localAdapter, memoryAdapter, validate, migrateSteps, sludgeLine, KINDS, MAX_VARIANTS, newId };
   if (typeof module !== 'undefined') module.exports = root.SeshatStore;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

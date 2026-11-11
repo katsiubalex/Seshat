@@ -17,7 +17,8 @@ function parseNum(s) { const t = String(s).replace(/\s/g, '').replace(',', '.');
 const showNum = v => v == null || v === '' ? '' : String(v).replace('.', ',');
 const NUM_ATTRS = 'type="text" inputmode="decimal" autocomplete="off" spellcheck="false"';
 function markInvalid(el, v) { if (Number.isNaN(v)) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid'); }
-function mk(id) { return { u: id, eff: { ...U[id].eff } }; }
+// ступень схемы из id технологии или { u, dose } (ввод коагулянта в сооружение — см. data.DOSE)
+function mk(id) { const o = typeof id === 'object' ? id : { u: id }; return { u: o.u, eff: { ...U[o.u].eff }, ...(o.dose ? { dose: o.dose } : {}) }; }
 const rub = v => Math.round(v).toLocaleString('ru-RU');
 function mln(v) {
   if (v >= 1000) return (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд ₽';

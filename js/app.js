@@ -15,8 +15,8 @@ const KINDS = {
     label: 'Схема очистки', createLabel: 'Создать схему', newName: 'Новая схема', draftLabel: 'Новая схема (не сохранена)',
     draftHint: 'Добавьте ступени из каталога и нажмите «Сохранить».',
     builtins: PRESETS.map((p, i) => ({ id: String(i), name: p.sn, data: { steps: p.scheme.map(mk) } })),
-    get: () => ({ steps: clone(state.steps) }),
-    apply: d => { state.steps = clone(d.steps); }
+    get: () => ({ steps: clone(state.steps), ...(SeshatStore.sludgeLine(state.sludge) ? { sludge: SeshatStore.sludgeLine(state.sludge) } : {}) }),
+    apply: d => { state.steps = clone(d.steps); state.sludge = d.sludge ? { ...d.sludge } : null; }
   },
   norm: {
     label: 'Нормативы', createLabel: 'Создать норматив', newName: 'Новый норматив', draftLabel: 'Новый норматив (не сохранён)',
@@ -38,7 +38,7 @@ function refItem(kind, ref) {
     if (kind === 'influent') return { name: `${pr.name}: ${d.influent.name}`, data: { q: d.influent.q, c: d.influent.c } };
     if (kind === 'norm') return { name: `${pr.name}: ${d.norm.name}`, data: { v: d.norm.v } };
     const v = d.variants.find(x => x.id === vid);
-    return v ? { name: `${pr.name}: ${v.name}`, data: { steps: v.steps } } : null;
+    return v ? { name: `${pr.name}: ${v.name}`, data: { steps: v.steps, ...(v.sludge ? { sludge: v.sludge } : {}) } } : null;
   }
   return t === 'b' ? KINDS[kind].builtins.find(b => b.id === id) || null : store.get(kind, id);
 }
@@ -54,6 +54,7 @@ function fresh() {
 function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(STATE_KEY));
+    if (s && Array.isArray(s.steps)) s.steps = SeshatStore.migrateSteps(s.steps.filter(x => x && (U[x.u] || x.u === 'chemP'))); // схемы до версии 0.50
     if (s && s.c && Array.isArray(s.steps) && s.steps.every(x => U[x.u]) && s.norm) {
       // Если запись не найдена (удалена, не сохранена до перезагрузки, старая версия) — открываем пример.
       s.ref = s.ref || {};

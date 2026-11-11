@@ -122,7 +122,7 @@ function newProjectData() {
     influent: { name: plainName('influent', 'Стоки'), q: state.q, c: { ...state.c } },
     norm: { name: plainName('norm', 'Нормативы'), v: { ...state.norm } },
     prices: { ...state.prices },
-    variants: [{ id: SeshatStore.newId(), name: plainName('scheme', 'Вариант 1'), steps: clone(state.steps) }]
+    variants: [{ id: SeshatStore.newId(), name: plainName('scheme', 'Вариант 1'), steps: clone(state.steps), ...(SeshatStore.sludgeLine(state.sludge) ? { sludge: SeshatStore.sludgeLine(state.sludge) } : {}) }]
   };
 }
 // Проект удалён: конструктор перестаёт на него ссылаться.
@@ -243,7 +243,7 @@ projBody.addEventListener('change', ev => {
   else if (kind === 'norm') d.norm = { name: src.name, ...src.data };
   else if (kind === 'scheme') {
     if (d.variants.length >= SeshatStore.MAX_VARIANTS) return;
-    d.variants.push({ id: SeshatStore.newId(), name: src.name || nextVariantName(pr), steps: src.data.steps });
+    d.variants.push({ id: SeshatStore.newId(), name: src.name || nextVariantName(pr), steps: src.data.steps, ...(src.data.sludge ? { sludge: src.data.sludge } : {}) });
   }
   if (saveProject(pr)) toast(kind === 'scheme' ? `Добавлен вариант «${d.variants[d.variants.length - 1].name}»` : `Заменено: ${kind === 'influent' ? 'стоки' : 'нормативы'} «${src.name}»`);
   renderProjects();
@@ -259,7 +259,7 @@ projBody.addEventListener('click', ev => {
   if (act === 'open') { openVariant(pr.id, v.id); return; }
   if (act === 'rename') { pui.renameVar = v.id; }
   if (act === 'copy') {
-    d.variants.splice(i + 1, 0, { id: SeshatStore.newId(), name: (v.name + ' (копия)').slice(0, 80), steps: clone(v.steps) });
+    d.variants.splice(i + 1, 0, { id: SeshatStore.newId(), name: (v.name + ' (копия)').slice(0, 80), steps: clone(v.steps), ...(v.sludge ? { sludge: { ...v.sludge } } : {}) });
     saveProject(pr);
   }
   if (act === 'del') {
@@ -291,6 +291,7 @@ function openVariant(pid, vid) {
   state.norm = { ...d.norm.v };
   state.prices = { ...d.prices };
   state.steps = clone(v.steps);
+  state.sludge = v.sludge ? { ...v.sludge } : null;
   state.ref = { influent: 'p:' + pid, norm: 'p:' + pid, scheme: `p:${pid}:${vid}` };
   state.ctx = { pid, vid };
   for (const k of Object.keys(KINDS)) { delete ui.draft[k]; delete ui.confirmDel[k]; delete ui.rename[k]; }
@@ -304,7 +305,7 @@ function ctxDirty() {
   const d = pr.data, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   return !same(SeshatStore.validate.influent({ q: state.q, c: state.c }), SeshatStore.validate.influent(d.influent))
     || !same(SeshatStore.validate.norm({ v: state.norm }), SeshatStore.validate.norm(d.norm))
-    || !same(SeshatStore.validate.scheme({ steps: state.steps }), SeshatStore.validate.scheme(v))
+    || !same(SeshatStore.validate.scheme({ steps: state.steps, sludge: state.sludge }), SeshatStore.validate.scheme(v))
     || !same(state.prices, d.prices);
 }
 
@@ -333,6 +334,7 @@ document.getElementById('ctx').addEventListener('click', ev => {
     d.norm = { name: d.norm.name, v: { ...state.norm } };
     d.prices = { ...state.prices };
     v.steps = clone(state.steps);
+    const sl = SeshatStore.sludgeLine(state.sludge); if (sl) v.sludge = sl; else delete v.sludge;
     if (saveProject(pr)) {
       state.ref = { influent: 'p:' + pr.id, norm: 'p:' + pr.id, scheme: `p:${pr.id}:${v.id}` };
       update(); toast(`Сохранено в проект «${pr.name}»`);

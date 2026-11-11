@@ -46,18 +46,23 @@ const WL = (() => {
     mle: ['нитри-денитрификация', 'процесс Лудзака—Эттингера', 'МЛЭ'], a2o: ['A²/O', 'A2/O', 'UCT', 'MUCT'], bardenpho: ['Bardenpho'], sbr: ['SBR', 'циклические реакторы'],
     mbbr: ['МББР', 'плавающая загрузка', 'плавающей загрузкой'], ifas: ['IFAS'], ags: ['гранулированный ил'], mbr: ['мембранный биореактор', 'мембранные биореакторы', 'МБР'],
     tf: ['капельный биофильтр', 'капельные биофильтры', 'незатопленные биофильтры'], baf: ['затопленные биофильтры', 'затопленный биофильтр', 'BAF'], uasb: ['UASB'],
-    wetland: ['биоплато', 'фитоочистные системы'], chemP: ['реагентная дефосфатация', 'химическое удаление фосфора'], denf: ['денитрифицирующие фильтры'],
+    wetland: ['биоплато', 'фитоочистные системы'], sec: ['вторичные отстойники', 'вторичный отстойник', 'вторичного отстойника', 'илоотделение'], denf: ['денитрифицирующие фильтры'],
     filter: ['зернистые фильтры', 'песчаные фильтры'], nitf: ['биофильтры доочистки'], disc: ['дисковые фильтры'], uf: ['ультрафильтрация', 'ультрафильтрационные мембраны'],
     gac: ['активированный уголь', 'активный уголь'], ozone: ['озонирование'], aop: ['усовершенствованное окисление'], ix: ['ионообменные смолы'], ro: ['обратный осмос'],
     hypo: ['гипохлорит натрия', 'хлорирование'], uv: ['УФ-обеззараживание', 'ультрафиолет'], strip: ['аммиачная отдувка'], neutral: ['нейтрализация стоков'], anammox: []
   };
   SeshatData.UNITS.forEach(u => add(U_SYN[u.id] || [u.n.split(' (')[0]], '#kb-u-' + u.id, 'u', 'kind-waste', u.n));
+  // элементы сооружений и линия осадка (статьи content/kb/units без места в каталоге)
+  const E_SYN = { reag: ['реагентное хозяйство', 'реагентная дефосфатация', 'ввод коагулянта'], blower: ['воздуходувная станция', 'воздуходувные станции', 'воздуходувки', 'система аэрации'],
+    recycle: ['возвратный ил', 'возвратного ила', 'внутренний рецикл', 'внутреннего рецикла'], thick: ['уплотнители ила', 'илоуплотнители', 'сгущение ила'], digest: ['метантенки', 'метантенк', 'метантенков'],
+    aerostab: ['аэробная стабилизация', 'аэробные стабилизаторы'], reject: ['фугат', 'фугата', 'возвратные потоки', 'возвратных потоков'], contact: ['контактный резервуар', 'контактные резервуары'] };
+  (SeshatKB.UNITS_KB || []).filter(x => !SeshatData.UNITS.some(u => u.id === x.id)).forEach(x => add(E_SYN[x.id] || [x.t], '#kb-u-' + x.id, 'u', 'kind-waste', x.t));
   // процессы
   const P_SYN = {
     screening: ['процеживание'], sedimentation: ['осаждение', 'отстаивание', 'седиментация'], flotation: ['флотация'], coagulation: ['коагуляция', 'флокуляция', 'коагулянт', 'флокулянт'],
     filtration: ['фильтрование', 'фильтрация'], equalization: ['усреднение'], neutralization: ['щёлочность', 'нейтрализация'], aeration: ['аэрация', 'перенос кислорода'],
     biooxidation: ['биологическое окисление', 'активный ил', 'активного ила'], nitrification: ['нитрификация', 'нитрификаторы'], denitrification: ['денитрификация', 'денитрификаторы'],
-    biop: ['биологическое удаление фосфора', 'фосфат-аккумулирующие бактерии', 'ФАО'], chemp: ['реагентное удаление фосфора'], anaerobic: ['анаэробное сбраживание', 'метантенк', 'метантенки', 'биогаз'],
+    biop: ['биологическое удаление фосфора', 'фосфат-аккумулирующие бактерии', 'ФАО'], chemp: ['реагентное удаление фосфора', 'химическое удаление фосфора'], anaerobic: ['анаэробное сбраживание', 'метановое сбраживание', 'биогаз'],
     anammox: ['анаммокс', 'АНАММОКС', 'деаммонификация'], adsorption: ['адсорбция', 'сорбция'], membranes: ['мембранное разделение', 'мембранное илоразделение'], ionexchange: ['ионный обмен'],
     aop: ['окислительные процессы'], disinfection: ['обеззараживание'], stripping: ['отдувка аммиака'], sludge: ['обработка осадка', 'обезвоживание осадка', 'избыточный ил', 'избыточный активный ил']
   };
@@ -105,7 +110,7 @@ const WL = (() => {
   T.forEach(t => { t.re = new RegExp(B + '(' + t.src + ')' + E, 'iu'); });
 
   /* ---------- превращение терминов в ссылки ---------- */
-  const SKIP = 'a,button,code,h1,h2,h3,input,select,textarea,sup,.kb-crumbs,.doc-id,.its-badge,.its-ndt,.kb-tag,.kb-tags,.gp-dl dt,.its-refs,.doc-links,.doc-rel,.sc,.kb-f';
+  const SKIP = 'a,button,code,h1,h2,h3,input,select,textarea,sup,mark,.katex,.kb-math,figure,.kb-src,.kb-crumbs,.doc-id,.its-badge,.its-ndt,.kb-tag,.kb-tags,.gp-dl dt,.its-refs,.doc-links,.doc-rel,.sc,.kb-f';
   const norm = h => h.replace(/^.*?(#|$)/, '#');
   function wikify(rootEl, selfHref, used = new Set()) {
     if (!rootEl) return;
@@ -136,12 +141,15 @@ const WL = (() => {
   }
 
   /* ---------- корпус статей: для обратных ссылок и указателя ---------- */
-  const P = SeshatPlan.PLAN, ITS = window.SeshatITS;
+  const ITS = window.SeshatITS;
   const ART = [];
-  SeshatData.UNITS.forEach(u => ART.push({ href: '#kb-u-' + u.id, type: 'u', belong: 'kind-waste', t: u.n, text: [u.d, (P[u.id] || {}).how, ...((P[u.id] || {}).params || []), ...(ITS && ITS.UNITS[u.id] ? ITS.UNITS[u.id].sum.map(x => x[0]) : [])].join(' ') }));
-  SeshatKB.AUX.forEach(a => ART.push({ href: '#kb-a-' + a.id, type: 'a', belong: 'kind-waste', t: a.t, text: [a.lead, ...a.s.map(x => x[1])].join(' ') }));
-  SeshatKB.PROCESSES.forEach(p => ART.push({ href: '#kb-p-' + p.id, type: 'p', belong: 'kind-waste', t: p.t, text: [p.lead, ...p.s.map(x => x[1]), ...(p.n || [])].join(' ') }));
-  SeshatKB.INDICATORS.forEach(p => ART.push({ href: '#kb-i-' + p.id, type: 'i', belong: 'kind-waste', t: p.t, text: [p.what, p.why, p.how].join(' ') }));
+  const RT = t => (window.SeshatRich ? SeshatRich.plain(t) : String(t || '')), KBU = Object.fromEntries((SeshatKB.UNITS_KB || []).map(x => [x.id, x]));
+  const richText = x => (x ? [x.lead, ...x.s.map(v => v[1]), ...(x.n || [])].map(RT).join(' ') : '');
+  SeshatData.UNITS.forEach(u => ART.push({ href: '#kb-u-' + u.id, type: 'u', belong: 'kind-waste', t: u.n, text: [u.d, richText(KBU[u.id]), ...(ITS && ITS.UNITS[u.id] ? ITS.UNITS[u.id].sum.map(x => x[0]) : [])].join(' ') }));
+  (SeshatKB.UNITS_KB || []).filter(x => !SeshatData.UNITS.some(u => u.id === x.id)).forEach(x => ART.push({ href: '#kb-u-' + x.id, type: 'u', belong: 'kind-waste', t: x.t, text: richText(x) }));
+  SeshatKB.AUX.forEach(a => ART.push({ href: '#kb-a-' + a.id, type: 'a', belong: 'kind-waste', t: a.t, text: richText(a) }));
+  SeshatKB.PROCESSES.forEach(p => ART.push({ href: '#kb-p-' + p.id, type: 'p', belong: 'kind-waste', t: p.t, text: richText(p) }));
+  SeshatKB.INDICATORS.forEach(p => ART.push({ href: '#kb-i-' + p.id, type: 'i', belong: 'kind-waste', t: p.t, text: richText(p) }));
   SeshatDocs.DOCS.forEach(d => ART.push({ href: '#doc-' + d.id, type: 'd', belong: docBelong(d), t: d.short + ' — ' + d.title, text: [d.about, ...d.points, d.seshat].join(' ') }));
   SeshatKB.FUNDAMENTALS.forEach(f => ART.push({ href: ROOT + '#kb-f-' + f.id, type: 'f', belong: 'common', t: f.t, text: [f.lead, ...f.s.map(x => x[1])].join(' ') }));
   const CRS = (window.SeshatCourses || { C: [] }).C;

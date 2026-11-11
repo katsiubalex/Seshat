@@ -7,7 +7,7 @@
 
   /** Посчитать один вариант на общих для проекта стоках, нормативах и ценах. */
   function evaluate(project, variant) {
-    const input = { q: project.influent.q, c: project.influent.c, steps: variant.steps };
+    const input = { q: project.influent.q, c: project.influent.c, steps: variant.steps, sludge: variant.sludge };
     const sim = M.simulate(input);
     const eco = E.costs(input, sim, project.prices);
     const out = sim.out;

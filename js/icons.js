@@ -28,6 +28,11 @@
     primary: `<path d="M6 12v16l26 14 26-14V12" ${S}/><path d="M6 17h52v11L32 42 6 28z" ${W}/>
       <path d="M28 10v16h8V10" ${S}/><path d="M32 42v4" ${S}/><path d="M12 31l20 9 20-9" ${T} stroke-dasharray="2 2.5"/>`,
 
+    // Вторичный отстойник: радиальный, с илососом и возвратом ила к аэротенку (стрелка назад)
+    sec: `<path d="M6 12v16l26 14 26-14V12" ${S}/><path d="M6 17h52v11L32 42 6 28z" ${W}/>
+      <path d="M29 10v12h6V10" ${S}/><path d="M12 30l20 9 20-9" ${T} stroke-dasharray="2 2.5"/>
+      <path d="M32 42v4H10" ${T}/><path d="M14 43l-4 3 4 3" ${T}/><text x="46" y="10" font-size="7" text-anchor="middle" fill="currentColor" font-family="sans-serif">II</text>`,
+
     // Напорная флотация: пузырьки поднимают загрязнения в пенный слой, скребок
     daf: `<path d="M8 12v28h48V12" ${S}/><path d="M8 20h48v20H8z" ${W}/>
       <path d="M8 20h48" ${S}/><path d="M10 17h44" ${T} stroke-dasharray="3 2"/>
@@ -66,8 +71,8 @@
       <rect x="22" y="20" width="20" height="14" ${S}/><path d="M26 20v14M30 20v14M34 20v14M38 20v14" ${T}/>
       <path d="M22 38h20" ${S}/><path d="M32 20v-8h18" ${T}/><circle cx="54" cy="12" r="4" ${S}/><path d="M52 10l4 2-4 2" ${T}/>`,
 
-    // Реагентная дефосфатация: расходный бак реагента, насос-дозатор, ввод в поток
-    chemP: `<path d="M8 6h16v20H8z" ${S}/><path d="M8 13h16v13H8z" ${W}/>
+    // Реагентное хозяйство (ввод коагулянта): расходный бак, насос-дозатор, ввод в поток
+    reag: `<path d="M8 6h16v20H8z" ${S}/><path d="M8 13h16v13H8z" ${W}/>
       <path d="M16 26v6h8" ${T}/><circle cx="28" cy="32" r="4" ${S}/><path d="M26 30l4 2-4 2" ${T}/>
       <path d="M32 32h10v6" ${T}/><path d="M39 35l3 3 3-3" ${T}/>
       <path d="M4 40h56" ${S}/><path d="M54 37l4 3-4 3" ${S}/><text x="16" y="21" font-size="7" text-anchor="middle" fill="currentColor" font-family="sans-serif">Me</text>`,

@@ -11,20 +11,47 @@ test('у каждого сооружения каталога есть связ�
     assert.ok(KB.UNIT_PROC[u.id] && KB.UNIT_PROC[u.id].length, u.id + ': нет процессов');
     for (const p of KB.UNIT_PROC[u.id]) assert.ok(procs.has(p), `${u.id} → ${p}`);
   }
-  for (const id of Object.keys(KB.UNIT_PROC)) assert.ok(D.UNITS.some(u => u.id === id), 'лишнее сооружение ' + id);
+  for (const id of Object.keys(KB.UNIT_PROC)) assert.ok(KB.UNITS_KB.some(u => u.id === id), 'лишнее сооружение ' + id);
+});
+
+test('статьи о сооружениях: есть на каждое сооружение каталога; элементы ссылаются на существующие сооружения', () => {
+  const ids = new Set(KB.UNITS_KB.map(u => u.id));
+  for (const u of D.UNITS) assert.ok(ids.has(u.id), 'нет статьи о сооружении ' + u.id);
+  for (const x of KB.UNITS_KB) {
+    assert.ok(['unit', 'element', 'option'].includes(x.role), x.id + ': роль');
+    if (x.role === 'unit') assert.ok(D.UNITS.some(u => u.id === x.id), x.id + ': сооружения нет в каталоге');
+    for (const h of [...(x.part_of || []), ...(x.parts || [])]) assert.ok(ids.has(h), `${x.id} → ${h}`);
+    for (const i of x.inds || []) assert.ok(KB.INDICATORS.some(k => k.id === i), `${x.id} → показатель ${i}`);
+  }
+});
+
+test('статьи очистки сточных вод: у каждого абзаца есть сноска, номера сносок существуют, формулы собираются', () => {
+  const RT = require('../js/richtext.js');
+  const all = [...KB.UNITS_KB, ...KB.PROCESSES, ...KB.INDICATORS, ...KB.AUX];
+  assert.ok(all.length > 80);
+  const problems = [];
+  for (const x of all) {
+    const raw = [x.lead, ...x.s.map(([h, t]) => t)].join('\n\n');
+    const a = RT.audit(raw, x.src.length);
+    if (a.uncited.length) problems.push(`${x.id}: без сноски — «${a.uncited[0].slice(0, 70)}…»`);
+    if (a.bad.length) problems.push(`${x.id}: нет источника № ${a.bad.join(', ')}`);
+    if (a.tex.length) problems.push(`${x.id}: формула не собирается — ${a.tex[0]}`);
+    for (const [doc, t] of x.src) assert.ok(doc && t, x.id + ': пустой источник');
+  }
+  assert.deepEqual(problems, []);
 });
 
 test('статьи о процессах и показателях заполнены, показатели расчёта описаны все', () => {
-  for (const p of KB.PROCESSES) assert.ok(p.t && p.lead.length > 60 && p.s.length >= 2, p.id);
+  for (const p of KB.PROCESSES) assert.ok(p.t && p.lead.length > 60 && p.s.length >= 2 && p.src.length, p.id);
   const ids = new Set(KB.INDICATORS.map(i => i.id));
   assert.equal(ids.size, KB.INDICATORS.length);
   for (const par of D.PARAMS) assert.ok(KB.INDICATORS.some(i => i.k === par.k), 'нет статьи о ' + par.k);
-  for (const i of KB.INDICATORS) assert.ok(i.what && i.why && i.how && i.typ, i.id);
+  for (const i of KB.INDICATORS) assert.ok(i.lead && i.s.length >= 2 && i.src.length && i.u, i.id);
 });
 
 test('ссылки на журналы и сообщества — https, учебники с выходными данными', () => {
   for (const g of [...KB.JOURNALS, ...KB.COMMUNITIES]) for (const [t, d, u] of g.list) { assert.match(u, /^https:\/\//, t); assert.ok(d, t); }
-  for (const b of KB.BOOKS) for (const [a, t, pub] of b.list) assert.ok(a && t && pub, t);
+  for (const [id, b] of Object.entries(KB.BIB)) { assert.ok(b.a && b.t && b.pub, id); if (b.url) assert.match(b.url, /^https:\/\//, id); }
 });
 
 test('у каждого модуля свои учебники; общие разделы — фундаментальные и гуманитарные', () => {

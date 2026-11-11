@@ -1,5 +1,6 @@
 // Схема очистки как граф: ступени соединены трубами, поток может делиться на параллельные линии и снова сливаться.
 // Ступень: { u, eff, to: [индексы следующих ступеней], sp?: [доли потока по трубам], x?, y? — место на генплане, м,
+//   dose? — ввод коагулянта для удаления фосфора в это сооружение ('fe' или 'al', см. data.DOSE),
 //   idle? — сооружение поставлено на план, но трубы к нему ещё не подведены: оно не работает }.
 // Ступени хранятся в порядке хода воды: трубы ведут только вперёд по списку, поэтому замкнутых контуров нет.
 // Старые схемы без поля to считаются последовательными. Чистые функции, тестируются в Node.
@@ -20,6 +21,7 @@
       if (sp && to.length > 1 && sp.every(w => isNum(w) && w > 0) && sp.some(w => w !== sp[0])) o.sp = sp.map(w => +w.toFixed(4));
       if (isNum(s.x) && isNum(s.y)) { o.x = Math.round(s.x * 10) / 10; o.y = Math.round(s.y * 10) / 10; }
       if (s.idle === true && !legacy) o.idle = true;
+      if (s.dose === 'fe' || s.dose === 'al') o.dose = s.dose;
       return o;
     });
     // как только к сооружению подвели или от него отвели трубу, оно работает
@@ -122,6 +124,12 @@
     e.push([idx, idx + 1, 1]);
     return fromEdges(nodes, e);
   }
+  /** Вставить ступень сразу после ступени i: вся вода из i идёт через новую ступень, дальше — прежними трубами */
+  function insertAfter(steps, i, step) {
+    const n = steps.length, e = toEdges(steps).map(x => (x[0] === i ? [n, x[1], x[2]] : x));
+    e.push([i, n, 1]);
+    return fromEdges([...bare(steps), step], e);
+  }
   /** Удалить ступень: её входы соединяются с её выходами */
   function remove(steps, i) {
     const e = toEdges(steps), ins = e.filter(x => x[1] === i), outs = e.filter(x => x[0] === i);
@@ -135,6 +143,7 @@
   function swap(steps, i, j) {
     const s = norm(steps);
     [s[i].u, s[j].u] = [s[j].u, s[i].u]; [s[i].eff, s[j].eff] = [s[j].eff, s[i].eff];
+    const di = s[i].dose, dj = s[j].dose; delete s[i].dose; delete s[j].dose; if (dj) s[i].dose = dj; if (di) s[j].dose = di;
     return s;
   }
   /** Проложить трубу a → b. null — получится замкнутый контур */
@@ -151,7 +160,7 @@
   }
   /** Параллельная линия: копия ступени с теми же входами и выходами, поток делится поровну */
   function parallel(steps, i) {
-    const n = steps.length, e = toEdges(steps), copy = { u: steps[i].u, eff: { ...steps[i].eff }, ...(steps[i].idle ? { idle: true } : {}) };
+    const n = steps.length, e = toEdges(steps), copy = { u: steps[i].u, eff: { ...steps[i].eff }, ...(steps[i].idle ? { idle: true } : {}), ...(steps[i].dose ? { dose: steps[i].dose } : {}) };
     e.filter(x => x[1] === i).forEach(([a, , w]) => e.push([a, n, w]));
     e.filter(x => x[0] === i).forEach(([, b, w]) => e.push([n, b, w]));
     const r = build([...bare(steps), copy], e);
@@ -164,6 +173,6 @@
     return norm(s);
   }
 
-  root.SeshatGraph = { norm, flows, place, split, preds, ancestors, depth, isChain, append, insertBefore, remove, swap, connect, disconnect, parallel, setSplit, share, lastPos: () => lastPos };
+  root.SeshatGraph = { norm, flows, place, split, insertAfter, preds, ancestors, depth, isChain, append, insertBefore, remove, swap, connect, disconnect, parallel, setSplit, share, lastPos: () => lastPos };
   if (typeof module !== 'undefined') module.exports = root.SeshatGraph;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

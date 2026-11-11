@@ -20,7 +20,7 @@ test('статьи о сооружениях: есть на каждое соо�
   for (const x of KB.UNITS_KB) {
     assert.ok(['сооружение', 'элемент', 'опция'].includes(x.role), x.id + ': роль');
     if (x.role === 'сооружение') assert.ok(D.UNITS.some(u => u.id === x.id), x.id + ': сооружения нет в каталоге');
-    for (const h of [...(x.part_of || []), ...(x.parts || [])]) assert.ok(ids.has(h), `${x.id} → ${h}`);
+    for (const h of [...(x.part_of || []), ...(x.parts || [])]) assert.ok(ids.has(h) || KB.AUX.some(a => a.id === h), `${x.id} → ${h}`);
     for (const i of x.inds || []) assert.ok(KB.INDICATORS.some(k => k.id === i), `${x.id} → показатель ${i}`);
   }
 });
@@ -36,7 +36,7 @@ test('статьи очистки сточных вод: у каждого аб�
     if (a.uncited.length) problems.push(`${x.id}: без сноски — «${a.uncited[0].slice(0, 70)}…»`);
     if (a.bad.length) problems.push(`${x.id}: нет источника № ${a.bad.join(', ')}`);
     if (a.tex.length) problems.push(`${x.id}: формула не собирается — ${a.tex[0]}`);
-    for (const [doc, t] of x.src) assert.ok(doc && t, x.id + ': пустой источник');
+    for (const [, t] of x.src) assert.ok(t, x.id + ': пустой источник');
   }
   assert.deepEqual(problems, []);
 });

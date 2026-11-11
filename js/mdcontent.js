@@ -133,19 +133,46 @@
   const sec = (h, text) => ({ h, paras: String(text).split(/\n\n+/) });
   const items = (h, arr, code) => (arr && arr.length ? [{ h, items: arr, code }] : []);
   const opt = (o, k, v) => { if (v !== undefined && v !== null && !(Array.isArray(v) && !v.length)) o[k] = v; return o; };
+  // Коллекция статей с разметкой: разделы хранятся как есть (raw), особые — «Ключевые числа», «См. также», «Источники».
+  // meta — поля заголовка, которые переходят в данные: 'имя' или ['имя в файле', 'имя в данных'].
+  const RICH_SPECIAL = ['Ключевые числа', 'См. также', 'Источники'];
+  const srcRow = x => { const [doc, t, where, url] = x.split(/\s*\|\s*/); const r = [doc && doc !== '—' ? doc : null, t || '', where || '']; if (url) r.push(url); return r; };
+  const srcLine = ([doc, t, where, url]) => [doc || '—', t, where || ''].concat(url ? [url] : []).join(' | ');
+  function rich(C) {
+    const M = (C.meta || []).map(m => (Array.isArray(m) ? m : [m, m]));
+    return Object.assign(C, {
+      page: 'tlazolteotl', rich: true,
+      fields: Object.assign({}, C.fields, { order: 'порядок в списке', need: 'что ещё не подтверждено источником', tool: 'как попробовать в конструкторе' }),
+      special: RICH_SPECIAL,
+      toData: d => {
+        const o = { id: d.meta.id, t: d.meta.title };
+        M.forEach(([f, k]) => opt(o, k, d.meta[f]));
+        o.lead = d.leadRaw || '';
+        o.s = d.sections.filter(s => !RICH_SPECIAL.includes(s.h)).map(s => [s.h, s.raw]);
+        opt(o, 'n', list(d, 'Ключевые числа')); opt(o, 'see', list(d, 'См. также'));
+        o.src = (list(d, 'Источники') || []).map(srcRow);
+        opt(o, 'need', d.meta.need); return opt(o, 'tool', d.meta.tool);
+      },
+      fromData: x => {
+        const meta = { id: x.id, title: x.t }; M.forEach(([f, k]) => { if (x[k] != null) meta[f] = x[k]; }); if (x.need) meta.need = x.need; if (x.tool) meta.tool = x.tool;
+        return { meta, lead: x.lead, sections: [...x.s.map(([h, raw]) => ({ h, raw })), ...items('Ключевые числа', x.n), ...items('См. также', x.see), ...items('Источники', (x.src || []).map(srcLine))] };
+      }
+    });
+  }
   const COLLECTIONS = {
-    processes: { label: 'Физика и химия процессов', dir: 'content/kb/processes', href: id => '#kb-p-' + id, page: 'tlazolteotl', kbKey: 'PROCESSES',
-      fields: { id: 'адрес статьи (латиница)', title: 'название', group: 'группа процессов' }, special: ['Уравнения', 'Ключевые числа', 'Источники'],
-      toData: d => { const o = { id: d.meta.id, t: d.meta.title, g: d.meta.group, lead: d.lead }; opt(o, 'f', list(d, 'Уравнения')); o.s = rest(d, ['Уравнения', 'Ключевые числа', 'Источники']); opt(o, 'n', list(d, 'Ключевые числа')); return opt(o, 'src', src(d)); },
-      fromData: x => ({ meta: { id: x.id, title: x.t, group: x.g }, lead: x.lead, sections: [...items('Уравнения', x.f, true), ...x.s.map(([h, t]) => sec(h, t)), ...items('Ключевые числа', x.n), ...items('Источники', x.src)] }) },
-    indicators: { label: 'Показатели качества воды', dir: 'content/kb/indicators', href: id => '#kb-i-' + id, page: 'tlazolteotl', kbKey: 'INDICATORS',
-      fields: { id: 'адрес статьи', key: 'показатель в расчёте конструктора (если есть)', title: 'название', unit: 'единицы', typical: 'типичные значения в городских стоках' }, special: ['Что это', 'Почему важно', 'Как снижают', 'Источники'],
-      toData: d => { const S = h => (d.sections.find(s => s.h === h) || { paras: [] }).paras.join('\n\n'); const o = { id: d.meta.id }; opt(o, 'k', d.meta.key); Object.assign(o, { t: d.meta.title, u: d.meta.unit, typ: d.meta.typical, what: S('Что это'), why: S('Почему важно'), how: S('Как снижают') }); return opt(o, 'src', src(d)); },
-      fromData: x => ({ meta: { id: x.id, key: x.k, title: x.t, unit: x.u, typical: x.typ }, lead: '', sections: [sec('Что это', x.what), sec('Почему важно', x.why), sec('Как снижают', x.how), ...items('Источники', x.src)] }) },
-    aux: { label: 'Вспомогательные здания', dir: 'content/kb/aux', href: id => '#kb-a-' + id, page: 'tlazolteotl', kbKey: 'AUX',
-      fields: { id: 'адрес статьи', title: 'название', proc: 'процессы (id статей)' }, special: ['Ключевые числа', 'Источники'],
-      toData: d => { const o = { id: d.meta.id, t: d.meta.title, lead: d.lead, s: rest(d, ['Ключевые числа', 'Источники']) }; opt(o, 'n', list(d, 'Ключевые числа')); opt(o, 'proc', d.meta.proc); return opt(o, 'src', src(d)); },
-      fromData: x => ({ meta: { id: x.id, title: x.t, proc: x.proc }, lead: x.lead, sections: [...x.s.map(([h, t]) => sec(h, t)), ...items('Ключевые числа', x.n), ...items('Источники', x.src)] }) },
+    // Очистка сточных вод: сооружения, процессы, показатели и здания — статьи с разметкой (js/richtext.js):
+    // вводная часть — «Коротко», разделы — «Подробно»; сноски [^n] ведут в раздел «Источники»
+    // (строка «документ | название | где | ссылка»: документ — id нормативного документа или книги из SeshatKB.BIB, «—» — прочее).
+    units: rich({ label: 'Сооружения очистки сточных вод', dir: 'content/kb/units', href: id => '#kb-u-' + id, kbKey: 'UNITS_KB',
+      fields: { id: 'адрес статьи (как в каталоге конструктора)', title: 'название', role: 'сооружение, элемент или опция', stage: 'стадия: mech, phys, bio, tert, dis, sludge', part_of: 'в состав каких сооружений входит (id)', parts: 'из каких элементов состоит (id)', procs: 'процессы (id статей)', inds: 'показатели, на которые влияет (id статей)' },
+      meta: ['role', 'stage', 'part_of', 'parts', 'procs', 'inds'] }),
+    processes: rich({ label: 'Физика и химия процессов', dir: 'content/kb/processes', href: id => '#kb-p-' + id, kbKey: 'PROCESSES',
+      fields: { id: 'адрес статьи (латиница)', title: 'название', group: 'группа процессов' }, meta: [['group', 'g']] }),
+    indicators: rich({ label: 'Показатели качества воды', dir: 'content/kb/indicators', href: id => '#kb-i-' + id, kbKey: 'INDICATORS',
+      fields: { id: 'адрес статьи', key: 'показатель в расчёте конструктора (если есть)', title: 'название', unit: 'единицы', typical: 'типичные значения в городских стоках (со ссылкой на источник в тексте)' },
+      meta: [['key', 'k'], ['unit', 'u'], ['typical', 'typ']] }),
+    aux: rich({ label: 'Вспомогательные здания', dir: 'content/kb/aux', href: id => '#kb-a-' + id, kbKey: 'AUX',
+      fields: { id: 'адрес статьи', title: 'название', proc: 'процессы (id статей)' }, meta: ['proc'] }),
     fundamentals: { label: 'Основы: дисциплины', dir: 'content/kb/fundamentals', href: id => '#kb-f-' + id, page: 'hub', kbKey: 'FUNDAMENTALS',
       fields: { id: 'адрес статьи', title: 'название', home: 'модуль «Основ» (fundamentals или basics)', mods: 'где пригодится (модули)' }, special: ['Ключевые формулы', 'Учебники', 'Источники'],
       toData: d => { const o = { id: d.meta.id, home: d.meta.home, t: d.meta.title, lead: d.lead }; opt(o, 'f', list(d, 'Ключевые формулы')); o.s = rest(d, ['Ключевые формулы', 'Учебники', 'Источники']); o.books = (list(d, 'Учебники') || []).map(book); o.mods = d.meta.mods || []; return opt(o, 'src', src(d)); },
@@ -197,8 +224,7 @@
     if (!doc.meta.id || !/^[a-z0-9-]+$/.test(doc.meta.id)) err.push('Поле id: только латинские строчные буквы, цифры и дефис — это адрес статьи.');
     const nameKey = coll === 'myths' ? 'name' : 'title';
     if (typeof doc.meta[nameKey] !== 'string' || !doc.meta[nameKey].trim()) err.push(`Нет поля ${nameKey} — названия статьи.`);
-    if (coll === 'indicators') ['Что это', 'Почему важно', 'Как снижают'].forEach(h => { if (!doc.sections.some(s => s.h === h && s.paras.length)) err.push(`Нет раздела «## ${h}».`); });
-    else if (coll !== 'myths' && !doc.lead) err.push(coll === 'glossary' ? 'Нет определения: напишите его текстом под заголовком файла.' : 'Нет вводного абзаца перед первым разделом.');
+    if (coll !== 'myths' && !doc.lead) err.push(coll === 'glossary' ? 'Нет определения: напишите его текстом под заголовком файла.' : C.rich ? 'Нет вводной части «Коротко» перед первым разделом.' : 'Нет вводного абзаца перед первым разделом.');
     const body = doc.sections.filter(s => !(C.special || []).includes(s.h));
     if (coll === 'glossary') {
       if (!doc.meta.source || !doc.meta.ref) err.push('Укажите документ (source) и пункт (ref), откуда взято определение.');
@@ -206,8 +232,9 @@
       if (doc.sections.length) warn.push('У термина не бывает разделов «## …»: определение — один абзац.');
       return { err, warn };
     }
-    if (coll !== 'indicators' && !body.length) err.push('Нет ни одного раздела «## …» с текстом.');
-    body.forEach(s => { if (!s.paras.length && !s.items.length && !s.quote) warn.push(`Раздел «${s.h}» пустой.`); });
+    if (!body.length) err.push('Нет ни одного раздела «## …» с текстом.');
+    body.forEach(s => { if (!(s.raw || '').trim() && !s.paras.length && !s.items.length && !s.quote) warn.push(`Раздел «${s.h}» пустой.`); });
+    if (C.rich) richAudit(doc).forEach(w => warn.push(w));
     if (coll === 'myths') {
       if (!(doc.meta.sources || []).some(s => s.url)) err.push('Укажите хотя бы один источник со ссылкой (sources: title и url).');
       if (!(doc.meta.mods || []).length) warn.push('Нет созвучных модулей (mods).');
@@ -215,7 +242,24 @@
     return { err, warn };
   }
 
-  const api = { parse, serialize, parseYaml, dumpYaml, COLLECTIONS, ordered, validate };
+  // Обоснованность статьи с разметкой: сноски у абзацев, номера сносок, формулы KaTeX
+  const RT = () => root.SeshatRich || (typeof require !== 'undefined' ? require('./richtext.js') : null);
+  function richAudit(doc) {
+    const R = RT(); if (!R) return [];
+    const nSrc = (list(doc, 'Источники') || []).length, out = [], used = new Set();
+    const parts = [['вводная часть', doc.leadRaw || ''], ...doc.sections.filter(s => s.h !== 'Источники').map(s => [s.h, s.raw || ''])];
+    parts.forEach(([h, raw]) => {
+      const a = R.audit(raw, nSrc);
+      a.used.forEach(k => used.add(k));
+      a.uncited.forEach(t => out.push(`«${h}»: нет сноски на источник — «${t}…»`));
+      a.bad.forEach(k => out.push(`«${h}»: сноска [^${k}], а источников всего ${nSrc}.`));
+      a.tex.forEach(t => out.push(`«${h}»: формула не разбирается — ${t}`));
+    });
+    for (let k = 1; k <= nSrc; k++) if (!used.has(k)) out.push(`Источник № ${k} нигде не упомянут сноской [^${k}].`);
+    return out;
+  }
+
+  const api = { parse, serialize, parseYaml, dumpYaml, COLLECTIONS, ordered, validate, richAudit };
   root.SeshatMD = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

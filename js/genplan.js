@@ -416,9 +416,9 @@ function setPick(id) { gpUI.pick = id; gpUI.sel = null; gpUI.aux = null; syncSel
 
 /* ---------- карточка сооружения или трубы ---------- */
 // «Коротко» из статьи базы знаний о сооружении (content/kb/units) — без сносок и схем; нет статьи — краткое описание каталога
-const kbUnit = id => ((window.SeshatKB && SeshatKB.UNITS_KB) || []).find(x => x.id === id);
+const gpKbArt = id => ((window.SeshatKB && SeshatKB.UNITS_KB) || []).find(x => x.id === id);
 function kbShort(id) {
-  const a = kbUnit(id);
+  const a = gpKbArt(id);
   if (!a || !window.SeshatRich) return U[id] ? `<p>${esc(U[id].d)}</p>` : '';
   return SeshatRich.parse(a.lead).filter(b => b.t === 'p').map(b => `<p>${SeshatRich.inline(b.v, { cite: false })}</p>`).join('');
 }
@@ -466,7 +466,7 @@ function renderUnitCard(sim, ec, L) {
     return;
   }
   if (gpUI.aux && SeshatKB) {
-    const a = SeshatKB.AUX.find(x => x.id === gpUI.aux) || kbUnit(gpUI.aux), b = L.aux.find(x => x.id === gpUI.aux);
+    const a = SeshatKB.AUX.find(x => x.id === gpUI.aux) || gpKbArt(gpUI.aux), b = L.aux.find(x => x.id === gpUI.aux);
     const href = SeshatKB.AUX.some(x => x.id === gpUI.aux) ? '#kb-a-' + gpUI.aux : '#kb-u-' + gpUI.aux;
     const lead = a && window.SeshatRich ? SeshatRich.parse(a.lead).filter(x => x.t === 'p').map(x => `<p>${SeshatRich.inline(x.v, { cite: false })}</p>`).join('') : '';
     box.innerHTML = `${close}<h2>${esc(a ? a.t : b.label)}</h2>${lead}

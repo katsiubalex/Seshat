@@ -5,7 +5,8 @@ const D = require('../js/data.js');
 const { simulate } = require('../js/model.js');
 
 const U = Object.fromEntries(D.UNITS.map(u => [u.id, u]));
-const run = (preset, ids) => simulate({ q: preset.q, c: preset.c, steps: (ids || preset.scheme).map(id => ({ u: id, eff: { ...U[id].eff } })) });
+const step = id => { const o = typeof id === 'object' ? id : { u: id }; return { u: o.u, eff: { ...U[o.u].eff }, ...(o.dose ? { dose: o.dose } : {}) }; };
+const run = (preset, ids, extra) => simulate({ q: preset.q, c: preset.c, steps: (ids || preset.scheme).map(step), ...(extra || {}) });
 const city = D.PRESETS[0];
 const last = r => r.prof[r.prof.length - 1];
 
@@ -37,10 +38,43 @@ test('без органики денитрификация ограничена 
   assert.ok(r.warns[0].some(w => w.includes('денитрификации')));
 });
 
-test('дефосфатация снижает фосфор', () => {
-  const a = last(run(city, ['primary', 'at']));
-  const b = last(run(city, ['primary', 'at', 'chemP']));
-  assert.ok(b.p < a.p * 0.3);
+test('ввод коагулянта в сооружение-хозяина снижает фосфор и добавляет осадок (СП 32 п. 9.2.5.7)', () => {
+  const a = run(city, ['primary', 'at', 'sec']);
+  const b = run(city, ['primary', 'at', { u: 'sec', dose: 'fe' }]);
+  assert.ok(last(b).p < last(a).p * 0.3);
+  assert.ok(b.sludge > a.sludge, 'химический осадок');
+  const d = b.perStep[2].dose;
+  assert.equal(d.r, 'fe');
+  // доза металла = β × стехиометрия × снятый фосфор
+  assert.ok(Math.abs(d.metal - d.dP * D.DOSE.points.sim.beta * D.DOSE.reagents.fe.stoich) < 1e-9);
+  assert.ok(D.UNITS.every(u => u.id !== 'chemP'), 'реагентная дефосфатация — не отдельная ступень');
+});
+
+test('решётки и песколовки не меняют взвесь (СП 32 п. 9.2.1.9, 9.2.2.3); первичный отстойник снижает органику по формуле (18)', () => {
+  for (const id of ['screens', 'coarse', 'drum', 'sand', 'sandv']) assert.deepEqual(last(run(city, [id])), { ...city.c }, id);
+  const r = run(city, ['primary']), i = r.cin[0], o = last(r);   // вход ступени — с фильтратом обезвоживания
+  const dSS = i.ss - o.ss;
+  assert.ok(Math.abs((i.bod - o.bod) - 0.4 * dSS) < 1e-6);
+  assert.ok(Math.abs((i.cod - o.cod) - 1.2 * dSS) < 1e-6);
+  assert.equal(o.p, city.c.p, 'растворённые фосфаты отстаиванием не снимаются');
+});
+
+test('аэротенк выдаёт иловую смесь — без вторичного отстойника предупреждение', () => {
+  const r = run(city, ['at']);
+  assert.equal(last(r).ss, U.at.mlss);
+  assert.ok(r.warns[0].some(w => /вторичн/i.test(w)));
+  const r2 = run(city, ['at', 'sec']);
+  assert.ok(last(r2).ss <= 20);
+  assert.ok(r2.warns[0].every(w => !/нет вторичного/i.test(w)));
+});
+
+test('фугат возвращается в начало станции и добавляет аммоний (СП 32 п. 9.1.7)', () => {
+  const none = run(city, null, { sludge: { stab: 'none', reject: 'none' } });
+  const dig = run(city, null, { sludge: { stab: 'digest', reject: 'none' } });
+  const amx = run(city, null, { sludge: { stab: 'digest', reject: 'anammox' } });
+  assert.ok(dig.reject.nh4Back > 0 && dig.reject.share > 0.03 && dig.reject.share < 0.3);
+  assert.ok(amx.reject.nh4Back < dig.reject.nh4Back * 0.3);
+  assert.deepEqual(none.prof[0], { ...city.c }, 'первая точка профиля — исходная вода');
 });
 
 test('УФ не меняет химические показатели', () => {
@@ -90,7 +124,7 @@ test('новые технологии: UASB для концентрирован�
   assert.ok(run(city, ['uasb']).warns[0].some(w => /концентрированные стоки/.test(w)));
   assert.ok(run(city, ['uasb']).warns[0].some(w => /аэробная доочистка/.test(w)));
   assert.ok(run(city, ['anammox']).warns[0].some(w => /Анаммокс/.test(w)));
-  assert.ok(run(city, ['screens', 'sand', 'primary', 'a2o', 'hypo']).warns[4].some(w => /дехлорация/.test(w)));
-  const bard = last(run(city, ['screens', 'sand', 'bardenpho'])), mle = last(run(city, ['screens', 'sand', 'mle']));
+  assert.ok(run(city, ['screens', 'sandv', 'primary', 'a2o', 'sec', 'hypo']).warns[5].some(w => /дехлор/.test(w)));
+  const bard = last(run(city, ['screens', 'sandv', 'bardenpho', 'sec'])), mle = last(run(city, ['screens', 'sandv', 'mle', 'sec']));
   assert.ok(bard.no3 < mle.no3 && bard.p < mle.p, 'Bardenpho удаляет азот и фосфор глубже Д-Н');
 });

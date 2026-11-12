@@ -21,8 +21,19 @@ function build() {
     const ids = new Set(); docs.forEach(d => { if (ids.has(d.meta.id)) problems.push(`${C.dir}: повторяется id ${d.meta.id}`); ids.add(d.meta.id); });
     out[coll] = MD.ordered(docs).map(C.toData);
   }
+  // схемы к статьям: content/kb/fig/<имя>.svg → SeshatFigs[имя] (встраиваются в страницу, чтобы работали цвета темы)
+  const figDir = path.join(root, 'content/kb/fig'), figs = {};
+  if (fs.existsSync(figDir)) fs.readdirSync(figDir).filter(f => f.endsWith('.svg')).sort().forEach(f => {
+    const svg = fs.readFileSync(path.join(figDir, f), 'utf8').replace(/<\?xml[^>]*>\s*/, '').replace(/<!--[\s\S]*?-->/g, '').replace(/>\s+</g, '><').trim();
+    if (!/^<svg[\s>]/.test(svg) || /<script|on\w+=/i.test(svg)) problems.push(`content/kb/fig/${f}: не SVG или содержит скрипты`);
+    else figs[f.slice(0, -4)] = svg;
+  });
+  // ссылки статей на схемы: файл должен существовать
+  for (const [coll, C] of Object.entries(MD.COLLECTIONS)) if (C.rich) (out[coll] || []).forEach(x => [x.lead, ...x.s.map(s => s[1])].forEach(t => {
+    for (const m of String(t).matchAll(/!\[[^\]]*\]\(fig\/([\w-]+)\.svg\)/g)) if (!figs[m[1]]) problems.push(`${C.dir}/${x.id}.md: нет схемы content/kb/fig/${m[1]}.svg`);
+  }));
   const js = `// Собрано из content/**/*.md командой node tools/build-content.js — не править вручную: правьте Markdown-файлы.\n` +
-    `(function (root) {\n  const C = ${JSON.stringify(out, null, 1).replace(/\n/g, '\n  ')};\n  root.SeshatContent = C;\n  if (typeof module !== 'undefined') module.exports = C;\n})(typeof globalThis !== 'undefined' ? globalThis : this);\n`;
+    `(function (root) {\n  const C = ${JSON.stringify(out, null, 1).replace(/\n/g, '\n  ')};\n  root.SeshatContent = C;\n  root.SeshatFigs = ${JSON.stringify(figs)};\n  if (typeof module !== 'undefined') module.exports = C;\n})(typeof globalThis !== 'undefined' ? globalThis : this);\n`;
   return { js, problems, warnings, count: Object.values(out).reduce((s, a) => s + a.length, 0) };
 }
 if (require.main === module) {

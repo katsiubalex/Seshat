@@ -7,12 +7,11 @@ const { PLAN, layout, unitSize } = require('../js/plan.js');
 const city = D.PRESETS[0];
 const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-test('у каждой технологии есть данные для генплана и описание работы', () => {
+test('у каждой технологии есть данные для генплана; описание работы — в статье базы знаний, а не в plan.js', () => {
   for (const u of D.UNITS) {
     const p = PLAN[u.id];
-    assert.ok(p, u.id);
-    assert.ok(p.how && p.how.length > 80, u.id + ': описание');
-    assert.ok(p.params.length >= 1, u.id + ': параметры');
+    assert.ok(p && p.a >= 0 && p.min > 0 && p.label, u.id);
+    assert.ok(!p.how && !p.params, u.id + ': описание перенесено в content/kb/units');
   }
 });
 
@@ -20,7 +19,10 @@ test('площадь растёт с расходом, но не меньше м
   const small = unitSize('a2o', 100), big = unitSize('a2o', 50000);
   assert.ok(big.area > small.area * 10);
   assert.ok(small.parts[0].area >= PLAN.a2o.min);
-  assert.equal(big.parts.length, 2); // аэротенк + вторичные отстойники
+  assert.equal(big.parts.length, 1); // вторичные отстойники — отдельное сооружение sec
+  const sec = unitSize('sec', 50000);
+  assert.equal(sec.parts[0].kind, 'clar');
+  assert.ok(sec.parts[0].n >= 2, 'не менее двух отстойников');
 });
 
 test('сооружения и здания не перекрываются и лежат внутри участка', () => {
@@ -47,7 +49,7 @@ test('участок больше суммарной площади сооруж
   assert.ok(L.area.site > L.area.structures);
 });
 
-test('генплан со всеми 40 технологиями сразу: без перекрытий, внутри участка', () => {
+test('генплан со всеми технологиями каталога сразу: без перекрытий, внутри участка', () => {
   for (const q of [300, 20000]) {
     const L = layout(q, D.UNITS.map(u => u.id));
     const all = [...L.blocks, ...L.aux];
@@ -62,8 +64,9 @@ test('генплан со всеми 40 технологиями сразу: б�
 
 test('параллельные линии стоят друг под другом, меньшего размера, трубы ведут к обеим', () => {
   const G = require('../js/graph.js');
-  const mk = id => ({ u: id, eff: {} });
-  const { steps } = G.parallel(G.norm(city.scheme.map(mk)), city.scheme.indexOf('a2o') >= 0 ? city.scheme.indexOf('a2o') : 2);
+  const mk = id => (typeof id === 'object' ? { ...id, eff: {} } : { u: id, eff: {} });
+  const ia = city.scheme.indexOf('a2o');
+  const { steps } = G.parallel(G.norm(city.scheme.map(mk)), ia >= 0 ? ia : 2);
   const L = layout(city.q, steps), one = layout(city.q, city.scheme);
   const i = steps.findIndex((s, k) => k > 0 && s.u === steps[k - 1].u);
   assert.ok(i > 0);

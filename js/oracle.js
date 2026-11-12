@@ -8,7 +8,7 @@
   const D = root.SeshatData || req('./data.js');
   const M = root.SeshatModel || req('./model.js');
   const E = root.SeshatEconomics || req('./economics.js');
-  const P = root.SeshatPlan || req('./plan.js');
+  const RT = root.SeshatRich || req('./richtext.js');
   const MS = root.SeshatModules || req('./modules.js');
   const KB = root.SeshatKB || req('./kb.js');
   const MY = root.SeshatMyths || req('./myths.js');
@@ -71,7 +71,7 @@
     ['daf', ['флотац', 'флотатор']], ['mbr', ['мбр', 'mbr', 'мембранн', 'мембран']],
     ['mbbr', ['мббр', 'mbbr', 'биозагруз', 'носител', 'биоплён', 'биоплен']], ['sbr', ['sbr', 'сбр', 'периодическ']],
     ['a2o', ['a2o', 'a²/o', 'а2о', 'uct', 'биологическое удаление фосфора']], ['mle', ['нитри-денитри', 'д-н', 'нитриденитри', 'аноксид']],
-    ['denf', ['денитрифицирующ', 'метанол']], ['chemP', ['дефосфат', 'коагулянт', 'соли алюмин', 'соли желез']],
+    ['denf', ['денитрифицирующ', 'метанол']], ['sec', ['вторичн', 'илоотдел']],
     ['gac', ['угол', 'уголь', 'сорбц', 'адсорб']], ['ozone', ['озон']], ['ro', ['осмос']],
     ['uv', ['уф', 'ультрафиол', 'обеззараж']], ['filter', ['фильтр', 'доочист']], ['at', ['аэротенк', 'активный ил', 'активного ила']]
   ];
@@ -165,13 +165,14 @@
   function howMenu() {
     return {
       text: 'О каком сооружении рассказать? Выберите из списка или напишите название.',
-      options: ['primary', 'at', 'a2o', 'mbr', 'chemP', 'uv'].map(id => ({ id: 'tech:' + id, label: name(id) })).concat([back])
+      options: ['primary', 'at', 'sec', 'a2o', 'mbr', 'uv'].map(id => ({ id: 'tech:' + id, label: name(id) })).concat([back])
     };
   }
   function tech(id) {
-    const p = P.PLAN[id], u = U[id];
+    const u = U[id], a = (KB.UNITS_KB || []).find(x => x.id === id), plain = t => RT.plain(t);
+    const nums = a && a.n && a.n.length ? ` Ключевые числа: ${a.n.slice(0, 3).map(x => plain(x).replace(/[.\s]+$/, '')).join('; ')}.` : '';
     return {
-      text: `${u.n}. ${p.how} Типовые параметры: ${p.params.join('; ').toLowerCase()}.`,
+      text: `${u.n}. ${a ? plain(a.lead) : u.d}${nums}`,
       options: [{ id: 'how', label: 'Расскажи о другом сооружении' }, back],
       action: open('tlazolteotl', 'kb-u-' + id, 'Подробнее в базе знаний')
     };
@@ -247,14 +248,15 @@
   }
   function kbHelp(ctx) {
     const p = pageOf(ctx);
-    if (p === 'tlazolteotl') return { text: 'В базе знаний модуля «Очистка сточных вод» — статьи о 40 сооружениях очистки, 22 процессах с уравнениями, 18 показателях качества воды и учебники модуля. Общие разделы Сешат — фундаментальные дисциплины, гуманитарные аспекты, журналы и сообщества.', options: [back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний модуля' } };
+    if (p === 'tlazolteotl') return { text: `В базе знаний модуля «Очистка сточных вод» — статьи о ${(KB.UNITS_KB || []).length} сооружениях и их элементах, ${KB.PROCESSES.length} процессах с формулами и схемами, ${KB.INDICATORS.length} показателях качества воды и учебники модуля. У каждого утверждения — сноска на норму, справочник НДТ или учебник. Общие разделы Сешат — фундаментальные дисциплины, гуманитарные аспекты, журналы и сообщества.`, options: [back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний модуля' } };
     if (p !== 'hub') return { text: `Модуль «${MOD[p].n}» ещё наполняется, но в его базе знаний уже есть учебники и ссылки на общие дисциплины, на которых он держится. Общие разделы Сешат — фундаментальные дисциплины, гуманитарные аспекты, журналы и сообщества.`, options: [{ id: 'books:' + p, label: 'Что почитать по теме?' }, back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний модуля' } };
     return { text: 'База знаний устроена как дерево. Общие разделы: фундаментальные дисциплины (гидравлика, математика, химия воды, микробиология, геология, насосы), гуманитарные аспекты (мифы о воде, антропология, философия, история санитарии, вода как общее благо, этика), научные журналы и профессиональные сообщества. У каждого модуля — своя база знаний со своими учебниками; у «Очистки сточных вод» ещё сооружения, процессы и показатели качества воды.',
       options: [{ id: 'f:hydraulics', label: 'Расскажи про гидравлику' }, { id: 'h:philosophy', label: 'Что такое философия воды?' }, back], action: { type: 'link', view: 'kb', label: 'Открыть базу знаний' } };
   }
   function article(kind, id) {
     const x = (kind === 'f' ? KB.FUNDAMENTALS : kind === 'h' ? KB.HUMANITIES : kind === 'w' ? KB.DRINKING : kind === 'n' ? KB.NETWORK : KB.INDICATORS).find(v => v.id === id);
-    const text = kind === 'i' ? `${x.t}. ${x.what} ${x.why} В городских стоках обычно ${x.typ}.` : `${x.t}. ${x.lead} ${x.s[0][1]}`;
+    const plain = t => RT.plain(t);
+    const text = kind === 'i' ? `${x.t}. ${plain(x.lead)} В городских стоках обычно ${plain(x.typ)}.` : `${x.t}. ${plain(x.lead)} ${plain(x.s[0][1]).slice(0, 400)}`;
     const page = kind === 'i' ? 'tlazolteotl' : kind === 'h' ? 'humanities' : kind === 'w' ? 'anahita' : kind === 'n' ? 'juturna' : 'hub';
     return { text, options: [{ id: 'kbhelp', label: 'Что ещё есть в базе знаний?' }, back], action: open(page, `kb-${kind}-${id}`, 'Читать статью целиком') };
   }
@@ -270,7 +272,7 @@
 
   /** Подбор схемы по составу стоков и нормативам (правила, а не оптимизация). */
   function recommendSteps(ctx) {
-    const c = ctx.c, n = ctx.norm, q = ctx.q, steps = ['screens', 'sand'], why = [];
+    const c = ctx.c, n = ctx.norm, q = ctx.q, steps = ['screens'], why = [];
     if (c.fat + c.oil > 200) { steps.push('daf'); why.push('много жиров и нефтепродуктов — нужна флотация до биологии'); }
     if (c.bod > 1000) { steps.push('equal', 'uasb'); why.push('очень высокая органика — усреднитель и анаэробный реактор UASB с получением биогаза перед аэробной очисткой'); }
     else if (c.fat > 100 || c.oil > 20) { steps.push('grease'); why.push('жиры и нефтепродукты задержит жироуловитель'); }
@@ -281,18 +283,25 @@
     if (needN && needP) { steps.push(q < 500 ? 'sbr' : 'a2o'); why.push(q < 500 ? 'для малого расхода удобен SBR: все зоны в одном резервуаре' : 'нормативы и по азоту, и по фосфору — подойдёт A²/O'); }
     else if (needN) { steps.push(q < 500 ? 'sbr' : 'mle'); why.push('нужно удалять азот — нитри-денитрификация'); }
     else { steps.push('at'); why.push('биогены не нормируются строго — хватит аэротенка'); }
-    if (strict('p', 1)) { steps.push('chemP'); why.push('строгий норматив по фосфору — реагентная дефосфатация'); }
+    if (U[steps[steps.length - 1]].mlss) { steps.push('sec'); why.push('после аэротенка ил отделяют во вторичных отстойниках'); }
+    // песок: аэрируемые песколовки не ставят перед биологическим удалением фосфора (СП 32 п. 9.2.2.1)
+    steps.splice(1, 0, steps.some(id => U[id].eff.bioP) ? 'sandv' : 'sand');
+    const doseP = strict('p', 1);
+    if (doseP) why.push('строгий норматив по фосфору — ввод коагулянта (реагентное удаление фосфора)');
     if (strict('no3', 5)) { steps.push('denf'); why.push('строгий норматив по нитратам — денитрифицирующие фильтры'); }
     if (strict('ss', 10) || strict('bod', 5) || strict('p', 0.5)) { steps.push('filter'); why.push('строгие нормы по взвеси — доочистка на фильтрах'); }
+    // коагулянт — в сооружение-хозяина: перед фильтрами, если они есть, иначе во вторичный отстойник или биоблок
+    if (doseP) { const k = [...steps.keys()].reverse().find(i => typeof steps[i] === 'string' && U[steps[i]].doseAt); if (k != null) steps[k] = { u: steps[k], dose: 'fe' }; }
     if (strict('oil', 0.1) || c.cod / Math.max(c.bod, 1) > 3) { steps.push('gac'); why.push(strict('oil', 0.1) ? 'строгий норматив по нефтепродуктам — сорбция на угле' : 'много трудноокисляемой органики — сорбция на угле'); }
     steps.push('uv');
     return { steps, why };
   }
   function recommend(ctx) {
     const { steps, why } = recommendSteps(ctx);
-    const r = evaluate({ ...ctx, steps: steps.map(id => ({ u: id, eff: { ...U[id].eff } })) });
+    const st = x => (typeof x === 'string' ? { u: x } : x);
+    const r = evaluate({ ...ctx, steps: steps.map(x => ({ u: st(x).u, eff: { ...U[st(x).u].eff }, ...(st(x).dose ? { dose: st(x).dose } : {}) })) });
     const tot = r.fails.length + r.ok.length;
-    let text = `Предлагаю схему: ${steps.map(name).join(' → ')}. Почему: ${list(why)}. `;
+    let text = `Предлагаю схему: ${steps.map(x => name(st(x).u) + (st(x).dose ? ' (с коагулянтом)' : '')).join(' → ')}. Почему: ${list(why)}. `;
     text += tot ? (r.fails.length ? `По расчёту выполняется ${r.ok.length} из ${tot} нормативов; не хватает по показателям ${list(r.fails.map(x => `«${lc(x.p.n)}»`))}. ` : `По расчёту выполняются все ${tot} нормативов. `) : '';
     text += `Строительство — около ${money(r.eco.total.capex * 1e6)}, эксплуатация — ${money(r.eco.total.opex)} в сутки.`;
     return { text, options: [{ id: 'review', label: 'Посмотри на мою текущую схему' }, back], action: { type: 'apply', steps, label: 'Собрать эту схему в конструкторе' } };

@@ -6,7 +6,9 @@ const O = require('../js/oracle.js');
 
 const U = Object.fromEntries(D.UNITS.map(u => [u.id, u]));
 const city = D.PRESETS[0];
-const ctx = (over = {}) => ({ q: city.q, c: { ...city.c }, steps: city.scheme.map(u => ({ u, eff: { ...U[u].eff } })), norm: { ...D.NORMS.pdk.v }, prices: undefined, projects: 0, hour: 10, ...over });
+const uid = x => (typeof x === 'object' ? x.u : x);
+const mk = x => ({ u: uid(x), eff: { ...U[uid(x)].eff }, ...(x.dose ? { dose: x.dose } : {}) });
+const ctx = (over = {}) => ({ q: city.q, c: { ...city.c }, steps: city.scheme.map(mk), norm: { ...D.NORMS.pdk.v }, prices: undefined, projects: 0, hour: 10, ...over });
 
 test('приветствие с вариантами ответа', () => {
   const r = O.greet(ctx({ projects: 3 }));
@@ -47,11 +49,14 @@ test('подбор схемы учитывает состав стоков и с
   assert.ok(a.steps.includes('daf'), 'жирные стоки → флотация');
   const loose = O.recommendSteps(ctx({ norm: { ...D.NORMS.pdk.v, nh4: null, no3: null, p: null, ss: null, bod: 20, oil: null } }));
   assert.ok(loose.steps.includes('at') && !loose.steps.includes('a2o'));
-  const strict = O.recommendSteps(ctx());
-  assert.ok(strict.steps.includes('a2o') && strict.steps.includes('chemP') && strict.steps.includes('filter'));
+  const strict = O.recommendSteps(ctx()), ids = strict.steps.map(uid);
+  assert.ok(ids.includes('a2o') && ids.includes('sec') && ids.includes('filter'));
+  assert.ok(ids.indexOf('sec') === ids.indexOf('a2o') + 1, 'вторичный отстойник сразу после аэротенка');
+  assert.ok(!ids.includes('sand'), 'перед A²/O — не аэрируемая песколовка (СП 32 п. 9.2.2.1)');
+  assert.ok(strict.steps.some(x => typeof x === 'object' && x.dose === 'fe'), 'коагулянт — опция сооружения-хозяина');
   const r = O.local({ id: 'recommend' }, ctx());
   assert.equal(r.action.type, 'apply');
-  assert.ok(r.action.steps.every(id => U[id]));
+  assert.ok(r.action.steps.every(x => U[uid(x)]));
 });
 
 test('неизвестный вопрос — честный ответ и меню', () => {

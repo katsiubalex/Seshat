@@ -28,7 +28,8 @@
       const capex = (u.cx || 0) * scale * pr.capexIdx;
       const kwh = ps.en * qs;
       let coag = 0, floc = 0, meth = 0;
-      if (u.id === 'chemP') coag = R.coagPerP * ps.dP * tm3;
+      // ввод коагулянта для удаления фосфора: товарный продукт, кг/сут (доза металла — СП 32 п. 9.2.5.7, см. data.DOSE)
+      if (ps.dose) coag += ps.dose.product * tm3;
       if (u.id === 'daf') { coag = R.dafCoag * qs; floc = R.dafFloc * qs; }
       if (u.id === 'coag') { coag = R.coagDose * qs; floc = R.coagFloc * qs; }
       if (u.id === 'denf') meth = R.methPerN * ps.dNOx * tm3;
@@ -50,6 +51,9 @@
 
     const keys = ['capex', 'kwh', 'energy', 'reagents', 'consumables', 'sludge', 'repair', 'opex'];
     const total = Object.fromEntries(keys.map(k => [k, steps.reduce((s, r) => s + r[k], 0)]));
+    // очистка фугата в линии осадка: электроэнергия (не относится ни к одной ступени схемы)
+    const rk = sim.reject && sim.reject.en ? sim.reject.en : 0;
+    if (rk) { total.kwh += rk; total.energy += rk * pr.kwh; total.opex += rk * pr.kwh; }
     return { steps, total, perM3: q > 0 ? total.opex / q : 0, perYear: total.opex * 365 };
   }
 

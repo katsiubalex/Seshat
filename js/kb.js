@@ -1,82 +1,41 @@
 // База знаний Сешат: процессы очистки, показатели качества воды, учебники, журналы, сообщества.
-// Статьи о сооружениях собираются из каталога (data.js) и описаний плана (plan.js) — здесь только связи с процессами.
+// Статьи хранятся в content/kb/<коллекция>/<id>.md и собираются в js/content.js (tools/build-content.js).
+// Статьи очистки сточных вод (сооружения, процессы, показатели, здания) — с разметкой js/richtext.js:
+// lead — «Коротко», s — разделы [заголовок, текст], n — ключевые числа, see — «См. также», src — источники для сносок [^n].
 (function (root) {
-
-  /* ---------- физика и химия процессов ---------- */
-  // f — формулы и уравнения (моноширинным шрифтом), n — ключевые числа, s — разделы [заголовок, текст]
-  // Статьи хранятся в content/kb/<коллекция>/<id>.md и собираются в js/content.js (tools/build-content.js)
   const CT = root.SeshatContent || (typeof require !== 'undefined' ? require('./content.js') : {});
-  const PROCESSES = CT.processes || [];
 
-  /* ---------- показатели качества воды ---------- */
-  // k — ключ показателя в расчёте (если есть), typ — типичные значения в городских стоках
-  const INDICATORS = CT.indicators || [];
+  /* ---------- очистка сточных вод ---------- */
+  const UNITS_KB = CT.units || [];          // сооружения каталога, их элементы и опции (role)
+  const PROCESSES = CT.processes || [];     // физика и химия процессов
+  const INDICATORS = CT.indicators || [];   // показатели качества воды (k — ключ в расчёте конструктора)
+  const AUX = CT.aux || [];                 // вспомогательные здания станции
+  // связи сооружений с процессами — из поля procs статьи о сооружении
+  const UNIT_PROC = Object.fromEntries(UNITS_KB.filter(u => u.procs && u.procs.length).map(u => [u.id, u.procs]));
 
-  /* ---------- связи сооружений с процессами ---------- */
-  const UNIT_PROC = {
-    coarse: ['screening'], screens: ['screening'], drum: ['screening'],
-    sand: ['sedimentation', 'aeration'], sandv: ['sedimentation'], grease: ['flotation', 'sedimentation'],
-    equal: ['equalization'], primary: ['sedimentation'], lamella: ['sedimentation'],
-    daf: ['flotation', 'coagulation'], coag: ['coagulation', 'sedimentation'], neutral: ['neutralization'], strip: ['stripping', 'neutralization'],
-    at: ['biooxidation', 'aeration', 'sedimentation'], oxid: ['biooxidation', 'nitrification', 'denitrification', 'aeration'],
-    mle: ['biooxidation', 'nitrification', 'denitrification', 'aeration'], a2o: ['biooxidation', 'nitrification', 'denitrification', 'biop'],
-    bardenpho: ['nitrification', 'denitrification', 'biop'], sbr: ['biooxidation', 'nitrification', 'denitrification', 'sedimentation'],
-    ags: ['biooxidation', 'nitrification', 'denitrification', 'biop'], mbbr: ['biooxidation', 'nitrification', 'aeration'],
-    ifas: ['biooxidation', 'nitrification', 'denitrification'], mbr: ['biooxidation', 'nitrification', 'membranes'],
-    tf: ['biooxidation', 'sedimentation'], baf: ['biooxidation', 'nitrification', 'filtration'], nitf: ['nitrification', 'biooxidation'], uasb: ['anaerobic'],
-    anammox: ['anammox', 'nitrification'], wetland: ['biooxidation', 'filtration', 'adsorption'],
-    chemP: ['chemp', 'coagulation'], denf: ['denitrification', 'filtration'], filter: ['filtration'], disc: ['filtration'],
-    uf: ['membranes'], gac: ['adsorption'], ozone: ['aop', 'disinfection'], aop: ['aop'], ix: ['ionexchange'],
-    ro: ['membranes'], uv: ['disinfection'], hypo: ['disinfection']
+  /* ---------- книги, на которые ссылаются статьи (сноски «книга | название | глава, страница») ---------- */
+  // a — авторы, t — название, pub — выходные данные, url — где прочитать (открытый доступ или DOI), off — сдвиг страниц PDF относительно печатных
+  const BIB = {
+    iwa2020: { a: 'Chen G., van Loosdrecht M. C. M., Ekama G. A., Brdjanovic D. (ред.)', t: 'Biological Wastewater Treatment: Principles, Modelling and Design. 2nd ed.', pub: 'London: IWA Publishing, 2020. ISBN 978-1-78906-036-2', url: 'https://doi.org/10.2166/9781789060362', note: 'открытый доступ (CC BY-NC-ND 4.0)' },
+    mwh2012: { a: 'Crittenden J. C., Trussell R. R., Hand D. W., Howe K. J., Tchobanoglous G.', t: "MWH's Water Treatment: Principles and Design. 3rd ed.", pub: 'Hoboken: John Wiley & Sons, 2012', url: 'https://doi.org/10.1002/9781118131473' },
+    yak1975: { a: 'Яковлев С. В., Карелин Я. А., Жуков А. И., Колобанов С. К.', t: 'Канализация: учебник для вузов. 5-е изд., перераб. и доп.', pub: 'М.: Стройиздат, 1975. 632 с.' },
+    eawag2014: { a: 'Tilley E., Ulrich L., Lüthi C., Reymond Ph., Schertenleib R., Zurbrügg C.', t: 'Compendium of Sanitation Systems and Technologies. 2nd revised ed.', pub: 'Dübendorf: Eawag, 2014', url: 'https://www.eawag.ch/en/department/sandec/publications/compendium/' },
+    me2014: { a: 'Metcalf & Eddy, AECOM: Tchobanoglous G., Stensel H. D., Tsuchihashi R., Burton F.', t: 'Wastewater Engineering: Treatment and Resource Recovery. 5th ed.', pub: 'New York: McGraw-Hill Education, 2014' }
   };
 
-  // вспомогательные здания станции
-  const AUX = CT.aux || [];
-
-  /* ---------- учебники по дисциплинам ---------- */
-  // [автор(ы), название, выходные данные]
-  const BOOKS = [
-    { d: 'Водоотведение и очистка сточных вод', list: [
-      ['Яковлев С. В., Воронов Ю. В.', 'Водоотведение и очистка сточных вод', 'М.: АСВ, 2004 и переиздания'],
-      ['Воронов Ю. В., Алексеев Е. В., Саломеев В. П., Пугачёв Е. А.', 'Водоотведение', 'М.: АСВ; ИНФРА-М (переиздания)'],
-      ['Калицун В. И.', 'Водоотводящие системы и сооружения', 'М.: Стройиздат'],
-      ['Ласков Ю. М., Воронов Ю. В., Калицун В. И.', 'Примеры расчётов канализационных сооружений', 'М.: Стройиздат'],
-      ['Гудков А. Г.', 'Механическая очистка сточных вод', 'М.; Вологда: Инфра-Инженерия, 2019 (2-е изд.)'],
-      ['Metcalf & Eddy, AECOM (Tchobanoglous G. и др.)', 'Wastewater Engineering: Treatment and Resource Recovery, 5th ed.', 'McGraw-Hill, 2014']] },
-    { d: 'Биологическая очистка и моделирование', list: [
-      ['Хенце М., Армоэс П., Ля-Кур-Янсен Й., Арван Э.', 'Очистка сточных вод. Биологические и химические процессы', 'М.: Мир, 2004 (перевод с англ.)'],
-      ['Жмур Н. С.', 'Технологические и биохимические процессы очистки сточных вод на сооружениях с аэротенками', 'М.: АКВАРОС, 2003'],
-      ['Гудков А. Г.', 'Биологическая очистка городских сточных вод', 'Вологда: ВоГТУ, 2002'],
-      ['Chen G., van Loosdrecht M. C. M., Ekama G. A., Brdjanovic D. (ред.)', 'Biological Wastewater Treatment: Principles, Modelling and Design, 2nd ed.', 'IWA Publishing, 2020'],
-      ['Grady C. P. L., Daigger G. T., Love N. G., Filipe C. D. M.', 'Biological Wastewater Treatment, 3rd ed.', 'CRC Press, 2011'],
-      ['Henze M., Gujer W., Mino T., van Loosdrecht M.', 'Activated Sludge Models ASM1, ASM2, ASM2d and ASM3', 'IWA Publishing, 2000']] },
-    { d: 'Химия воды и аналитический контроль', list: [
-      ['Лурье Ю. Ю.', 'Аналитическая химия промышленных сточных вод', 'М.: Химия, 1984'],
-      ['Никаноров А. М.', 'Гидрохимия', 'СПб.: Гидрометеоиздат'],
-      ['Sawyer C. N., McCarty P. L., Parkin G. F.', 'Chemistry for Environmental Engineering and Science, 5th ed.', 'McGraw-Hill, 2003']] },
-    { d: 'Микробиология и биотехнология', list: [
-      ['Гусев М. В., Минеева Л. А.', 'Микробиология', 'М.: Академия'],
-      ['Rittmann B. E., McCarty P. L.', 'Environmental Biotechnology: Principles and Applications, 2nd ed.', 'McGraw-Hill, 2020']] },
-    { d: 'Обработка осадков', list: [
-      ['Туровский И. С.', 'Обработка осадков сточных вод', 'М.: Стройиздат'],
-      ['Metcalf & Eddy', 'Wastewater Engineering (главы об обработке осадков), 5th ed.', 'McGraw-Hill, 2014']] },
-    { d: 'Водоснабжение и водоподготовка', list: [
-      ['Абрамов Н. Н.', 'Водоснабжение', 'М.: Стройиздат'],
-      ['Николадзе Г. И., Сомов М. А.', 'Водоснабжение', 'М.: Стройиздат'],
-      ['Кульский Л. А.', 'Теоретические основы и технология кондиционирования воды', 'Киев: Наукова думка'],
-      ['Crittenden J. C. и др.', "MWH's Water Treatment: Principles and Design, 3rd ed.", 'Wiley, 2012']] },
-    { d: 'Гидравлика и сети', list: [
-      ['Чугаев Р. Р.', 'Гидравлика', 'Л.: Энергоиздат'],
-      ['Лукиных А. А., Лукиных Н. А.', 'Таблицы для гидравлического расчёта канализационных сетей и дюкеров по формуле акад. Н. Н. Павловского', 'М.: Стройиздат'],
-      ['Шевелев Ф. А., Шевелев А. Ф.', 'Таблицы для гидравлического расчёта водопроводных труб', 'М.: Стройиздат']] },
-    { d: 'Мембраны и физико-химические методы', list: [
-      ['Judd S.', 'The MBR Book: Principles and Applications of Membrane Bioreactors, 2nd ed.', 'Butterworth-Heinemann, 2011'],
-      ['Benjamin M. M., Lawler D. F.', 'Water Quality Engineering: Physical/Chemical Treatment Processes', 'Wiley, 2013']] }
-  ];
-
-  /* ---------- учебники по модулям: у каждого модуля свои дисциплины ---------- */
   const B = {
     yakovlev: ['Яковлев С. В., Воронов Ю. В.', 'Водоотведение и очистка сточных вод', 'М.: АСВ, 2004 и переиздания'],
+    yak1975: ['Яковлев С. В., Карелин Я. А., Жуков А. И., Колобанов С. К.', 'Канализация. 5-е изд.', 'М.: Стройиздат, 1975'],
+    gudkovMech: ['Гудков А. Г.', 'Механическая очистка сточных вод', 'М.; Вологда: Инфра-Инженерия, 2019 (2-е изд.)'],
+    gudkovBio: ['Гудков А. Г.', 'Биологическая очистка городских сточных вод', 'Вологда: ВоГТУ, 2002'],
+    me2014: ['Metcalf & Eddy, AECOM (Tchobanoglous G. и др.)', 'Wastewater Engineering: Treatment and Resource Recovery, 5th ed.', 'McGraw-Hill, 2014'],
+    iwa2020: ['Chen G., van Loosdrecht M. C. M., Ekama G. A., Brdjanovic D. (ред.)', 'Biological Wastewater Treatment: Principles, Modelling and Design, 2nd ed.', 'IWA Publishing, 2020 (открытый доступ)', [['read', 'IWA Publishing, открытый доступ', 'https://doi.org/10.2166/9781789060362']]],
+    henze: ['Хенце М., Армоэс П., Ля-Кур-Янсен Й., Арван Э.', 'Очистка сточных вод. Биологические и химические процессы', 'М.: Мир, 2004 (перевод с англ.)'],
+    zhmur: ['Жмур Н. С.', 'Технологические и биохимические процессы очистки сточных вод на сооружениях с аэротенками', 'М.: АКВАРОС, 2003'],
+    grady: ['Grady C. P. L., Daigger G. T., Love N. G., Filipe C. D. M.', 'Biological Wastewater Treatment, 3rd ed.', 'CRC Press, 2011'],
+    asm: ['Henze M., Gujer W., Mino T., van Loosdrecht M.', 'Activated Sludge Models ASM1, ASM2, ASM2d and ASM3', 'IWA Publishing, 2000'],
+    turovsky: ['Туровский И. С.', 'Обработка осадков сточных вод', 'М.: Стройиздат'],
+    judd: ['Judd S.', 'The MBR Book: Principles and Applications of Membrane Bioreactors, 2nd ed.', 'Butterworth-Heinemann, 2011'],
     voronov: ['Воронов Ю. В., Алексеев Е. В., Саломеев В. П., Пугачёв Е. А.', 'Водоотведение', 'М.: АСВ; ИНФРА-М (переиздания)'],
     kalitsun: ['Калицун В. И.', 'Водоотводящие системы и сооружения', 'М.: Стройиздат'],
     laskov: ['Ласков Ю. М., Воронов Ю. В., Калицун В. И.', 'Примеры расчётов канализационных сооружений', 'М.: Стройиздат'],
@@ -103,7 +62,11 @@
     chugaev: ['Чугаев Р. Р.', 'Гидравлика', 'Л.: Энергоиздат']
   };
   const MODULE_BOOKS = {
-    tlazolteotl: BOOKS.filter(b => !['Водоснабжение и водоподготовка', 'Гидравлика и сети', 'Химия воды и аналитический контроль', 'Микробиология и биотехнология'].includes(b.d)),
+    tlazolteotl: [
+      { d: 'Водоотведение и очистка сточных вод', list: [B.yakovlev, B.yak1975, B.voronov, B.laskov, B.gudkovMech, B.me2014] },
+      { d: 'Биологическая очистка и моделирование', list: [B.iwa2020, B.henze, B.zhmur, B.gudkovBio, B.grady, B.asm] },
+      { d: 'Обработка осадков', list: [B.turovsky] },
+      { d: 'Физико-химические методы и мембраны', list: [B.mwh, B.judd, B.benjamin] }],
     anahita: [{ d: 'Очистка природных вод', list: [B.nikoladze, B.kulsky, B.abramov, B.mwh, B.benjamin] }],
     juturna: [{ d: 'Сети водоснабжения', list: [B.abramov, B.abramovNet, B.shevelev, B.karelin] }],
     cloacina: [{ d: 'Водоотводящие сети', list: [B.kalitsun, B.voronov, B.yakovlev, B.lukinykh, B.karelin] }],
@@ -163,6 +126,6 @@
   /* ---------- модуль «Сети водоснабжения»: расчёт кольцевой сети ---------- */
   // статьи — content/kb/network/<id>.md; src: [документ (id в docs.js) или null, название, где, ссылка]; need — что ещё не подтверждено источником
   const NETWORK = CT.network || [];
-  root.SeshatKB = { PROCESSES, INDICATORS, UNIT_PROC, AUX, BOOKS, MODULE_BOOKS, FUNDAMENTALS, HUMANITIES, NETWORK, DRINKING, JOURNALS, COMMUNITIES };
+  root.SeshatKB = { UNITS_KB, PROCESSES, INDICATORS, UNIT_PROC, AUX, BIB, MODULE_BOOKS, FUNDAMENTALS, HUMANITIES, NETWORK, DRINKING, JOURNALS, COMMUNITIES };
   if (typeof module !== 'undefined') module.exports = root.SeshatKB;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -6,7 +6,8 @@ const { simulate } = require('../js/model.js');
 const { costs, defaultPrices } = require('../js/economics.js');
 
 const U = Object.fromEntries(D.UNITS.map(u => [u.id, u]));
-const input = (preset, ids, q) => ({ q: q ?? preset.q, c: preset.c, steps: (ids || preset.scheme).map(id => ({ u: id, eff: { ...U[id].eff } })) });
+const mk = x => { const o = typeof x === 'object' ? x : { u: x }; return { u: o.u, eff: { ...U[o.u].eff }, ...(o.dose ? { dose: o.dose } : {}) }; };
+const input = (preset, ids, q) => ({ q: q ?? preset.q, c: preset.c, steps: (ids || preset.scheme).map(mk) });
 const calc = (inp, prices) => costs(inp, simulate(inp), prices);
 const city = D.PRESETS[0];
 const near = (a, b, tol = 1e-6) => assert.ok(Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)), `${a} ≠ ${b}`);
@@ -31,11 +32,12 @@ test('электроэнергия = удельный расход × расхо
   near(r.steps[0].energy, U.a2o.en * 5000 * 10);
 });
 
-test('коагулянт для дефосфатации считается по удалённому фосфору', () => {
-  const inp = input(city, ['primary', 'at', 'chemP'], 10000);
+test('коагулянт для дефосфатации считается по снятому фосфору: β × стехиометрия (СП 32 п. 9.2.5.7)', () => {
+  const inp = input(city, ['primary', 'at', { u: 'sec', dose: 'fe' }], 10000);
   const sim = simulate(inp), r = costs(inp, sim);
-  const dP = sim.perStep[2].dP;
-  near(r.steps[2].reagentKg.coag, D.ECON.reagents.coagPerP * dP * 10);
+  const d = sim.perStep[2].dose, pt = D.DOSE.points.sim, rg = D.DOSE.reagents.fe;
+  // кг товарного продукта в сутки = мг/л металла × тыс. м³/сут ÷ доля металла в продукте
+  near(r.steps[2].reagentKg.coag, d.dP * pt.beta * rg.stoich / rg.product * 10);
   assert.ok(r.steps[2].reagents > 0);
   assert.equal(r.steps[1].reagents, 0);
 });

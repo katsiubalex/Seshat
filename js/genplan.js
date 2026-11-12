@@ -162,6 +162,14 @@ function drawUnit(svg, b, i, fs, ov) {
   const r = fs * 0.85;
   el('circle', { cx: b.x - 1, cy: b.y - 1, r, class: 'gp-badge' }, g);
   el('text', { x: b.x - 1, y: b.y - 1 + r * 0.4, class: 'gp-badge-n', 'font-size': r * 1.15 }, g).textContent = i + 1;
+  // ввод коагулянта: метка реагента у нижнего левого угла (реагент подаётся из реагентного хозяйства)
+  const dose = gpView && gpView.L && gpView.L.steps[i] && gpView.L.steps[i].dose;
+  if (dose) {
+    const dg = el('g', { class: 'gp-dose-mark' }, g);
+    el('title', {}, dg).textContent = `Ввод коагулянта (${dose === 'al' ? 'соли алюминия' : 'соли железа'}) для удаления фосфора`;
+    el('rect', { x: b.x - 1, y: b.y + b.h - r * 1.6, width: r * 3, height: r * 1.8, rx: r * 0.5, class: 'gp-dose-bg' }, dg);
+    el('text', { x: b.x - 1 + r * 1.5, y: b.y + b.h - r * 0.35, class: 'gp-dose-t', 'font-size': r * 1.05 }, dg).textContent = dose === 'al' ? 'Al' : 'Fe';
+  }
   // предупреждения Сешат
   const warns = gpView && gpView.sim ? gpView.sim.warns[i] : [];
   if (warns && warns.length && !b.idle) {
@@ -241,7 +249,7 @@ function renderPlan(sim, eco) {
   if (!steps.length) { canvas.innerHTML = startSteps(); gpView = null; return null; }
   sim.src = SeshatGraph.flows(steps).src;
   const r = canvas.getBoundingClientRect();
-  const L = SeshatPlan.layout(state.q, steps, { aspect: r.width && r.height ? r.width / r.height : 1.6 });
+  const L = SeshatPlan.layout(state.q, steps, { aspect: r.width && r.height ? r.width / r.height : 1.6, sludge: state.sludge });
   if (gpUI.sel != null && gpUI.sel >= L.blocks.length) gpUI.sel = null;
   if (gpUI.edge && !L.edges.some(e => e.a === gpUI.edge[0] && e.b === gpUI.edge[1])) gpUI.edge = null;
   const W = L.site.w, H = L.site.h, fs = Math.max(2.6, Math.min(9, W / 58)), pad = fs * 5;
@@ -378,7 +386,7 @@ function setMode(mode) {
 /* ---------- весь экран конструктора ---------- */
 function renderStudio() {
   const sim = lastSim; if (!sim) return;
-  const L = gpUI.mode === 'plan' ? renderPlan(sim, eco) : SeshatPlan.layout(state.q, SeshatGraph.norm(state.steps));
+  const L = gpUI.mode === 'plan' ? renderPlan(sim, eco) : SeshatPlan.layout(state.q, SeshatGraph.norm(state.steps), { sludge: state.sludge });
   renderHud(sim, eco, L); renderEdges(sim); renderOutCheck(sim);
   // аналитика появляется, когда есть что анализировать
   const empty = !state.steps.length; document.getElementById('btn-sheet').hidden = empty;
@@ -407,6 +415,36 @@ function syncSelection() {
 function setPick(id) { gpUI.pick = id; gpUI.sel = null; gpUI.aux = null; syncSelection(); }
 
 /* ---------- карточка сооружения или трубы ---------- */
+// «Коротко» из статьи базы знаний о сооружении (content/kb/units) — без сносок и схем; нет статьи — краткое описание каталога
+const gpKbArt = id => ((window.SeshatKB && SeshatKB.UNITS_KB) || []).find(x => x.id === id);
+function kbShort(id) {
+  const a = gpKbArt(id);
+  if (!a || !window.SeshatRich) return U[id] ? `<p>${esc(U[id].d)}</p>` : '';
+  return SeshatRich.parse(a.lead).filter(b => b.t === 'p').map(b => `<p>${SeshatRich.inline(b.v, { cite: false })}</p>`).join('');
+}
+// ввод коагулянта в сооружение-хозяина: выбор реагента и что он даёт (СП 32 п. 9.2.5.7)
+function doseHTML(u, s, ps, q) {
+  if (!u.doseAt || !SeshatData.DOSE) return '';
+  const D = SeshatData.DOSE, pt = D.points[u.doseAt], d = ps && ps.dose;
+  return `<h3>Реагентное удаление фосфора</h3>
+    <label class="gp-dose"><span>Ввод коагулянта ${esc(pt.n)}</span><select data-gpdose aria-label="Ввод коагулянта в это сооружение">
+      <option value="">нет</option>${Object.entries(D.reagents).map(([k, r]) => `<option value="${k}"${s.dose === k ? ' selected' : ''}>${esc(r.n)}</option>`).join('')}</select></label>
+    ${d ? `<dl class="gp-dl"><dt>Снято фосфатов</dt><dd>${fmt(d.dP)} мг P/л</dd><dt>Доза металла</dt><dd>${fmt(d.metal)} мг/л (β = ${String(pt.beta).replace('.', ',')})</dd><dt>Товарный реагент</dt><dd>${n1(d.product * q / 1e6)} т/сут — ${esc(D.reagents[d.r].pn)}</dd></dl>` : ''}
+    <p class="hint">Реагент не отдельная ступень: его вводят в это сооружение. Доза = β × стехиометрия × снятый фосфор (СП 32 п. 9.2.5.7). <a href="#kb-u-reag">Реагентное хозяйство →</a></p>`;
+}
+// линия осадка: стабилизация, очистка фугата и возвратный поток в начало станции
+function sludgeLineHTML(sim) {
+  const S = SeshatData.SLUDGE; if (!S) return '';
+  const sl = { stab: 'none', reject: 'none', ...(state.sludge || {}) }, r = sim && sim.reject;
+  const sel = (k, list) => `<select data-gpsludge="${k}">${Object.entries(list).map(([v, o]) => `<option value="${v}"${sl[k] === v ? ' selected' : ''}>${esc(o.n)}</option>`).join('')}</select>`;
+  return `<h3>Линия осадка</h3>
+    <label class="gp-dose"><span>Стабилизация</span>${sel('stab', S.stab)}</label>
+    <label class="gp-dose"><span>Фугат</span>${sel('reject', S.reject)}</label>
+    ${r ? `<dl class="gp-dl"><dt>Сухое вещество осадка</dt><dd>${n1(r.ds / 1000)} т/сут${r.dsDig < r.ds ? ` → ${n1(r.dsDig / 1000)} после стабилизации` : ''}</dd><dt>Фугат</dt><dd>${n0(r.V)} м³/сут</dd>
+      ${r.nh4 > 0 ? `<dt>Аммоний в фугате</dt><dd>${n0(r.nh4)} кг N/сут${r.removed > 0 ? `, после очистки ${n0(r.nh4Back)}` : ''}</dd><dt>Прибавка на входе</dt><dd>+${fmt(r.add.nh4)} мг N/л (${Math.round(r.share * 100)}% азота стоков)</dd>` : ''}
+      ${r.p > 0 ? `<dt>Фосфор в фугате</dt><dd>${n1(r.p)} кг P/сут (+${fmt(r.add.p)} мг/л)</dd>` : ''}</dl>` : ''}
+    <p class="hint">Отжатая вода от обезвоживания возвращается в начало станции и нагружает сооружения (СП 32 п. 9.1.7). После метантенков в ней 600–1 500 мг/л аммонийного азота. <a href="#kb-u-reject">Возвратные потоки →</a></p>`;
+}
 function gpName(i, steps) { return `${i + 1}. ${U[steps[i].u].n.split(' (')[0]}`; }
 function renderUnitCard(sim, ec, L) {
   const box = document.getElementById('gp-info'), i = gpUI.sel, steps = L ? L.steps : [], q = state.q;
@@ -422,17 +460,19 @@ function renderUnitCard(sim, ec, L) {
       ${window.SeshatITS ? SeshatITS.line(id) : ''}
       <div class="gp-acts gp-put">${where}</div>
       <p class="hint">${ed ? 'Сооружение встанет в выбранную трубу между двумя сооружениями.' : 'Встанет в схему по порядку стадий очистки. Можно и перетащить из каталога прямо в нужное место плана или на трубу.'}</p>
-      ${P ? `<h3>Как работает</h3><p>${esc(P.how)}</p>` : ''}
-      ${eff ? `<h3>Типично снижает</h3><ul>${eff}</ul>` : ''}
-      ${P && P.params ? `<h3>Типовые параметры</h3><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-      <p><a href="#kb-u-${id}">Подробнее в базе знаний: что говорит справочник НДТ, схемы, цифры →</a></p>`;
+      <h3>Коротко</h3>${kbShort(id)}
+      ${eff ? `<h3>В расчёте снижает</h3><ul>${eff}</ul>` : ''}
+      <p><a href="#kb-u-${id}">Подробнее в базе знаний: как работает, расчёт, что повышает, источники →</a></p>`;
     return;
   }
   if (gpUI.aux && SeshatKB) {
-    const a = SeshatKB.AUX.find(x => x.id === gpUI.aux), b = L.aux.find(x => x.id === gpUI.aux);
-    box.innerHTML = `${close}<h2>${esc(a.t)}</h2><p>${esc(a.lead)}</p>${a.s.map(([h, t]) => `<h3>${esc(h)}</h3><p>${esc(t)}</p>`).join('')}
-      <dl class="gp-dl"><dt>Площадь</dt><dd>≈ ${n0(b.area)} м² (${n0(b.w)} × ${n0(b.h)} м)</dd></dl>
-      <p><a href="#kb-a-${a.id}">Подробнее в базе знаний →</a></p>`;
+    const a = SeshatKB.AUX.find(x => x.id === gpUI.aux) || gpKbArt(gpUI.aux), b = L.aux.find(x => x.id === gpUI.aux);
+    const href = SeshatKB.AUX.some(x => x.id === gpUI.aux) ? '#kb-a-' + gpUI.aux : '#kb-u-' + gpUI.aux;
+    const lead = a && window.SeshatRich ? SeshatRich.parse(a.lead).filter(x => x.t === 'p').map(x => `<p>${SeshatRich.inline(x.v, { cite: false })}</p>`).join('') : '';
+    box.innerHTML = `${close}<h2>${esc(a ? a.t : b.label)}</h2>${lead}
+      ${gpUI.aux === 'sludge' ? sludgeLineHTML(sim) : ''}
+      ${b ? `<dl class="gp-dl"><dt>Площадь</dt><dd>≈ ${n0(b.area)} м² (${n0(b.w)} × ${n0(b.h)} м)</dd></dl>` : ''}
+      ${a ? `<p><a href="${href}">Подробнее в базе знаний →</a></p>` : ''}`;
     return;
   }
   if (gpUI.edge) {
@@ -468,9 +508,9 @@ function renderUnitCard(sim, ec, L) {
     ${s.idle ? '' : `<h3>Что происходит с водой</h3>
     <div class="tbl-wrap"><table class="gp-tbl"><thead><tr><th>Показатель, мг/л</th><th>до</th><th>после</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`}
     ${tune}
-    <h3>Как работает</h3><p>${esc(P.how)}</p>
-    <h3>Типовые параметры</h3><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-    <p><a href="#kb-u-${b.id}">Подробнее в базе знаний: процессы, показатели →</a></p>
+    ${doseHTML(u, s, sim.perStep[i], q)}
+    <h3>Коротко</h3>${kbShort(b.id)}
+    <p><a href="#kb-u-${b.id}">Подробнее в базе знаний: как работает, расчёт, что повышает, источники →</a></p>
     <h3>Размеры и затраты</h3><p>${gpSize(b)}</p>
     <dl class="gp-dl"><dt>Капзатраты</dt><dd>${mln(e.capex)}</dd><dt>Эксплуатация</dt><dd>${money(e.opex)} в сутки</dd><dt>Электроэнергия</dt><dd>${n0(e.kwh)} кВт·ч/сут</dd>${sim.perStep[i].sludge >= 1 ? `<dt>Осадок</dt><dd>${n1(sim.perStep[i].sludge / 1000)} т сухого вещества в сутки</dd>` : ''}</dl>`;
 }
@@ -772,6 +812,14 @@ document.getElementById('gp-info').addEventListener('click', ev => {
 });
 document.getElementById('gp-info').addEventListener('change', ev => {
   const t = ev.target;
+  if (t.matches('[data-gpdose]')) { // ввод коагулянта в выбранное сооружение
+    const s = SeshatGraph.norm(state.steps); if (t.value) s[gpUI.sel].dose = t.value; else delete s[gpUI.sel].dose;
+    gpCommit(s, gpUI.sel, t.value ? 'Коагулянт вводится в это сооружение' : 'Ввод коагулянта отключён'); return;
+  }
+  if (t.dataset.gpsludge) { // линия осадка
+    state.sludge = { stab: 'none', reject: 'none', ...(state.sludge || {}), [t.dataset.gpsludge]: t.value };
+    update(); return;
+  }
   if (t.dataset.ctk) { // эффективность ступени
     const v = parseNum(t.value); if (Number.isNaN(v)) { markInvalid(t, v); return; }
     const s = SeshatGraph.norm(state.steps); s[gpUI.sel].eff[t.dataset.ctk] = Math.min(100, v || 0);
@@ -857,8 +905,16 @@ function nextStep(sim) {
   const { list, pass } = normsState(sim.out);
   if (!list.length) return { text: 'Нормативы водоёма не выбраны, поэтому неясно, достаточно ли очистки.', act: { open: 'drw-out', label: 'Выбрать нормативы' } };
   if (pass === list.length) return { ok: true, text: 'Все нормативы выполнены. Посмотрите затраты на слое «Затраты» или сохраните схему.', act: { layer: 'cost', label: 'Слой «Затраты»' } };
+  // биореактор без илоотделения: в водоём уходит иловая смесь
+  const noSep = steps.findIndex((s, i) => U[s.u].mlss && !steps.some((x, j) => U[x.u].sep && SeshatGraph.ancestors(steps)[j].has(i)));
+  if (noSep >= 0) return { text: `После «${U[steps[noSep].u].n.split(' (')[0]}» нет вторичного отстойника: иловая смесь с ${n0(U[steps[noSep].u].mlss)} мг/л взвеси уходит дальше по схеме.`, recs: ['sec'] };
   const fails = list.filter(p => sim.out[p.k] > state.norm[p.k]).sort((a, b) => (DEFICIT_ORDER.indexOf(a.k) + 99) % 99 - (DEFICIT_ORDER.indexOf(b.k) + 99) % 99);
   const p = fails[0], have = new Set(steps.map(s => s.u));
+  // фосфор: сначала — ввод коагулянта в уже стоящее сооружение (лучше всего — перед фильтрами доочистки)
+  if (p.k === 'p') {
+    const rank = { post: 0, sim: 1, pre: 2 }, hosts = steps.map((s, i) => i).filter(i => U[steps[i].u].doseAt && !steps[i].dose).sort((a, b) => rank[U[steps[a].u].doseAt] - rank[U[steps[b].u].doseAt]);
+    if (hosts.length) return { text: `Фосфор фосфатов: на выпуске ${fmt(sim.out.p)} мг/л, это ×${fmt(sim.out.p / state.norm.p)} от нормы. Включите ввод коагулянта в «${U[steps[hosts[0]].u].n.split(' (')[0]}» — в карточке сооружения.`, act: { sel: hosts[0], label: 'Открыть карточку' } };
+  }
   // сначала технологии, которые закрывают больше нарушений сразу, при равенстве — более дешёвые
   const covers = u => fails.filter(f => effScore(u, f.k) >= 40).length;
   // вторую биологию поверх первой не советуем: после неё нужна доочистка

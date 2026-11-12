@@ -19,8 +19,8 @@ const booksOf = id => {
 };
 const nBooks = id => booksOf(id).reduce((s, b) => s + b.list.length, 0);
 const KB_SECTIONS = [
-  { id: 'units', t: 'Сооружения очистки', d: 'Как устроено и работает каждое из 40 сооружений, что оно удаляет и сколько стоит.', n: () => UNITS.length + KB.AUX.length },
-  { id: 'proc', t: 'Физика и химия процессов', d: 'Осаждение, флотация, нитрификация, денитрификация, мембраны, обеззараживание — с уравнениями и ключевыми числами.', n: () => KB.PROCESSES.length },
+  { id: 'units', t: 'Сооружения очистки', d: 'Как устроено и работает каждое сооружение станции, из каких элементов состоит, что снижает и что повышает в воде, как его рассчитывают.', n: () => new Set([...UNITS.map(u => u.id), ...(KB.UNITS_KB || []).map(u => u.id)]).size + KB.AUX.length },
+  { id: 'proc', t: 'Физика и химия процессов', d: 'Осаждение, флотация, нитрификация, денитрификация, мембраны, обеззараживание — с формулами, схемами и источниками.', n: () => KB.PROCESSES.length },
   { id: 'ind', t: 'Показатели качества воды', d: 'Что означают БПК, ХПК, азот, фосфор и другие показатели, как их измеряют и почему они важны.', n: () => KB.INDICATORS.length },
   { id: 'net', t: 'Расчёт водопроводной сети', d: 'Кольцевые сети, расчётные и узловые расходы, потери напора по Шевелёву, увязка колец, свободные напоры и пожаротушение — с пунктами норм.', n: () => KB.NETWORK.length },
   { id: 'dwu', t: 'Сооружения водоподготовки', d: 'Как работает каждое сооружение станции водоподготовки, когда его применяют и какое качество воды оно даёт — по СП 31.13330.2021.', n: () => (window.SeshatDW ? SeshatDW.UNITS.length : 0) },
@@ -60,6 +60,8 @@ const docRef = x => { const D = DOCS_BY_ID[x.doc]; return `<a href="#doc-${x.doc
 const EFF_IND = { ss: 'ss', bod: 'bod', cod: 'cod', nh4: 'nh4', no2: 'no2', no3: 'no3', p: 'p', oil: 'oil', fat: 'fat', nit: 'nh4', den: 'no3', bioP: 'p' };
 const EFF_NAME = { nit: 'нитрификация', den: 'денитрификация', bioP: 'биоудаление P' };
 const norm = s => String(s).toLowerCase().replace(/ё/g, 'е');
+// первое предложение «Коротко» — для карточек разделов
+const firstSentence = t => { const p = window.SeshatRich ? SeshatRich.plain(String(t).split(/\n\s*\n/)[0]) : String(t); const m = /^(.{40,}?[.!?])\s/.exec(p + ' '); return m ? m[1] : p; };
 const kbRoot = () => document.getElementById('kb-root');
 // Путь вверху, как в файловой системе: База знаний / Модуль / Раздел / Статья. «База знаний» ведёт в общую базу Сешат.
 const crumbs = (...items) => {
@@ -127,15 +129,17 @@ function kbResults() {
   const stem = q.length > 5 ? q.slice(0, -2) : q, hit = t => norm(t).includes(stem);
   const res = [], all = !KB_MOD; // на главной Сешат ищем по всем модулям, в модуле — по своим разделам
   if (all || own.includes('units')) {
-    UNITS.forEach(u => { const P = SeshatPlan.PLAN[u.id] || {}; if (hit(u.n + ' ' + u.d + ' ' + (P.how || ''))) res.push(['Сооружение', u.n, '#kb-u-' + u.id]); });
-    KB.AUX.forEach(a => { if (hit(a.t + ' ' + a.lead + a.s.map(x => x.join(' ')).join(' '))) res.push(['Сооружение', a.t, '#kb-a-' + a.id]); });
+    const txt = x => x ? x.t + ' ' + x.lead + ' ' + x.s.map(v => v.join(' ')).join(' ') : '';
+    UNITS.forEach(u => { if (hit(u.n + ' ' + u.d + ' ' + txt(UKB_BY[u.id]))) res.push(['Сооружение', u.n, '#kb-u-' + u.id]); });
+    (KB.UNITS_KB || []).filter(x => !U[x.id]).forEach(x => { if (hit(txt(x))) res.push([ROLE[x.role] || 'Элемент', x.t, '#kb-u-' + x.id]); });
+    KB.AUX.forEach(a => { if (hit(txt(a))) res.push(['Сооружение', a.t, '#kb-a-' + a.id]); });
   }
   if (KB_MOD) docsOf(PAGE).forEach(d => { if (hit(d.short + ' ' + d.title + ' ' + d.about)) res.push(['Документ', d.short + ' — ' + d.title, '#doc-' + d.id]); });
   if (all || own.includes('proc')) KB.PROCESSES.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Процесс', p.t, '#kb-p-' + p.id]); });
   if (all || own.includes('net')) KB.NETWORK.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Расчёт сети', p.t, (KB_MOD && KB_MOD.id === 'juturna' ? '' : ROOT + 'juturna/') + '#kb-n-' + p.id]); });
   if ((all || own.includes('dwu')) && window.SeshatDW) SeshatDW.UNITS.forEach(u => { if (hit(u.n + ' ' + u.d + ' ' + u.how + ' ' + u.params.join(' '))) res.push(['Сооружение водоподготовки', u.n, (PAGE === 'anahita' ? '' : ROOT + 'anahita/') + '#kb-v-' + u.id]); });
   if (all || own.includes('dwk')) KB.DRINKING.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' ') + (p.f || []).join(' '))) res.push(['Водоподготовка', p.t, (PAGE === 'anahita' ? '' : ROOT + 'anahita/') + '#kb-w-' + p.id]); });
-  if (all || own.includes('ind')) KB.INDICATORS.forEach(p => { if (hit([p.t, p.what, p.why, p.how].join(' '))) res.push(['Показатель', p.t, '#kb-i-' + p.id]); });
+  if (all || own.includes('ind')) KB.INDICATORS.forEach(p => { if (hit(p.t + ' ' + p.lead + ' ' + p.s.map(x => x.join(' ')).join(' '))) res.push(['Показатель', p.t, '#kb-i-' + p.id]); });
   (all ? KB_MODS.map(m => m.id) : [PAGE]).forEach(mid => booksOf(mid).forEach(b => b.list.forEach(([a, t]) => {
     if (hit(a + ' ' + t + ' ' + b.d)) res.push(['Учебник', `${a} ${t}`, mid === PAGE ? '#kb-books' : ROOT + KB_MODS.find(m => m.id === mid).path + '#kb-books']);
   })));
@@ -155,12 +159,13 @@ function kbSection(id) {
   let body = '';
   if (id === 'units') {
     body = (window.SeshatITS ? `<p class="hint its-intro">Каталог сверен со справочником наилучших доступных технологий <a href="#doc-its10">ИТС 10-2019</a>. Значок у технологии показывает её статус: ${['ndt', 'group', 'psv', 'persp', 'old', 'none'].map(k => `<span class="its-badge its-${k}">${esc(SeshatITS.STATUS[k].t)}</span>`).join(' ')}</p>` : '') + STAGES.map(s => `<section class="kb-group"><h2><span class="dot" style="background:${s.c}"></span>${esc(s.n)}</h2><div class="kb-units">${UNITS.filter(u => u.st === s.id).map(u => unitLink(u.id)).join('')}</div></section>`).join('')
+      + `<section class="kb-group"><h2><span class="dot" style="background:var(--muted)"></span>Элементы сооружений, опции и линия осадка</h2><p class="hint">Это части других сооружений: в конструкторе они не ставятся отдельно, а включаются в карточке сооружения-хозяина или в линии осадка.</p><ul class="kb-links">${(KB.UNITS_KB || []).filter(x => !U[x.id]).map(x => `<li><a href="#kb-u-${x.id}">${esc(x.t)}</a> <span class="hint">— ${esc((ROLE[x.role] || 'элемент').toLowerCase())}${x.part_of && x.part_of.length ? ': ' + x.part_of.map(k => U[k] ? U[k].n : (UKB_BY[k] || AUX_BY[k] || { t: k }).t).join(', ') : ''}</span></li>`).join('')}</ul></section>`
       + `<section class="kb-group"><h2><span class="dot" style="background:var(--muted)"></span>Вспомогательные здания</h2><ul class="kb-links">${KB.AUX.map(a => `<li><a href="#kb-a-${a.id}">${esc(a.t)}</a></li>`).join('')}</ul></section>`;
   } else if (id === 'proc') {
     const groups = [...new Set(KB.PROCESSES.map(p => p.g))];
-    body = groups.map(g => `<section class="kb-group"><h2>${esc(g)}</h2><div class="kb-grid kb-grid-sm">${KB.PROCESSES.filter(p => p.g === g).map(p => `<a class="kb-card" href="#kb-p-${p.id}"><b>${esc(p.t)}</b><span>${esc(p.lead)}</span></a>`).join('')}</div></section>`).join('');
+    body = groups.map(g => `<section class="kb-group"><h2>${esc(g)}</h2><div class="kb-grid kb-grid-sm">${KB.PROCESSES.filter(p => p.g === g).map(p => `<a class="kb-card" href="#kb-p-${p.id}"><b>${esc(p.t)}</b><span>${esc(firstSentence(p.lead))}</span></a>`).join('')}</div></section>`).join('');
   } else if (id === 'ind') {
-    body = `<div class="kb-grid kb-grid-sm">${KB.INDICATORS.map(p => `<a class="kb-card" href="#kb-i-${p.id}"><b>${esc(p.t)}</b><span>${esc(p.u)} · в городских стоках ${esc(p.typ)}</span></a>`).join('')}</div>`;
+    body = `<div class="kb-grid kb-grid-sm">${KB.INDICATORS.map(p => `<a class="kb-card" href="#kb-i-${p.id}"><b>${esc(p.t)}</b><span>${esc(p.u)}${p.typ ? ' · в городских стоках ' + esc(SeshatRich ? SeshatRich.plain(p.typ) : p.typ) : ''}</span></a>`).join('')}</div>`;
   } else if (id === 'books' && KB_MOD) {
     body = (booksOf(PAGE).length ? '' : '<div class="empty">Учебники модуля ещё подбираются.</div>') + booksOf(PAGE).map(b => `<section class="panel kb-group"><h2>${esc(b.d)}</h2>${bookList(b.list)}</section>`).join('')
       + `<p class="hint">Учебники по гидравлике, математике, химии воды и другим общим дисциплинам — в разделе <a href="${ROOT}#kb-fund">«Фундаментальные дисциплины»</a> базы знаний Сешат. Ссылки ведут в магазины, к издателям, в электронные библиотеки (по подписке) или к открытому тексту; классические книги, которые больше не издаются, — к букинистам.</p>`;
@@ -211,32 +216,77 @@ function seq(list, i, href, title) {
   return `<nav class="kb-seq">${prev ? `<a href="${href(prev)}">← ${esc(title(prev))}</a>` : '<span></span>'}${next ? `<a href="${href(next)}">${esc(title(next))} →</a>` : ''}</nav>`;
 }
 
+/* ---------- статьи очистки сточных вод: «Коротко» → «Подробно», формулы, схемы, сноски ---------- */
+// Сооружения (content/kb/units), процессы, показатели и здания — разметка js/richtext.js; общий вид для сайта и редактора.
+const UKB_BY = Object.fromEntries((KB.UNITS_KB || []).map(p => [p.id, p]));
+const ROLE = { 'сооружение': 'Сооружение', 'элемент': 'Элемент сооружения', 'опция': 'Опция сооружения', 'здание': 'Вспомогательное здание' };
+const RX = x => ({ src: x.src || [], figs: window.SeshatFigs || {} });
+const rich = (t, x) => window.SeshatRich ? SeshatRich.blocks(t, RX(x)) : `<p>${esc(t)}</p>`;
+const richI = (t, x) => window.SeshatRich ? SeshatRich.inline(t, RX(x)) : esc(t);
+// источник: [документ (id нормативного документа или книги), название, где, ссылка]
+function srcItem([doc, t, where, url], k) {
+  const D = doc && DOCS_BY_ID[doc], Bk = doc && KB.BIB && KB.BIB[doc];
+  const title = D ? `<a href="#doc-${doc}">${esc(t || D.short)}</a>` : Bk ? `${esc(Bk.a)} ${Bk.url ? `<a href="${esc(Bk.url)}" target="_blank" rel="noopener">${esc(t || Bk.t)} ↗</a>` : `<i>${esc(t || Bk.t)}</i>`}. ${esc(Bk.pub)}${Bk.note ? ` <span class="hint">(${esc(Bk.note)})</span>` : ''}`
+    : url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(t)} ↗</a>` : esc(t);
+  return `<li id="src-${k + 1}">${title}${where ? ` <span class="hint">— ${esc(where)}</span>` : ''}</li>`;
+}
+const srcList = x => (x.src && x.src.length ? `<section class="panel kb-src"><h2>Источники</h2><ol class="kb-links">${x.src.map(srcItem).join('')}</ol>${x.need ? `<p class="hint">Источник уточняется: ${esc(x.need[0].toLowerCase() + x.need.slice(1))}</p>` : ''}</section>` : '');
+const numsPanel = x => (x.n && x.n.length ? `<section class="panel kb-nums"><h2>Ключевые числа</h2><ul>${x.n.map(v => `<li>${richI(v, x)}</li>`).join('')}</ul></section>` : '');
+const seePanel = x => (x.see && x.see.length ? `<section class="panel"><h2>См. также</h2><ul class="kb-links">${x.see.map(v => `<li>${richI(v, x)}</li>`).join('')}</ul></section>` : '');
+// ссылка на сооружение или элемент по id
+function uLink(id) {
+  if (U[id]) return `<a href="#kb-u-${id}">${esc(U[id].n)}</a>`;
+  if (UKB_BY[id]) return `<a href="#kb-u-${id}">${esc(UKB_BY[id].t)}</a>`;
+  if (AUX_BY[id]) return `<a href="#kb-a-${id}">${esc(AUX_BY[id].t)}</a>`;
+  return esc(id);
+}
+/** Статья с разметкой: шапка, «Коротко», «Подробно», боковая колонка. extra — {kicker, main, side, before} — добавки конкретного вида статьи. */
+function richArticle(x, crumbsHTML, extra = {}) {
+  const head = `${crumbsHTML}<header class="kb-ahead"${extra.color ? ` style="--c:${extra.color}"` : ''}>${extra.icon || ''}<div><span class="gp-stage">${esc(extra.kicker || '')}</span><h1>${esc(x.t)}</h1></div></header>`;
+  const short = `<section class="panel kb-short"><h2>Коротко</h2><div class="kb-lead">${rich(x.lead, x)}</div>${extra.after || ''}</section>`;
+  const body = x.s.map(([h, t]) => `<section class="panel"><h2>${esc(h)}</h2>${rich(t, x)}</section>`).join('');
+  const main = `${short}${body.length ? `<h2 class="kb-deep">Подробно</h2>${body}` : ''}${extra.main || ''}`;
+  const side = `${extra.sideTop || ''}${numsPanel(x)}${extra.side || ''}${seePanel(x)}${srcList(x)}`;
+  return article(head, main, side);
+}
+// модельные коэффициенты конструктора: что снижает и что повышает сооружение в расчёте
+function modelPanel(id) {
+  const u = U[id]; if (!u) return '';
+  const D = SeshatData, eff = Object.entries(u.eff).filter(([, v]) => v > 0);
+  const rows = eff.map(([k, v]) => `<li><span>${EFF_NAME[k] || esc(PARAMS.find(p => p.k === k)?.n || k)}</span><b>−${v}%</b></li>`);
+  if (u.kss) Object.entries(u.kss).forEach(([k, kk]) => rows.push(`<li><span>${esc(PARAMS.find(p => p.k === k)?.n || k)}</span><b>−${String(kk).replace('.', ',')} мг на 1 мг снятой взвеси</b></li>`));
+  const up = [];
+  if (u.eff.nit) up.push('азот нитратов — растёт на столько, сколько аммония окислено (нитрификация)');
+  if (u.mlss) up.push(`взвесь — на выходе иловая смесь, ${u.mlss.toLocaleString('ru-RU')} мг/л: её задерживает вторичный отстойник`);
+  if (u.bio) up.push(`осадок — прирост ила ${String(u.yield ?? 0.6).replace('.', ',')} кг на 1 кг снятого БПК₅`);
+  if (u.doseAt) up.push(`с вводом коагулянта (${D.DOSE.points[u.doseAt].n}) — осадок: +2,5 кг на 1 кг железа или +4 кг на 1 кг алюминия (СП 32 п. 9.2.5.7)`);
+  return `<section class="panel kb-model"><h2>В конструкторе</h2>
+    ${rows.length ? `<p>Снижает в расчёте:</p><ul class="kb-eff">${rows.join('')}</ul>` : '<p>Состав воды в расчёте не меняет.</p>'}
+    ${up.length ? `<p>Повышает или добавляет:</p><ul>${up.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+    <p class="hint">Коэффициенты модели — учебные ориентиры; откуда они взяты, сказано в разделе «Подробно». В карточке сооружения на плане их можно изменить.</p></section>`;
+}
 function kbUnit(id) {
-  const u = U[id], P = SeshatPlan.PLAN[id] || {}, st = STG[u.st], i = UNITS.indexOf(u);
-  const eff = Object.entries(u.eff).filter(([, v]) => v > 0);
-  const procs = KB.UNIT_PROC[id] || [];
-  const inds = [...new Set(eff.map(([k]) => EFF_IND[k]).filter(Boolean))];
-  const head = `${crumbs(['Сооружения очистки', '#kb-units'], [u.n])}
-    <header class="kb-ahead" style="--c:${st.c}">${SeshatIcons.icon(id, 72, u.n)}<div><span class="gp-stage">${esc(st.n)}</span><h1>${esc(u.n)}</h1><p class="kb-lead">${esc(u.d)}</p></div></header>`;
-  const main = `<section class="panel"><h2>Как работает</h2><p>${esc(P.how || '')}</p></section>
-    ${window.SeshatITS ? SeshatITS.section(id) : ''}
-    ${P.params && P.params.length ? `<section class="panel"><h2>Типовые параметры</h2><ul>${P.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-    <section class="panel"><h2>Что удаляет</h2>${eff.length ? `<ul class="kb-eff">${eff.map(([k, v]) => `<li><span>${EFF_NAME[k] || esc(PARAMS.find(p => p.k === k)?.n || k)}</span><b>${v}%</b></li>`).join('')}</ul><p class="hint">Типовые эффективности, принятые в расчётах конструктора очистки. В карточке сооружения на плане их можно изменить.</p>` : '<p>Химический состав воды почти не меняет: сооружение нужно для защиты оборудования, выравнивания режима или обеззараживания.</p>'}</section>
+  const x = UKB_BY[id], u = U[id], ITS = window.SeshatITS;
+  if (!x && !u) return kbHome();
+  const st = u ? STG[u.st] : null, i = UNITS.indexOf(u);
+  const crumbsHTML = crumbs(['Сооружения очистки', '#kb-units'], [x ? x.t : u.n]);
+  const a = x || { id, t: u.n, lead: u.d, s: [], src: [] };
+  const procs = KB.UNIT_PROC[id] || [], inds = a.inds || [];
+  const comp = (a.part_of && a.part_of.length ? `<p><b>Входит в состав:</b> ${a.part_of.map(uLink).join(', ')}</p>` : '') + (a.parts && a.parts.length ? `<p><b>Состоит из:</b> ${a.parts.map(uLink).join(', ')}</p>` : '');
+  const main = `${u ? modelPanel(id) : ''}${u && ITS ? ITS.section(id) : ''}
     ${procs.length ? `<section class="panel"><h2>Какие процессы идут</h2><p class="kb-tags">${procs.map(procLink).join('')}</p></section>` : ''}
-    ${seq(UNITS, i, x => '#kb-u-' + x.id, x => x.n)}`;
-  const side = `<section class="panel"><h2>Затраты</h2><dl class="gp-dl"><dt>Электроэнергия</dt><dd>${fmt(u.en)} кВт·ч/м³</dd><dt>Капзатраты</dt><dd>≈ ${u.cx} млн ₽ на 10 000 м³/сут</dd>${u.cons ? `<dt>Расходники</dt><dd>${fmt(u.cons)} ₽/м³</dd>` : ''}</dl><p class="hint">Ориентиры для учебных расчётов.</p></section>
-    ${inds.length ? `<section class="panel"><h2>Показатели</h2><ul class="kb-links">${inds.map(k => `<li><a href="#kb-i-${k}">${esc(IND_BY[k].t)}</a></li>`).join('')}</ul></section>` : ''}
-    <section class="panel"><h2>Попробовать</h2><p>Добавьте сооружение на план и посмотрите, как оно меняет воду и затраты.</p><button type="button" class="primary" data-kbadd="${id}">Добавить в конструктор</button></section>`;
-  kbRoot().innerHTML = article(head, main, side);
+    ${u ? seq(UNITS, i, v => '#kb-u-' + v.id, v => v.n) : ''}`;
+  const side = `${comp ? `<section class="panel"><h2>Состав</h2>${comp}</section>` : ''}
+    ${inds.length ? `<section class="panel"><h2>Показатели</h2><ul class="kb-links">${inds.filter(k => IND_BY[k]).map(k => `<li><a href="#kb-i-${k}">${esc(IND_BY[k].t)}</a></li>`).join('')}</ul></section>` : ''}
+    ${u ? `<section class="panel"><h2>Затраты в конструкторе</h2><dl class="gp-dl"><dt>Электроэнергия</dt><dd>${fmt(u.en)} кВт·ч/м³</dd><dt>Капзатраты</dt><dd>≈ ${u.cx} млн ₽ на 10 000 м³/сут</dd>${u.cons ? `<dt>Расходники</dt><dd>${fmt(u.cons)} ₽/м³</dd>` : ''}</dl><p class="hint">Ориентиры для учебных расчётов; сверка с НЦС — на вкладке «Экономика» конструктора.</p></section>
+    <section class="panel"><h2>Попробовать</h2><p>${esc(a.tool || 'Добавьте сооружение на план и посмотрите, как оно меняет воду и затраты.')}</p><button type="button" class="primary" data-kbadd="${id}">Добавить в конструктор</button></section>` : a.tool ? `<section class="panel"><h2>В конструкторе</h2><p>${esc(a.tool)}</p><a class="btn" href="#constructor" data-go="constructor">Открыть конструктор</a></section>` : ''}`;
+  kbRoot().innerHTML = richArticle(a, crumbsHTML, { kicker: u ? st.n : ROLE[a.role] || 'Элемент сооружения', color: st && st.c, icon: u ? SeshatIcons.icon(id, 72, u.n) : '', main, side });
 }
 function kbProc(id) {
   const p = PROC_BY[id], i = KB.PROCESSES.indexOf(p);
-  const units = Object.entries(KB.UNIT_PROC).filter(([, l]) => l.includes(id)).map(([u]) => u).filter(u => U[u]);
-  const head = `${crumbs(['Физика и химия процессов', '#kb-proc'], [p.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(p.g)}</span><h1>${esc(p.t)}</h1><p class="kb-lead">${esc(p.lead)}</p></div></header>`;
-  const main = `${p.f ? `<section class="panel"><h2>Уравнения</h2><div class="kb-f">${p.f.map(x => `<code>${esc(x)}</code>`).join('')}</div></section>` : ''}
-    ${sections(p.s)}${seq(KB.PROCESSES, i, x => '#kb-p-' + x.id, x => x.t)}`;
-  const side = `${numbers(p.n)}${srcPanel(p)}${units.length ? `<section class="panel"><h2>Где идёт</h2><div class="kb-units kb-units-col">${units.map(unitLink).join('')}</div></section>` : ''}`;
-  kbRoot().innerHTML = article(head, main, side);
+  const units = Object.entries(KB.UNIT_PROC).filter(([, l]) => l.includes(id)).map(([u]) => u);
+  const side = units.length ? `<section class="panel"><h2>Где идёт</h2><div class="kb-units kb-units-col">${units.map(u => (U[u] ? unitLink(u) : `<p>${uLink(u)}</p>`)).join('')}</div></section>` : '';
+  kbRoot().innerHTML = richArticle(p, crumbs(['Физика и химия процессов', '#kb-proc'], [p.t]), { kicker: p.g, main: seq(KB.PROCESSES, i, x => '#kb-p-' + x.id, x => x.t), side });
 }
 // методики измерений показателя: обозначение, метод, для каких вод, где подтверждено
 function methodsHTML(id) {
@@ -250,17 +300,22 @@ function methodsHTML(id) {
 function kbInd(id) {
   const p = IND_BY[id], i = KB.INDICATORS.indexOf(p), par = p.k && PARAMS.find(x => x.k === p.k);
   const nv = p.k && state.norm[p.k], iv = p.k && state.c[p.k];
-  const head = `${crumbs(['Показатели качества воды', '#kb-ind'], [p.t])}<header class="kb-ahead"><div><span class="gp-stage">${esc(p.u)}</span><h1>${esc(p.t)}</h1></div></header>`;
-  const main = `${sections([['Что это', p.what], ['Почему важно', p.why], ['Как снижают', p.how]])}${methodsHTML(p.id)}${seq(KB.INDICATORS, i, x => '#kb-i-' + x.id, x => x.t)}`;
-  const side = `<section class="panel"><h2>Значения</h2><dl class="gp-dl"><dt>Городские стоки</dt><dd>${esc(p.typ)}</dd>${par ? `<dt>Ваши стоки</dt><dd>${fmt(iv)} ${esc(par.u)}</dd><dt>Ваш норматив</dt><dd>${nv == null || nv === '' ? 'не задан' : fmt(nv) + ' ' + esc(par.u)}</dd>` : ''}</dl>
-      <p class="hint">Нормативы сброса — в документах <a href="#doc-pp1430">ПП № 1430</a> (НДТ) и <a href="#doc-pr296">приказе № 296</a> (рыбохозяйственные).</p></section>
-    ${srcPanel(p)}${par ? '<section class="panel"><h2>В конструкторе</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;
-  kbRoot().innerHTML = article(head, main, side);
+  const units = UNITS.filter(u => Object.keys(u.eff).some(k => EFF_IND[k] === p.k && u.eff[k] > 0)).map(u => u.id);
+  const sideTop = `<section class="panel"><h2>Значения</h2><dl class="gp-dl"><dt>Единицы</dt><dd>${esc(p.u)}</dd><dt>Городские стоки</dt><dd>${richI(p.typ || '', p)}</dd>${par ? `<dt>Ваши стоки</dt><dd>${fmt(iv)} ${esc(par.u)}</dd><dt>Ваш норматив</dt><dd>${nv == null || nv === '' ? 'не задан' : fmt(nv) + ' ' + esc(par.u)}</dd>` : ''}</dl>
+      <p class="hint">Нормативы сброса — <a href="#doc-pp1430">ПП № 1430</a> (технологические показатели НДТ) и <a href="#doc-pr296">приказ № 296</a> (рыбохозяйственные ПДК).</p></section>`;
+  const side = `${units.length ? `<section class="panel"><h2>Снижают в конструкторе</h2><div class="kb-units kb-units-col">${units.map(unitLink).join('')}</div></section>` : ''}
+    ${par ? '<section class="panel"><h2>В конструкторе</h2><p>Этот показатель рассчитывается по ступеням схемы. Включите на плане режим «Качество», чтобы увидеть его в каждой трубе.</p><a class="btn" href="#constructor" data-go="constructor">Открыть план</a></section>' : ''}`;
+  kbRoot().innerHTML = richArticle(p, crumbs(['Показатели качества воды', '#kb-ind'], [p.t]), { kicker: p.u, main: methodsHTML(p.id) + seq(KB.INDICATORS, i, x => '#kb-i-' + x.id, x => x.t), sideTop, side });
 }
 function kbAux(id) {
   const a = AUX_BY[id];
-  const head = `${crumbs(['Сооружения очистки', '#kb-units'], [a.t])}<header class="kb-ahead"><div><span class="gp-stage">Вспомогательное здание</span><h1>${esc(a.t)}</h1><p class="kb-lead">${esc(a.lead)}</p></div></header>`;
-  kbRoot().innerHTML = article(head, sections(a.s), numbers(a.n) + srcPanel(a) + (a.proc ? `<section class="panel"><h2>Процессы</h2><p class="kb-tags">${a.proc.map(procLink).join('')}</p></section>` : ''));
+  const side = a.proc ? `<section class="panel"><h2>Процессы</h2><p class="kb-tags">${a.proc.map(procLink).join('')}</p></section>` : '';
+  kbRoot().innerHTML = richArticle(a, crumbs(['Сооружения очистки', '#kb-units'], [a.t]), { kicker: 'Вспомогательное здание', side });
+}
+/** Предпросмотр в редакторе статей: тот же вид, что на сайте (для коллекций с разметкой). */
+function richPreviewHTML(coll, x) {
+  const kick = { units: ROLE[x.role] || 'Сооружение', processes: x.g, indicators: x.u, aux: 'Вспомогательное здание' }[coll];
+  return richArticle(x, '', { kicker: kick });
 }
 
 function kbFund(id, hum) {
@@ -323,7 +378,7 @@ function renderKB(param) {
   const m = /^([a-z]+)(?:-([a-zA-Z0-9-]+))?$/.exec(param || '');
   if (!m) return kbHome();
   const [, a, b] = m;
-  if (a === 'u' && b && U[b]) return kbUnit(b);
+  if (a === 'u' && b && (U[b] || UKB_BY[b])) return kbUnit(b);
   if (a === 'p' && PROC_BY[b]) return kbProc(b);
   if (a === 'i' && IND_BY[b]) return kbInd(b);
   if (a === 'a' && AUX_BY[b]) return kbAux(b);

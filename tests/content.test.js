@@ -52,7 +52,10 @@ test('заголовок понимает то, что пишут редакто
 test('проверка статьи ловит главные ошибки', () => {
   const bad = MD.parse('---\nid: Bad Id\n---\n\n## Пусто\n');
   const v = MD.validate('processes', bad);
-  assert.ok(v.err.some(e => /id/.test(e))); assert.ok(v.err.some(e => /title/.test(e))); assert.ok(v.err.some(e => /вводного абзаца/.test(e)));
+  assert.ok(v.err.some(e => /id/.test(e))); assert.ok(v.err.some(e => /title/.test(e))); assert.ok(v.err.some(e => /вводн/.test(e)));
+  // у статей с разметкой: абзац без сноски и несуществующий номер сноски — предупреждения
+  const r = MD.richAudit(MD.parse('---\nid: x\ntitle: X\n---\n\nСуть[^1].\n\n## Подробно\nБез сноски.\n\nСноска на пустоту[^3].\n\n## Источники\n- sp32 | СП 32.13330.2018 | п. 9.2.1 |\n'));
+  assert.ok(r.some(w => /нет сноски/.test(w)) && r.some(w => /\[\^3\]/.test(w)), r.join('; '));
   const myth = MD.parse('---\nid: x\nname: X\n---\n\n## Имя: Икс\nТекст.\n');
   assert.ok(MD.validate('myths', myth).err.some(e => /источник/.test(e)));
 });

@@ -57,7 +57,7 @@ test('внутренние ссылки #doc-… в данных ведут на
 test('курсы: ссылки уроков ведут на существующие статьи, модули и курсы-предшественники существуют', () => {
   const { C } = require('../js/courses.js');
   const D = require('../js/data.js');
-  const ok = new Set([...D.UNITS.map(u => '#kb-u-' + u.id), ...KB.AUX.map(a => '#kb-a-' + a.id), ...KB.PROCESSES.map(p => '#kb-p-' + p.id),
+  const ok = new Set([...D.UNITS.map(u => '#kb-u-' + u.id), ...KB.UNITS_KB.map(u => '#kb-u-' + u.id), ...KB.AUX.map(a => '#kb-a-' + a.id), ...KB.PROCESSES.map(p => '#kb-p-' + p.id),
     ...KB.INDICATORS.map(p => '#kb-i-' + p.id), ...KB.FUNDAMENTALS.map(p => '#kb-f-' + p.id), ...KB.HUMANITIES.map(p => '#kb-h-' + p.id), ...KB.NETWORK.map(p => '#kb-n-' + p.id), ...KB.DRINKING.map(p => '#kb-w-' + p.id), ...require('../js/dwcalc.js').UNITS.map(u => '#kb-v-' + u.id),
     ...DOCS.map(d => '#doc-' + d.id), ...G.map(g => '#kb-g-' + g.id)]);
   const ids = new Set(C.map(c => c.id));
@@ -79,7 +79,7 @@ test('курсы: ссылки уроков ведут на существующ
 
 test('учебники: у каждой книги базы знаний есть запись о том, где её взять, ссылки корректны', () => {
   const B = require('../js/books.js');
-  const all = [...KB.BOOKS.flatMap(g => g.list), ...Object.values(KB.MODULE_BOOKS).flatMap(gs => gs.flatMap(g => g.list)), ...KB.FUNDAMENTALS.flatMap(f => f.books), ...KB.HUMANITIES.flatMap(f => f.books)];
+  const all = [...Object.values(KB.MODULE_BOOKS).flatMap(gs => gs.flatMap(g => g.list)), ...KB.FUNDAMENTALS.flatMap(f => f.books), ...KB.HUMANITIES.flatMap(f => f.books)];
   for (const [a, t] of all) assert.ok(B.LINKS[B.key(a, t)], 'нет записи о ссылках: ' + a + ' — ' + t);
   const kinds = ['read', 'buy', 'ebs', 'used', 'lib'];
   const check = l => { assert.ok(kinds.includes(l[0]) && l[1], l.join(' ')); assert.match(l[2], /^https?:\/\//, l[2]); assert.ok(!/twirpx|studmed|obuchalka|totalarch|elima|b-ok|zlib|dokumen\.pub/.test(l[2]), 'пиратский сайт: ' + l[2]); };

@@ -7,11 +7,12 @@ const { defaultPrices } = require('../js/economics.js');
 
 const U = Object.fromEntries(D.UNITS.map(u => [u.id, u]));
 const city = D.PRESETS[0];
-const v = (id, ids) => ({ id, name: id, steps: ids.map(u => ({ u, eff: { ...U[u].eff } })) });
+const mk = x => { const o = typeof x === 'object' ? x : { u: x }; return { u: o.u, eff: { ...U[o.u].eff }, ...(o.dose ? { dose: o.dose } : {}) }; };
+const v = (id, ids) => ({ id, name: id, steps: ids.map(mk) });
 const proj = (variants, norm) => ({ influent: { name: 'Город', q: city.q, c: { ...city.c } }, norm: { name: 'N', v: norm || { ...D.NORMS.target.v, fat: 3 } }, prices: defaultPrices(), variants });
 
 const full = v('full', city.scheme);                                  // пример: выполняет целевые нормативы
-const cheap = v('cheap', ['screens', 'sand', 'primary', 'at']);        // без удаления биогенов
+const cheap = v('cheap', ['screens', 'sandv', 'primary', 'at', 'sec']);        // без удаления биогенов
 
 test('каждый вариант считается на общих стоках и нормативах', () => {
   const r = compare(proj([full, cheap]));

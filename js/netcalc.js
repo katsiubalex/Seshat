@@ -230,6 +230,13 @@
       out.push(high.length ? { level: 'bad', text: `Свободный напор больше ${MAX_FREE} м в узлах ${high.map(n => n.id).join(', ')}: нужны регуляторы давления или зонирование.`, ref: REF.max, nodes: high.map(n => n.id) }
         : { level: 'ok', text: `Свободный напор у потребителей не больше ${MAX_FREE} м.`, ref: REF.max });
     }
+    // участки без расхода: чаще всего тупик к узлу, у которого не задан отбор, — воду там никто не берёт
+    const dry = (res.pipes || []).filter(p => isFinite(p.q) && Math.abs(p.q) < 1e-6).map(p => p.id);
+    if (dry.length) {
+      const zero = cons.filter(n => !(n.q > 0)).map(n => n.id);
+      out.push({ level: 'warn', text: `По ${dry.length > 1 ? 'участкам' : 'участку'} ${dry.join(', ')} вода не идёт: дальше по ним никто её не забирает.` +
+        (zero.length ? ` ${zero.length > 1 ? 'Узлы' : 'Узел'} без отбора: ${zero.join(', ')}. Задайте узловой отбор, нажмите «Распределить по узлам» или замкните тупик в кольцо.` : ''), pipes: dry });
+    }
     // тупиковые хозяйственно-питьевые линии — не больше 100 мм (СП 31 п. 11.5)
     const g = graph(net), deg = g.adj.map(a => a.length);
     const dead = net.pipes.filter(p => { const a = g.idx[p.a], b = g.idx[p.b]; return a != null && b != null && (deg[a] === 1 && !net.nodes[a].source || deg[b] === 1 && !net.nodes[b].source) && p.d > 100; });

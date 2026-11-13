@@ -131,3 +131,21 @@ test('статьи о расчёте сети: у каждой есть исто
     if (p.src.every(([doc, , , url]) => !doc && !url)) assert.ok(p.need, p.id + ': источник без ссылки — нужна пометка');
   }
 });
+
+test('участок без расхода: тупик к узлу без отбора — предупреждение; кольцо через такой узел — вода идёт', () => {
+  const net = N.example();
+  net.nodes.push({ id: '7', x: 2200, y: 0, z: 55, q: 0, floors: 5 });
+  net.pipes.push({ id: 'у1', a: '5', b: '7', L: 600, d: 150, mat: 'used' });
+  const w = N.check(net, N.solve(net)).find(x => /вода не идёт/.test(x.text));
+  assert.ok(w, 'есть предупреждение');
+  assert.equal(w.level, 'warn');
+  assert.deepEqual(w.pipes, ['у1']);
+  assert.match(w.text, /Узел без отбора: 7\./);
+  // замкнули тупик на узел 6 — по новому кольцу вода идёт, предупреждения нет
+  net.pipes.push({ id: 'у2', a: '7', b: '6', L: 721, d: 150, mat: 'used' });
+  const res = N.solve(net);
+  assert.ok(Math.abs(res.pipes.find(p => p.id === 'у1').q) > 0.5);
+  assert.ok(!N.check(net, res).some(x => /вода не идёт/.test(x.text)));
+  // в примере без новых узлов предупреждения нет
+  assert.ok(!N.check(N.example(), N.solve(N.example())).some(x => /вода не идёт/.test(x.text)));
+});

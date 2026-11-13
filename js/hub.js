@@ -27,7 +27,8 @@ function renderHome() {
   document.getElementById('home-root').innerHTML = `
     <header class="home-head">
       <h1>Сешат</h1>
-      <p class="home-lead">Инженерная платформа водного хозяйства. Каждый модуль — отдельная дисциплина со своей базой знаний, курсами и расчётным конструктором.</p>
+      <p class="home-mission">Инженерное знание уходит вместе с людьми. Мы сохраняем его и передаём дальше.</p>
+      <p class="home-lead">Открытая инженерная платформа водного хозяйства: каждый модуль — отдельная дисциплина со своей базой знаний, курсами и расчётным конструктором. <a class="home-why" href="#about" data-go="about">Зачем это →</a></p>
       <div class="home-actions">${ready.map(m => `<a class="btn primary" href="${m.path}">Открыть «${esc(m.n)}»</a>`).join('')}<a class="btn" href="#seshat" data-go="seshat">Спросить Сешат</a></div>
     </header>
     <section class="cycle-wrap" aria-labelledby="cluster-water">
@@ -39,7 +40,7 @@ function renderHome() {
     ${groupSection('related', 'Смежные области, без которых водное хозяйство не работает. Пока это заготовки модулей.')}
     <section class="home-more">
       <a class="home-link" href="#kb" data-go="kb"><b>База знаний</b><span>Сооружения, процессы, показатели воды, учебники и нормативные документы модулей, журналы и сообщества.</span></a>
-      <a class="home-link" href="#about" data-go="about"><b>О проекте</b><span>Для кого платформа, откуда название и как связаться с автором.</span></a>
+      <a class="home-link" href="#about" data-go="about"><b>О проекте</b><span>Зачем нужна платформа, для кого она, откуда название и как связаться с автором.</span></a>
     </section>`;
   requestAnimationFrame(drawCycle);
 }

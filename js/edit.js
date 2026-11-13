@@ -154,7 +154,7 @@
     const S = R.STATUS;
     document.getElementById('contribute-root').innerHTML = `
       <header class="about-head"><h1>Участвовать</h1>
-        <p class="about-lead">Сешат растёт как сетевая структура: предложить правку может любой — студент, инженер, преподаватель, сотрудник водоканала. На сайт правка попадает после двух проверок: автоматической и человеческой. Так платформа остаётся открытой и при этом проверяемой.</p></header>
+        <p class="about-lead">«Сешат» растёт как сетевая структура: предложить правку может любой — студент, инженер, преподаватель, сотрудник водоканала. На сайт правка попадает после двух проверок: автоматической и человеческой. Так платформа остаётся открытой и при этом проверяемой.</p></header>
       <section class="panel about-block" aria-labelledby="ct-how"><h2 id="ct-how">Как правка попадает на сайт</h2>
         <ol class="ct-steps">
           <li><b>Предложение.</b> Под каждой статьёй, документом, курсом и мифом есть кнопки «Предложить правку» и «Нашли ошибку?». В форме — что не так, что предлагаете и источник.</li>
@@ -165,8 +165,10 @@
       <section class="panel about-block" aria-labelledby="ct-st"><h2 id="ct-st">Статусы материалов</h2>
         <ul class="ct-status">${Object.entries(S).map(([k, s]) => `<li><span class="rv rv-${k}">${esc(s.t)}</span><span>${esc(s.d)}</span></li>`).join('')}</ul>
         <p class="hint">Статус виден под каждым материалом. Сейчас экспертных проверок ещё нет: все статьи проверены автоматически, курсы — черновики.</p></section>
-      <section class="panel about-block" aria-labelledby="ct-roles"><h2 id="ct-roles">Роли</h2>
-        <div class="ct-wrap"><table class="ct-table"><thead><tr><th>Роль</th><th>Кто</th><th>Что делает</th></tr></thead><tbody>${R.ROLES.map(([r, w, d]) => `<tr><td><b>${esc(r)}</b></td><td>${esc(w)}</td><td>${esc(d)}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="panel about-block" aria-labelledby="ct-roles"><h2 id="ct-roles">Путь в сообществе</h2>
+        <p>Опыт передаётся от человека к человеку. На платформе это путь из четырёх ступеней: каждая следующая — больше ответственности и больше доверия.</p>
+        <ol class="ct-ladder">${R.ROLES.slice(0, 4).map(([r, w, d]) => `<li><b>${esc(r)}</b><span class="ct-who">${esc(w)}</span><span>${esc(d)}</span></li>`).join('')}</ol>
+        ${R.ROLES.slice(4).map(([r, w, d]) => `<p class="hint"><b>${esc(r)}</b> (${esc(w)}): ${esc(d.charAt(0).toLowerCase() + d.slice(1))}</p>`).join('')}</section>
       <section class="panel about-block" aria-labelledby="ct-cur"><h2 id="ct-cur">Кураторы модулей</h2>
         <p>Куратор отвечает за модуль: принимает правки, назначает рецензентов и следит, чтобы нормы были действующими. Пока кураторов нет, правки проверяет автор проекта.</p>
         ${groups.map(g => `<h3 class="ct-sub">${esc(SeshatModules.GROUPS[g])}</h3><ul class="ct-cur">${MODS.filter(m => m.group === g).map(m => { const c = R.CURATORS[m.id];

@@ -1510,3 +1510,27 @@ code.tex{color:var(--bad);background:var(--bad-bg);padding:0 .3em;border-radius:
 .gp-dose select{max-width:60%}
 .gp-dose-bg{fill:var(--gold);opacity:.92}
 .gp-dose-t{fill:var(--on-k);font-weight:700;text-anchor:middle;font-family:var(--f-body)}
+
+/* конструктор водоотводящей сети: профиль и логика расчёта */
+.sew-prof .sp-pipe{fill:var(--k);opacity:.55;stroke:var(--k);stroke-width:1.5}
+.sew-prof .sp-water{stroke:#3B82C4;stroke-width:2}
+.sew-prof .sp-well{fill:var(--surface2);stroke:var(--ink);stroke-width:1;opacity:.8}
+.net-leg .sp-lp,.net-leg .sp-lw,.net-leg .sp-lwell{display:inline-block;width:18px;height:6px;background:var(--k);opacity:.55}.net-leg .sp-lw{height:2px;background:#3B82C4;opacity:1}.net-leg .sp-lwell{width:6px;height:12px;background:var(--surface2);border:1px solid var(--ink);opacity:1}
+.np.bad .np-l{stroke:var(--bad)}
+.sew-info summary{cursor:pointer;font-size:13px;color:var(--muted);margin-top:8px}
+.sew-pick{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.sew-pick button{font:inherit;font-size:13px;padding:3px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.sew-pick button[aria-pressed=true]{background:var(--k);color:var(--on-k,#fff);border-color:var(--k)}
+.sl-title{font-size:15px;margin:16px 0 6px}
+.sew-logic{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sew-logic .sl{border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:8px;padding:8px 12px;background:var(--surface)}
+.sew-logic .sl-norm{border-left-color:var(--ok)}.sew-logic .sl-method{border-left-color:#3B82C4}.sew-logic .sl-assume{border-left-color:var(--warn)}.sew-logic .sl-input{border-left-color:var(--muted)}.sew-logic .sl-calc{border-left-color:var(--line)}
+.sl-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sl-n{font-family:var(--f-mono);font-size:12px;color:var(--muted);min-width:1.6em}
+.sl-k{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.sl-k.sl-norm,.sl-norm .sl-k{background:var(--ok-bg);color:var(--ok)}.sl-k.sl-method,.sl-method .sl-k{background:rgba(59,130,196,.12);color:#3B82C4}.sl-k.sl-assume,.sl-assume .sl-k{background:var(--warn-bg);color:var(--warn)}
+.sl-f{margin:6px 0 2px;overflow-x:auto}
+.sl-s{font-family:var(--f-mono);font-size:13px;line-height:1.5}
+.sl-r{font-size:12px;color:var(--muted);margin-top:3px}
+.sl-note summary{cursor:pointer;font-size:12px;color:var(--warn);margin-top:4px}.sl-note p{margin:4px 0 0;font-size:13px}
+.sew-assume{font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:6px}

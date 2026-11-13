@@ -1,0 +1,59 @@
+name: Задача разработки
+description: Задача для агента или разработчика — по правилам AGENTS.md
+title: "[Модуль] Задача: что сделать"
+labels: ["задача"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Задача ставится заказчиком. Исполнитель до начала работы пишет план в комментарии (файлы, тесты, контрольный пример) и задаёт вопросы здесь же. Правила — [AGENTS.md](../blob/main/AGENTS.md).
+  - type: textarea
+    id: goal
+    attributes:
+      label: Цель
+      description: Что должно стать возможным или верным после выполнения. Одно-два предложения, без перечисления файлов.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Источники
+      description: Пункты норм, страницы изданий, данные, на которые опирается задача. Если задача про расчёт — контрольный пример с ожидаемым результатом.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Как заказчик проверит на сайте, что сделано. Конкретные шаги и ожидаемые числа или состояния.
+      placeholder: |
+        - [ ] Открыть конструктор, задать стоки Q = 10 000 м³/сут, БПК₅ = 250 мг/л …
+        - [ ] На выходе БПК₅ = … мг/л (расчёт по СП 32 формула …)
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Границы
+      description: Какие файлы и разделы можно трогать; что трогать нельзя; что сознательно не делаем в этой задаче.
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Этап дорожной карты
+      options: ["0 · Прототип", "1 · Проверенное ядро", "2 · Первые люди", "3 · Живая база", "4 · Профессиональный слой", "5 · Гильдия и сеть"]
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Тип
+      options: ["контент", "расчёт", "интерфейс", "данные", "инфраструктура", "документация"]
+    validations:
+      required: true
+  - type: input
+    id: effort
+    attributes:
+      label: Оценка
+      description: В сессиях (одна сессия — 2–4 часа)

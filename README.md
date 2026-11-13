@@ -1,5 +1,7 @@
 # Сешат — инженерная платформа
 
+> **Разработчикам и агентам:** [ARCHITECTURE.md](ARCHITECTURE.md) — устройство и карта файлов · [AGENTS.md](AGENTS.md) — обязательные правила разработки · [ROADMAP.md](ROADMAP.md) — этапы и критерии перехода · [CHANGELOG.md](CHANGELOG.md) — что нового · [docs/decisions/](docs/decisions/) — принятые решения. Контент: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Инженерная платформа водного хозяйства: база знаний, курсы и расчётные инструменты на одном движке.
 Модули называются по своему предмету и выстроены по пути воды:
 Гидрология → Водные ресурсы → Гидротехника → Водозаборные сооружения → Очистка природных вод →
@@ -77,6 +79,8 @@
 | `tests/plan.test.js` | тесты генплана |
 | `tests/oracle.test.js` | тесты ответов Сешат |
 | `tests/release.test.js` | проверка номеров версий у подключённых файлов |
+| `tests/architecture.test.js` | каждый файл `js/` описан в `ARCHITECTURE.md`; версия в `ARCHITECTURE.md` и `CHANGELOG.md` совпадает с `package.json` |
+| `tools/metrics.js` | числа для месячного отчёта (`npm run metrics`) |
 
 Сборка не нужна: сайт открывается двойным щелчком по `index.html` или публикуется через GitHub Pages.
 

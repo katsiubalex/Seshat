@@ -344,7 +344,7 @@ function kbDWUnit(id) {
   const DW = SeshatDW, u = DW.BY[id], i = DW.UNITS.indexOf(u), st = DW.STAGES.find(s => s.id === u.st);
   const arts = (DW_ART[id] || []).map(a => DW_BY[a]).filter(Boolean);
   const head = `${crumbs([SEC.dwu.t, '#kb-dwu'], [u.n])}<header class="kb-ahead"><div><span class="gp-stage">${esc(st.n)}${u.code ? ' · код ' + esc(u.code) : ''}</span><h1>${esc(u.n)}</h1><p class="kb-lead">${esc(u.d)}</p></div></header>`;
-  const main = `<section class="panel"><h2>Как работает</h2><p>${esc(u.how)}</p></section>
+  const main = `${u.s ? sections(u.s) : `<section class="panel"><h2>Как работает</h2><p>${esc(u.how)}</p></section>`}
     <section class="panel"><h2>Условия применения и параметры</h2><ul>${u.params.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>
     ${u.est && u.est.length ? `<p class="hint">Влияние на ${u.est.map(k => esc((DW.PARAMS.find(p => p.k === k) || {}).n || k).toLowerCase()).join(', ')} в конструкторе — учебный ориентир: свод правил этих чисел не даёт.</p>` : ''}
     ${seq(DW.UNITS, i, x => '#kb-v-' + x.id, x => x.n)}`;

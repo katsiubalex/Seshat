@@ -197,6 +197,14 @@
         opt(o, 'need', d.meta.need); return opt(o, 'tool', d.meta.tool); },
       fromData: x => ({ meta: { id: x.id, title: x.t, group: x.g, need: x.need, tool: x.tool }, lead: x.lead, sections: [...items('Формулы', x.f, true), ...x.s.map(([h, t]) => sec(h, t)), ...items('Ключевые числа', x.n),
         ...items('Источники', x.src.map(([doc, t, where, url]) => [doc || '—', t, where || ''].concat(url ? [url] : []).join(' | ')))] }) },
+    // сооружения водоподготовки («Очистка природных вод»): текст статьи — здесь, расчёт — в js/dwcalc.js (там же стадия и код сооружения);
+    // источники — «документ | название | пункт, с. страница»
+    dwunits: { label: 'Сооружения водоподготовки', dir: 'content/kb/dwunits', href: id => '#kb-v-' + id, page: 'anahita',
+      fields: { id: 'адрес статьи (как в расчёте js/dwcalc.js)', title: 'название' }, special: ['Условия применения и параметры', 'Источники'],
+      toData: d => { const o = { id: d.meta.id, t: d.meta.title, lead: d.lead, s: rest(d, ['Условия применения и параметры', 'Источники']), p: list(d, 'Условия применения и параметры') || [] };
+        o.src = (list(d, 'Источники') || []).map(x => { const [doc, t, where] = x.split(/\s*\|\s*/); return [doc && doc !== '—' ? doc : null, t || '', where || '']; }); return o; },
+      fromData: x => ({ meta: { id: x.id, title: x.t }, lead: x.lead, sections: [...x.s.map(([h, t]) => sec(h, t)), ...items('Условия применения и параметры', x.p),
+        ...items('Источники', x.src.map(([doc, t, where]) => [doc || '—', t, where || ''].join(' | ')))] }) },
     // глоссарий: одно определение — один файл; текст файла — само определение (цитата или изложение)
     glossary: { label: 'Глоссарий', dir: 'content/glossary', href: id => '#kb-g-' + id, page: 'hub',
       fields: { id: 'адрес термина (латиница)', title: 'термин', source: 'документ (id из нормативных документов: vk74, fz416, sp31, sp32, sp58, its10…)', ref: 'статья, пункт и страница документа', quote: 'true — дословная цитата, false — краткое изложение' },

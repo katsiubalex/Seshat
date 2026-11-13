@@ -15,14 +15,14 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/svg+xml" href="assets/seshat-icon.svg?v=0.50.0">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png?v=0.50.0">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=0.50.0">
+<link rel="icon" type="image/svg+xml" href="assets/seshat-icon.svg?v=0.51.0">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png?v=0.51.0">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=0.51.0">
 <script>try{var t=localStorage.getItem("seshat-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=0.50.0">
-<link rel="stylesheet" href="css/style.css?v=0.50.0">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=0.51.0">
+<link rel="stylesheet" href="css/style.css?v=0.51.0">
 <script>/* если страница взята из кэша браузера и на сайте уже новая версия — тихо обновить её один раз */(function(){try{var l=document.querySelector('link[href*="css/style.css"]');if(!l)return;var h=l.getAttribute('href'),v=(h.match(/v=([\d.]+)/)||[])[1],root=h.indexOf('../')===0?'../':'';fetch(root+'version.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){var k='seshat-upd';if(!j.v||j.v===v||sessionStorage.getItem(k)===j.v)return;sessionStorage.setItem(k,j.v);fetch(location.pathname,{cache:'reload'}).then(function(){location.reload()},function(){location.reload()})})['catch'](function(){})}catch(e){}})()</script>
 </head>
 <body data-page="hub" data-root="">
@@ -92,8 +92,23 @@
 <div class="wrap view about-page" id="view-about" hidden>
   <header class="about-head">
     <h1>О проекте</h1>
-    <p class="about-lead">Сешат — инженерная платформа водного хозяйства: база знаний, курсы и расчётные инструменты на одном движке. Платформа состоит из модулей, каждый посвящён одной дисциплине. Первый кластер — «Водная инфраструктура», девять модулей по пути воды: от гидрологии до очистки сточных вод. Общая опора для всех — «Основы»: фундаментальные дисциплины, основы водоснабжения и водоотведения и гуманитарные аспекты. Рядом — смежные области: экономика, децентрализованные системы, охрана труда, цифровые инструменты, строительство, защита атмосферы и почв. Первый готовый модуль — «Очистка сточных вод» с конструктором схем очистки; остальные в разработке.</p>
+    <p class="about-lead">Инженерное знание уходит вместе с людьми, а нужно оно будет всё большему числу людей. Поэтому мы строим живую базу знаний и сообщество, которое передаёт мастерство из рук в руки.</p>
   </header>
+
+  <section class="panel about-block" aria-labelledby="ab-why">
+    <h2 id="ab-why">Зачем</h2>
+    <ol class="mission">
+      <li><b>Знание уходит.</b> Поколение, которое построило водопровод и канализацию и понимает, как они работают, уходит на пенсию. Молодых в профессии мало, а учебники отстают от практики.</li>
+      <li><b>Нужно оно всё большему числу людей.</b> Сети стареют, рядом с ними появляются локальные системы, требования к очистке растут. Специалистов, которые понимают свою систему, нужно больше, а не меньше.</li>
+      <li><b>Документов мало.</b> Инженерный опыт живёт в людях. Когда цепочка от мастера к ученику обрывается, знание исчезает, даже если чертежи лежат в архиве.</li>
+      <li><b>Что мы делаем.</b> Открытая база знаний с конструкторами, которая быстро вводит в дисциплину и помогает разобраться на месте. И сообщество специалистов, которое её проверяет, развивает и передаёт то, что в статью не запишешь. <a href="#contribute" data-go="contribute">Как участвовать →</a></li>
+    </ol>
+  </section>
+
+  <section class="panel about-block" aria-labelledby="ab-what">
+    <h2 id="ab-what">Что такое «Сешат»</h2>
+    <p>«Сешат» — инженерная платформа водного хозяйства: база знаний, курсы и расчётные инструменты на одном движке. Платформа состоит из модулей, каждый посвящён одной дисциплине. Первый кластер — «Водная инфраструктура», девять модулей по пути воды: от гидрологии до очистки сточных вод. Общая опора для всех — «Основы»: фундаментальные дисциплины, основы водоснабжения и водоотведения и гуманитарные аспекты. Рядом — смежные области: экономика, децентрализованные системы, охрана труда, цифровые инструменты, строительство, защита атмосферы и почв. Первый готовый модуль — «Очистка сточных вод» с конструктором схем очистки; остальные в разработке.</p>
+  </section>
 
   <section class="panel about-block" aria-labelledby="ab-who">
     <h2 id="ab-who">Для кого</h2>
@@ -178,40 +193,40 @@
   </form>
 </section>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script src="js/data.js?v=0.50.0"></script>
-<script src="js/graph.js?v=0.50.0"></script>
-<script src="js/model.js?v=0.50.0"></script>
-<script src="js/icons.js?v=0.50.0"></script>
-<script src="js/economics.js?v=0.50.0"></script>
-<script src="js/store.js?v=0.50.0"></script>
-<script src="js/plan.js?v=0.50.0"></script>
-<script src="js/dwcalc.js?v=0.50.0"></script>
-<script src="js/core.js?v=0.50.0"></script>
-<script src="js/hubstate.js?v=0.50.0"></script>
-<script src="js/its.js?v=0.50.0"></script>
-<script src="assets/katex/katex.min.js?v=0.50.0"></script>
-<script src="js/richtext.js?v=0.50.0"></script>
-<script src="js/content.js?v=0.50.0"></script>
-<script src="js/kb.js?v=0.50.0"></script>
-<script src="js/modules.js?v=0.50.0"></script>
-<script src="js/myths.js?v=0.50.0"></script>
-<script src="js/oracle.js?v=0.50.0"></script>
-<script src="js/docs.js?v=0.50.0"></script>
-<script src="js/docsview.js?v=0.50.0"></script>
-<script src="js/ncs.js?v=0.50.0"></script>
-<script src="js/ncsview.js?v=0.50.0"></script>
-<script src="js/methods.js?v=0.50.0"></script>
-<script src="js/courses.js?v=0.50.0"></script>
-<script src="js/books.js?v=0.50.0"></script>
-<script src="js/kbview.js?v=0.50.0"></script>
-<script src="js/glossary.js?v=0.50.0"></script>
-<script src="js/kblinks.js?v=0.50.0"></script>
-<script src="js/review.js?v=0.50.0"></script>
-<script src="js/edit.js?v=0.50.0"></script>
-<script src="js/mdcontent.js?v=0.50.0"></script>
-<script src="js/ghsubmit.js?v=0.50.0"></script>
-<script src="js/editor.js?v=0.50.0"></script>
-<script src="js/seshat.js?v=0.50.0"></script>
-<script src="js/hub.js?v=0.50.0"></script>
+<script src="js/data.js?v=0.51.0"></script>
+<script src="js/graph.js?v=0.51.0"></script>
+<script src="js/model.js?v=0.51.0"></script>
+<script src="js/icons.js?v=0.51.0"></script>
+<script src="js/economics.js?v=0.51.0"></script>
+<script src="js/store.js?v=0.51.0"></script>
+<script src="js/plan.js?v=0.51.0"></script>
+<script src="js/dwcalc.js?v=0.51.0"></script>
+<script src="js/core.js?v=0.51.0"></script>
+<script src="js/hubstate.js?v=0.51.0"></script>
+<script src="js/its.js?v=0.51.0"></script>
+<script src="assets/katex/katex.min.js?v=0.51.0"></script>
+<script src="js/richtext.js?v=0.51.0"></script>
+<script src="js/content.js?v=0.51.0"></script>
+<script src="js/kb.js?v=0.51.0"></script>
+<script src="js/modules.js?v=0.51.0"></script>
+<script src="js/myths.js?v=0.51.0"></script>
+<script src="js/oracle.js?v=0.51.0"></script>
+<script src="js/docs.js?v=0.51.0"></script>
+<script src="js/docsview.js?v=0.51.0"></script>
+<script src="js/ncs.js?v=0.51.0"></script>
+<script src="js/ncsview.js?v=0.51.0"></script>
+<script src="js/methods.js?v=0.51.0"></script>
+<script src="js/courses.js?v=0.51.0"></script>
+<script src="js/books.js?v=0.51.0"></script>
+<script src="js/kbview.js?v=0.51.0"></script>
+<script src="js/glossary.js?v=0.51.0"></script>
+<script src="js/kblinks.js?v=0.51.0"></script>
+<script src="js/review.js?v=0.51.0"></script>
+<script src="js/edit.js?v=0.51.0"></script>
+<script src="js/mdcontent.js?v=0.51.0"></script>
+<script src="js/ghsubmit.js?v=0.51.0"></script>
+<script src="js/editor.js?v=0.51.0"></script>
+<script src="js/seshat.js?v=0.51.0"></script>
+<script src="js/hub.js?v=0.51.0"></script>
 </body>
 </html>

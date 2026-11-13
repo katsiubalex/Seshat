@@ -276,7 +276,13 @@
     S.net.pipes.forEach(q => { if (!q.Lset && (q.a === n.id || q.b === n.id)) q.L = Math.max(1, dist(node(q.a), node(q.b))); });
     const keep = view; render(); view = keep; // план не «прыгает», пока узел тащат
   });
-  root().addEventListener('pointerup', () => { if (drag && drag.moved) { view = null; rerender(); } drag = drag && drag.moved ? { done: true } : null; setTimeout(() => { drag = null; }, 0); });
+  // Узел захвачен setPointerCapture, поэтому браузер отдаёт click самому плану, а не узлу:
+  // выбор узла без перетаскивания делаем здесь, а click после этого пропускаем.
+  root().addEventListener('pointerup', () => {
+    if (!drag || drag.done) return;
+    if (drag.moved) view = null; else S.sel = 'n:' + drag.id;
+    rerender(); drag = { done: true }; setTimeout(() => { drag = null; }, 0);
+  });
   root().addEventListener('click', ev => {
     const t = ev.target;
     if (t.closest('[data-tool]')) { S.tool = t.closest('[data-tool]').dataset.tool; pick = null; return rerender(); }

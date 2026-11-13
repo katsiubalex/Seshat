@@ -26,6 +26,27 @@ slug:
   clean_accents: true
 
 collections:
+  - name: units
+    label: "Сооружения очистки сточных вод"
+    label_singular: "Сооружение"
+    folder: content/kb/units
+    create: false
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Название", widget: string }
+      - { name: role, label: "Что это", widget: select, options: ["сооружение", "элемент", "опция"] }
+      - { name: stage, label: "Стадия", widget: select, options: [mech, phys, bio, tert, dis, sludge] }
+      - { name: part_of, label: "В состав каких сооружений входит (адреса)", widget: list, required: false }
+      - { name: parts, label: "Из каких элементов состоит (адреса)", widget: list, required: false }
+      - { name: procs, label: "Процессы (адреса статей)", widget: list, required: false }
+      - { name: inds, label: "Показатели, на которые влияет (адреса статей)", widget: list, required: false }
+      - { name: need, label: "Что ещё не подтверждено источником", widget: string, required: false }
+      - { name: tool, label: "Как попробовать в конструкторе", widget: string, required: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: вводная часть, разделы «## …», «## Ключевые числа», «## Источники» (документ | название | где)", widget: text }
   - name: processes
     label: "Физика и химия процессов"
     label_singular: "Процесс"
@@ -114,6 +135,34 @@ collections:
       - { name: tool, label: "Как попробовать в конструкторе", widget: string, required: false }
       - { name: order, label: "Порядок в списке", widget: number, required: false }
       - { name: body, label: "Текст: вводный абзац, «## Формулы», разделы, «## Ключевые числа», «## Источники» (документ | название | где | ссылка)", widget: text }
+  - name: network
+    label: "Расчёт водопроводной сети"
+    label_singular: "Статья"
+    folder: content/kb/network
+    create: true
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Название", widget: string }
+      - { name: need, label: "Что ещё не подтверждено источником", widget: string, required: false }
+      - { name: tool, label: "Как попробовать в конструкторе", widget: string, required: false }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: вводный абзац, «## Формулы», разделы, «## Ключевые числа», «## Источники» (документ | название | где | ссылка)", widget: text }
+  - name: dwunits
+    label: "Сооружения водоподготовки"
+    label_singular: "Сооружение"
+    folder: content/kb/dwunits
+    create: false
+    identifier_field: id
+    slug: "{{id}}"
+    summary: "{{title}}"
+    fields:
+      - { name: id, label: "Адрес статьи (латиница)", widget: string, pattern: ['^[a-z0-9-]+$', "Только латинские строчные буквы, цифры и дефис"] }
+      - { name: title, label: "Название", widget: string }
+      - { name: order, label: "Порядок в списке", widget: number, required: false }
+      - { name: body, label: "Текст: вводный абзац, «## Как работает», «## Условия применения и параметры», «## Источники» (документ | название | пункт, с. страница)", widget: text }
   - name: glossary
     label: "Глоссарий"
     label_singular: "Термин"

@@ -11,7 +11,8 @@
   const idPat = id => new RegExp(`id: '${reEsc(id)}'`);
   // где лежат данные материала: файл и как найти в нём запись
   const BY_TYPE = {
-    u: id => ({ files: ['js/plan.js', 'js/data.js'], find: new RegExp(`^\\s+${reEsc(id)}: \\{`, 'm'), type: 'Сооружение' }),
+    // статьи о сооружениях — Markdown (content/kb/units/…); расчётные данные сооружения — в js/data.js
+    u: id => ({ files: [`content/kb/units/${id}.md`, 'js/data.js'], type: 'Сооружение', md: ['units', id] }),
     // статьи базы знаний — отдельные Markdown-файлы (content/…): их можно править прямо на GitHub или в редакторе Сешат
     p: id => ({ files: [`content/kb/processes/${id}.md`], type: 'Процесс', md: ['processes', id] }),
     i: id => ({ files: [`content/kb/indicators/${id}.md`, 'js/methods.js'], type: 'Показатель', md: ['indicators', id] }),
@@ -22,9 +23,10 @@
     d: id => ({ files: ['js/docs.js'], find: idPat(id), type: 'Документ', key: 'doc-' + id }),
     g: id => ({ files: [`content/glossary/${id}.md`], type: 'Термин', md: ['glossary', id] }),
     w: id => ({ files: [`content/kb/drinking/${id}.md`], type: 'Водоподготовка', md: ['drinking', id] }),
-    v: id => ({ files: ['js/dwcalc.js'], find: idPat(id), type: 'Сооружение водоподготовки' })
+    // статьи о сооружениях водоподготовки — Markdown (content/kb/dwunits/…); расчёт — в js/dwcalc.js
+    v: id => ({ files: [`content/kb/dwunits/${id}.md`, 'js/dwcalc.js'], type: 'Сооружение водоподготовки', md: ['dwunits', id] })
   };
-  const BY_SECTION = { net: 'content/kb/network', dwu: 'js/dwcalc.js', dwk: 'content/kb/drinking', units: 'js/data.js', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
+  const BY_SECTION = { net: 'content/kb/network', dwu: 'content/kb/dwunits', dwk: 'content/kb/drinking', units: 'content/kb/units', proc: 'content/kb/processes', ind: 'content/kb/indicators', books: 'js/books.js', docs: 'js/docs.js', fund: 'content/kb/fundamentals', hum: 'content/kb/humanities',
     myth: 'content/myths', journals: 'js/kb.js', comm: 'js/kb.js', glossary: 'content/glossary' };
 
   // материал, открытый сейчас: ключ (адрес без «#»), тип, файлы данных

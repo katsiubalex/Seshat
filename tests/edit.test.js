@@ -41,3 +41,20 @@ test('запись материала находится в файле данн�
   for (const d of require('../js/docs.js').DOCS) assert.match(docs, new RegExp(`id: '${d.id}'`), d.id);
   for (const c of require('../js/courses.js').C) assert.match(courses, new RegExp(`id: '${c.id}'`), c.id);
 });
+
+test('у всех статей базы знаний одинаковая панель правки: «Править статью» ведёт в редактор', () => {
+  const MD = require('../js/mdcontent.js'), edit = read('js/edit.js');
+  for (const [coll, C] of Object.entries(MD.COLLECTIONS)) {
+    const m = /#kb-([a-z])-/.exec(C.href('x')); if (!m) continue; // мифы — свой раздел (#lore-…), он описан отдельно
+    const line = edit.split('\n').find(l => new RegExp(`^\\s+${m[1]}: id => \\(`).test(l)) || '';
+    assert.ok(line.includes(`${C.dir}/\${id}.md`), `${coll}: панель правки должна вести к файлу ${C.dir}/<id>.md`);
+    assert.ok(line.includes(`md: ['${coll}', id]`), `${coll}: нет кнопки «Править статью»`);
+  }
+});
+
+test('у каждого сооружения водоподготовки есть статья, у каждой статьи — сооружение в расчёте', () => {
+  const DW = require('../js/dwcalc.js');
+  const files = fs.readdirSync(path.join(root, 'content/kb/dwunits')).map(f => f.replace(/\.md$/, ''));
+  assert.deepEqual([...files].sort(), DW.UNITS.map(u => u.id).sort());
+  for (const u of DW.UNITS) assert.ok(u.n && u.d && u.how && u.params.length && u.refs.length, u.id);
+});

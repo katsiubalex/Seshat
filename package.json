@@ -5,6 +5,8 @@
   "license": "MIT",
   "description": "Конструктор схем очистки сточных вод из наилучших доступных технологий",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "check": "node tools/build-content.js --check && node --test tests/*.test.js",
+    "metrics": "node tools/metrics.js"
   }
 }

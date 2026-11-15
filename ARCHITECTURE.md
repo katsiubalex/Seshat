@@ -125,7 +125,7 @@ flowchart LR
 | Что | Где |
 |---|---|
 | Хостинг | GitHub Pages из `main`; свой домен — в плане |
-| CI | `.github/workflows/tests.yml` — тесты на каждый PR; `content.yml` — пересборка статей после слияния; `freshness.yml` — еженедельная проверка ссылок и дат сверки → задача «Проверка актуальности» |
+| CI | `.github/workflows/tests.yml` — тесты на каждый PR; `content.yml` — пересборка статей после слияния; `freshness.yml` — еженедельная проверка ссылок и дат сверки → задача «Проверка актуальности»; `tag.yml` — тег `vX.Y.Z` на каждую новую версию в `main` |
 | Тесты | `npm test` (`node --test`), 19 файлов; `node tools/build-content.js --check` |
 | Качество данных | `tools/check-links.js`, `tests/ncs.test.js` (1623 значения сверены со сборниками), `tests/content.test.js` |
 | Метрики | `node tools/metrics.js` — числа для месячного отчёта |

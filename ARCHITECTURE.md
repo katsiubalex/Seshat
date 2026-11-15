@@ -129,6 +129,7 @@ flowchart LR
 | Тесты | `npm test` (`node --test`), 19 файлов; `node tools/build-content.js --check` |
 | Качество данных | `tools/check-links.js`, `tests/ncs.test.js` (1623 значения сверены со сборниками), `tests/content.test.js` |
 | Метрики | `node tools/metrics.js` — числа для месячного отчёта |
+| Источники | закрытый репозиторий [`katsiubalex/Seshat-sources`](https://github.com/katsiubalex/Seshat-sources): полные тексты норм с паспортами, учебники по главам, оригиналы PDF. Порядок чтения: `нормативка/INDEX.md` → `INDEX.md` модуля → паспорт файла → текст. На сайт из него идёт только то, что разрешает `legal_status` документа (ADR-007) |
 
 ## 4. Модули и их состояние
 

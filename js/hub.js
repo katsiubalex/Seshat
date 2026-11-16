@@ -27,8 +27,8 @@ function renderHome() {
   document.getElementById('home-root').innerHTML = `
     <header class="home-head">
       <h1>Сешат</h1>
-      <p class="home-mission">Инженерное знание уходит вместе с людьми. Мы сохраняем его и передаём дальше.</p>
-      <p class="home-lead">Открытая инженерная платформа водного хозяйства: каждый модуль — отдельная дисциплина со своей базой знаний, курсами и расчётным конструктором. <a class="home-why" href="#about" data-go="about">Зачем это →</a></p>
+      <p class="home-mission">Инженерная платформа водного хозяйства —<br>от нормы до проекта</p>
+      <p class="home-lead">Конструкторы для инженеров водоснабжения и водоотведения: схемы очистки, водоподготовка, расчёт сетей и их стоимость. Расчёты опираются на своды правил и справочники НДТ, а их логику можно открыть: откуда взялось каждое число. Под инструментами — база знаний, нормативные документы и курсы. <a class="home-why" href="#about" data-go="about">Зачем это →</a></p>
       <div class="home-actions">${ready.map(m => `<a class="btn primary" href="${m.path}">Открыть «${esc(m.n)}»</a>`).join('')}<a class="btn" href="#seshat" data-go="seshat">Спросить Сешат</a></div>
     </header>
     <section class="cycle-wrap" aria-labelledby="cluster-water">

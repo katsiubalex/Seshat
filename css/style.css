@@ -453,6 +453,7 @@ a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mission li{counter-increment:ms;display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);font-size:15px;line-height:1.55}
 .mission li::before{content:counter(ms,decimal-leading-zero);font-family:var(--f-mono);font-size:12px;font-weight:600;color:var(--muted)}
 .mission li:last-child{border-color:var(--accent)}
+.mission li:last-child:nth-child(odd){grid-column:1/-1}
 .mission b{font-size:16px}
 @media (max-width:760px){.mission{grid-template-columns:minmax(0,1fr)}}
 .contacts{gap:12px;border-color:var(--accent)}

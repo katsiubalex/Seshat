@@ -1,6 +1,6 @@
 {
   "name": "seshat",
-  "version": "0.53.2",
+  "version": "0.53.3",
   "private": true,
   "license": "MIT",
   "description": "Конструктор схем очистки сточных вод из наилучших доступных технологий",

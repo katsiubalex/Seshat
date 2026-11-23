@@ -1233,6 +1233,8 @@ body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-i
 .doc-sw.kind-building{background:color-mix(in srgb,var(--k) 35%,var(--surface));border-color:var(--k)}
 .wb-kind-building{--wb:var(--mech)} .wb-kind-base{--wb:var(--gold)} .wb-kind-related{--wb:var(--muted)}
 .mod-wip{display:inline-block;margin-left:.5rem;font-size:.72rem;font-weight:600;letter-spacing:.03em;padding:2px 7px;border-radius:999px;border:1px dashed var(--k,var(--line));color:var(--k,var(--muted));vertical-align:middle}
+/* база знаний: кнопка «Новая статья» под заголовком */
+.kb-new{margin:10px 0 0}
 /* главная: один модуль крупно и кнопка «Что дальше?» */
 .mod-hero{display:flex;flex-wrap:wrap;align-items:center;gap:28px;padding:28px;border:2px solid var(--k);border-radius:18px;background:color-mix(in srgb,var(--k) 9%,var(--surface))}
 .mod-hero-glyph{display:flex;padding:22px;border-radius:50%;border:1px solid color-mix(in srgb,var(--k) 40%,var(--line));background:var(--surface);color:var(--k)}

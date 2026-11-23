@@ -70,8 +70,15 @@ function renderHomeAll() {
 }
 document.getElementById('home-root').addEventListener('click', ev => {
   const b = ev.target.closest('[data-home]'); if (!b) return;
-  homeAll = b.dataset.home === 'all'; renderHome(); window.scrollTo(0, 0);
-  document.getElementById('home-root').querySelector(homeAll ? '[data-home="main"]' : '[data-home="all"]').focus();
+  const swap = () => {
+    homeAll = b.dataset.home === 'all'; renderHome(); window.scrollTo(0, 0);
+    if (homeAll) drawCycle(); // стрелки нужны сразу: браузер снимает новую страницу для перехода
+    document.getElementById('home-root').querySelector(homeAll ? '[data-home="main"]' : '[data-home="all"]').focus({ preventScroll: true });
+  };
+  // плавный переход: плашка модуля перетекает в его карточку на странице всех модулей и обратно,
+  // остальное появляется и затухает (стили ::view-transition-* в style.css); без поддержки в браузере — сразу
+  const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (document.startViewTransition && !calm) document.startViewTransition(swap); else swap();
 });
 // стрелки между карточками: считаются по их положению на экране
 function drawCycle() {

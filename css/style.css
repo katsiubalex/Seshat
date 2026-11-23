@@ -1243,6 +1243,11 @@ body.kind-building,body.kind-base,body.kind-related{--accent:var(--k);--accent-i
 .mod-hero-text p{margin:0;font-size:17px;color:var(--muted)}
 .mod-hero-text ul{margin:0;padding-left:20px;line-height:1.6}
 .home-back,.home-next{align-self:flex-start}
+/* переход между «Модули» и страницей всех модулей: плашка модуля перетекает в его карточку, остальное затухает и появляется */
+.mod-hero,.cycle .mod-card[data-id="tlazolteotl"]{view-transition-name:mod-hero}
+::view-transition-group(mod-hero){animation-duration:.5s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+::view-transition-old(mod-hero),::view-transition-new(mod-hero){height:100%;object-fit:fill;animation-duration:.5s}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.45s}
 @media (max-width:560px){.mod-hero{padding:18px;gap:18px}.mod-hero-glyph{padding:14px}.mod-hero-glyph .glyph{width:72px;height:72px}}
 /* главная: «Основы» и «Смежные области» */
 .mod-group{margin-top:28px}

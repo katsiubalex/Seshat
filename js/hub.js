@@ -1,4 +1,4 @@
-// Главная страница инженерной платформы Сешат: водный цикл из модулей, страницы модулей, «О проекте».
+// Главная страница инженерной платформы Сешат (вкладка «Модули»): модуль «Очистка сточных вод» и, по кнопке «Что дальше?», водный цикл из всех модулей.
 
 const { MODULES, KIND, GROUPS, glyph } = SeshatModules;
 const MOD = Object.fromEntries(MODULES.map(m => [m.id, m]));
@@ -22,9 +22,35 @@ function card(id) {
 }
 const groupSection = (g, lead) => `<section class="mod-group" aria-labelledby="grp-${g}"><div class="cluster-head"><h2 id="grp-${g}">${esc(GROUPS[g])}</h2><p>${lead}</p></div>
   <div class="mod-row">${MODULES.filter(m => m.group === g).map(m => card(m.id)).join('')}</div></section>`;
+// На вкладке «Модули» — один модуль с рабочим конструктором; прежняя страница со всеми модулями
+// (водный цикл, «Основы», «Смежные области») открывается кнопкой «Что дальше?» рядом с его иконкой.
+const HOME_MODULE = 'tlazolteotl';
+let homeAll = false; // показана ли страница со всеми модулями
 function renderHome() {
+  if (homeAll) return renderHomeAll();
+  const m = MOD[HOME_MODULE];
+  document.getElementById('home-root').innerHTML = `
+    <header class="home-head">
+      <h1>Сешат</h1>
+      <p class="home-mission">Инженерная платформа водного хозяйства —<br>от нормы до проекта</p>
+    </header>
+    <section class="mod-hero kind-${m.kind}" aria-labelledby="mod-hero-t">
+      <div class="mod-hero-icon">
+        <a class="mod-hero-glyph" href="${modHref(m)}" aria-label="Открыть модуль «${esc(m.n)}»">${glyph(m.id, 120)}</a>
+        <button type="button" class="btn" data-home="all">Что дальше?</button>
+      </div>
+      <div class="mod-hero-text">
+        <h2 id="mod-hero-t">${esc(m.n)}</h2>
+        <p>${esc(m.d)}</p>
+        <ul>${m.will.map(w => `<li>${esc(w)}</li>`).join('')}</ul>
+        <div class="home-actions"><a class="btn primary" href="${modHref(m)}">Открыть модуль</a></div>
+      </div>
+    </section>`;
+}
+function renderHomeAll() {
   const ready = MODULES.filter(m => m.ready);
   document.getElementById('home-root').innerHTML = `
+    <button type="button" class="btn home-back" data-home="main">← К модулю «${esc(MOD[HOME_MODULE].n)}»</button>
     <header class="home-head">
       <h1>Сешат</h1>
       <p class="home-mission">Инженерная платформа водного хозяйства —<br>от нормы до проекта</p>
@@ -44,6 +70,11 @@ function renderHome() {
     </section>`;
   requestAnimationFrame(drawCycle);
 }
+document.getElementById('home-root').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-home]'); if (!b) return;
+  homeAll = b.dataset.home === 'all'; renderHome(); window.scrollTo(0, 0);
+  document.getElementById('home-root').querySelector(homeAll ? '[data-home="main"]' : '[data-home="all"]').focus();
+});
 // стрелки между карточками: считаются по их положению на экране
 function drawCycle() {
   const box = document.getElementById('cycle'), svg = document.getElementById('cycle-lines'); if (!box || !svg) return;

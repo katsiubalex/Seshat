@@ -4,12 +4,6 @@ const { MODULES, KIND, GROUPS, glyph } = SeshatModules;
 const MOD = Object.fromEntries(MODULES.map(m => [m.id, m]));
 const modHref = m => m.path;
 
-/* ---------- меню: список модулей ---------- */
-// меню сгруппировано: водная инфраструктура по пути воды, затем основы и смежные области
-const NAV_ORDER = ['tlaloc', 'hapi', 'yu', 'enki', 'anahita', 'juturna', 'interior', 'cloacina', 'tlazolteotl'];
-const navItem = m => `<a class="nav-link nav-mod kind-${m.kind}" href="${modHref(m)}">${glyph(m.id, 20)}<span class="nav-t">${esc(m.n)}<small>${esc(m.d)}${m.ready || m.note ? '' : m.stub ? ' · заготовка' : ' · скоро'}</small></span></a>`;
-document.getElementById('nav-modules').innerHTML = NAV_ORDER.map(id => navItem(MOD[id])).join('')
-  + ['base', 'related'].map(g => `<span class="nav-sub">${esc(GROUPS[g])}</span>` + MODULES.filter(m => m.group === g).map(navItem).join('')).join('');
 
 /* ---------- главная: водный цикл ---------- */
 // место на поле 5 × 2: путь воды слева направо по верхнему ряду и обратно по нижнему

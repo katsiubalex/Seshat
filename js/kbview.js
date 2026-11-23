@@ -86,13 +86,16 @@ const bookFind = (a, t, own) => {
 const bookList = list => `<ol class="kb-books">${list.map(([a, t, pub, own]) => `<li><span class="kb-auth">${esc(a)}</span> <b>${esc(t)}</b>. <span class="kb-pub">${esc(pub)}</span> ${bookFind(a, t, own)}</li>`).join('')}</ol>`;
 
 /* ---------- главная базы знаний: на главной Сешат и в каждом модуле ---------- */
+// кнопка «Новая статья»: открывает редактор статей (на главной Сешат) — сразу с шаблоном раздела или, без раздела, со списком разделов
+const NEW_COLL = { units: 'units', proc: 'processes', ind: 'indicators', dwu: 'dwunits', dwk: 'drinking', fund: 'fundamentals', hum: 'humanities' };
+const newBtn = sec => `<p class="kb-new"><a class="btn" href="${ROOT}#editor${NEW_COLL[sec] ? '-' + NEW_COLL[sec] + '-new' : ''}" title="Написать статью и отправить её на проверку куратору">Новая статья</a></p>`;
 const kbCard = (s, href) => `<a class="kb-card" href="${href || '#kb-' + s.id}"><b>${esc(s.t)}</b><span>${esc(s.d)}</span><small>${s.n()} ${s.unit || 'статей'}</small></a>`;
 function kbHome() {
   const head = KB_MOD
     ? `${crumbs()}<header class="kb-head"><div><p class="lore-kicker">${esc(KB_MOD.n)} · ${esc(KB_MOD.d)}</p><h1>База знаний модуля</h1>
-        <p class="sub">Статьи и учебники по дисциплине модуля. Общие разделы — фундаментальные дисциплины, гуманитарные аспекты, журналы и сообщества — в <a href="${ROOT}#kb">базе знаний Сешат</a>.</p></div></header>`
+        <p class="sub">Статьи и учебники по дисциплине модуля. Общие разделы — фундаментальные дисциплины, гуманитарные аспекты, журналы и сообщества — в <a href="${ROOT}#kb">базе знаний Сешат</a>.</p>${newBtn()}</div></header>`
     : `${crumbs()}<header class="kb-head"><div><h1>База знаний Сешат</h1>
-        <p class="sub">Общие разделы для всей платформы и базы знаний модулей: у каждого модуля — свои сооружения, процессы и учебники.</p></div></header>`;
+        <p class="sub">Общие разделы для всей платформы и базы знаний модулей: у каждого модуля — свои сооружения, процессы и учебники.</p>${newBtn()}</div></header>`;
   kbRoot().innerHTML = `${head}
     <input id="kb-search" type="search" class="lib-search kb-search" placeholder="${KB_MOD ? 'Найти в базе знаний модуля…' : 'Найти: «гидравлика», «нитрификация», «Остром», «мембран»…'}" aria-label="Поиск по базе знаний" value="${esc(kbUI.q)}">
     <div id="kb-results"></div>`;
@@ -200,7 +203,7 @@ function kbSection(id) {
     body = src.map(b => `<section class="panel kb-group"><h2>${esc(b.g)}</h2><ul class="kb-ext">${b.list.map(([t, d, u]) => `<li>${ext(t, u)}<span>${esc(d)}</span></li>`).join('')}</ul></section>`).join('');
   }
   const d = id === 'books' && KB_MOD ? `Учебники и справочники по дисциплинам модуля ${KB_MOD.n}.` : S.d;
-  kbRoot().innerHTML = `${crumbs([S.t])}<header class="kb-head"><div><h1>${esc(S.t)}</h1><p class="sub">${esc(d)}</p></div></header>${body}`;
+  kbRoot().innerHTML = `${crumbs([S.t])}<header class="kb-head"><div><h1>${esc(S.t)}</h1><p class="sub">${esc(d)}</p>${NEW_COLL[id] ? newBtn(id) : ''}</div></header>${body}`;
 }
 
 /* ---------- статьи ---------- */

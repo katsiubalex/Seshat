@@ -23,7 +23,7 @@ function card(id) {
 const groupSection = (g, lead) => `<section class="mod-group" aria-labelledby="grp-${g}"><div class="cluster-head"><h2 id="grp-${g}">${esc(GROUPS[g])}</h2><p>${lead}</p></div>
   <div class="mod-row">${MODULES.filter(m => m.group === g).map(m => card(m.id)).join('')}</div></section>`;
 // На вкладке «Модули» — один модуль с рабочим конструктором; прежняя страница со всеми модулями
-// (водный цикл, «Основы», «Смежные области») открывается кнопкой «Что дальше?» рядом с его иконкой.
+// (водный цикл, «Основы», «Смежные области») открывается кнопкой «Что дальше?» под плашкой модуля.
 const HOME_MODULE = 'tlazolteotl';
 let homeAll = false; // показана ли страница со всеми модулями
 function renderHome() {
@@ -35,17 +35,15 @@ function renderHome() {
       <p class="home-mission">Инженерная платформа водного хозяйства —<br>от нормы до проекта</p>
     </header>
     <section class="mod-hero kind-${m.kind}" aria-labelledby="mod-hero-t">
-      <div class="mod-hero-icon">
-        <a class="mod-hero-glyph" href="${modHref(m)}" aria-label="Открыть модуль «${esc(m.n)}»">${glyph(m.id, 120)}</a>
-        <button type="button" class="btn" data-home="all">Что дальше?</button>
-      </div>
+      <a class="mod-hero-glyph" href="${modHref(m)}" aria-label="Открыть модуль «${esc(m.n)}»">${glyph(m.id, 120)}</a>
       <div class="mod-hero-text">
         <h2 id="mod-hero-t">${esc(m.n)}</h2>
         <p>${esc(m.d)}</p>
         <ul>${m.will.map(w => `<li>${esc(w)}</li>`).join('')}</ul>
         <div class="home-actions"><a class="btn primary" href="${modHref(m)}">Открыть модуль</a></div>
       </div>
-    </section>`;
+    </section>
+    <button type="button" class="btn home-next" data-home="all">Что дальше?</button>`;
 }
 function renderHomeAll() {
   const ready = MODULES.filter(m => m.ready);
